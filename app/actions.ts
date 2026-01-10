@@ -4,6 +4,7 @@ import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { JWT } from 'google-auth-library';
 import { revalidatePath } from 'next/cache';
 import type { SetFormData } from "@/lib/schemas";
+import { calculateEstimated1RM } from "@/lib/utils";
 
 // Configuration de l'authentification
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
@@ -16,23 +17,20 @@ const auth = new JWT({
 
 const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID || '', auth);
 
-// Helper pour calculer le 1RM (Formule de Brzycki)
-const calculate1RM = (weight: number, reps: number) => {
-  if (reps === 1) return weight;
-  return weight * (36 / (37 - reps));
-};
-
 export async function saveWorkoutSet(data: SetFormData & { timestamp: Date }) {
   try {
     await doc.loadInfo();
     const sheet = doc.sheetsByTitle['Workouts'] || doc.sheetsByIndex[0];
 
+    if (sheet.rowCount <= 1 && sheet.columnCount <= 1) {
+      await sheet.setHeaderRow(['Exercise', 'Weight', 'Reps', 'Timestamp']);
+   }
+
     const newRow = {
+      Timestamp: data.timestamp.toISOString(),
       Exercise: data.exerciseName,
       Weight: data.weight.toString(),
       Reps: data.reps.toString(),
-      Timestamp: data.timestamp.toISOString(),
-      Estimated1RM: calculate1RM(data.weight, data.reps).toFixed(2),
     };
 
     await sheet.addRow(newRow);
@@ -54,13 +52,22 @@ export async function getWorkoutHistory() {
     const sheet = doc.sheetsByTitle['Workouts'] || doc.sheetsByIndex[0];
     const rows = await sheet.getRows();
 
-    const history = rows.map(row => ({
-      exerciseName: row.get('Exercise'),
-      weight: parseFloat(row.get('Weight')),
-      reps: parseInt(row.get('Reps')),
-      timestamp: row.get('Timestamp'),
-      oneRM: parseFloat(row.get('Estimated1RM')),
-    }));
+    console.log("rows", rows);  
+
+    const history = rows.map(row => {
+      const weight = parseFloat(row.get('Weight'));
+      const reps = parseInt(row.get('Reps'));
+      const exerciseName = row.get('Exercise');
+      return {
+        timestamp: row.get('Timestamp'),
+        exerciseName,
+        weight,
+        reps,
+        oneRM: calculateEstimated1RM(weight, reps, exerciseName),
+      };
+    });
+
+    console.log("history", history);
 
     return { success: true, data: history };
   } catch (error) {

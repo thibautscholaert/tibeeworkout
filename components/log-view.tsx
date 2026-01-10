@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Plus, X, Check, ChevronDown, Search } from "lucide-react"
+import { Plus, X, Check, ChevronDown, Search, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,7 +13,7 @@ import { setFormSchema, type SetFormData } from "@/lib/schemas"
 import { EXERCISES } from "@/lib/exercises"
 import { useWorkout } from "@/lib/workout-context"
 import { saveWorkoutSet } from "@/app/actions"
-import { cn } from "@/lib/utils"
+import { cn, formatWeight } from "@/lib/utils"
 
 export function LogView() {
   const { currentSession, addSet, removeSet } = useWorkout()
@@ -31,7 +31,7 @@ export function LogView() {
   } = useForm<SetFormData>({
     resolver: zodResolver(setFormSchema),
     defaultValues: {
-      exerciseName: "",
+      exerciseName: "Pull up",
       weight: 0,
       reps: 0,
     },
@@ -40,8 +40,16 @@ export function LogView() {
   const selectedExercise = watch("exerciseName")
 
   const filteredExercises = useMemo(() => {
-    if (!searchQuery) return EXERCISES
-    return EXERCISES.filter((ex) => ex.toLowerCase().includes(searchQuery.toLowerCase()))
+    let exercises = EXERCISES
+    if (searchQuery) {
+      exercises = EXERCISES.filter((ex) => ex.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    }
+    // Sort favorites first
+    return [...exercises].sort((a, b) => {
+      if (a.favorite && !b.favorite) return -1
+      if (!a.favorite && b.favorite) return 1
+      return 0
+    })
   }, [searchQuery])
 
   const onSubmit = async (data: SetFormData) => {
@@ -55,8 +63,8 @@ export function LogView() {
         reps: data.reps,
       })
       // Keep exercise selected, reset weight and reps for quick entry
-      setValue("weight", 0)
-      setValue("reps", 0)
+      // setValue("weight", 0)
+      // setValue("reps", 0)
     } catch (error) {
       console.error("Failed to save set:", error)
     } finally {
@@ -105,23 +113,26 @@ export function LogView() {
                 ) : (
                   filteredExercises.map((exercise) => (
                     <button
-                      key={exercise}
+                      key={exercise.name}
                       type="button"
                       onClick={() => {
-                        setValue("exerciseName", exercise)
+                        setValue("exerciseName", exercise.name)
                         setExerciseOpen(false)
                         setSearchQuery("")
                       }}
                       className={cn(
                         "relative flex w-full cursor-pointer items-center rounded-md px-3 py-2.5 text-sm outline-none transition-colors",
                         "hover:bg-accent hover:text-accent-foreground",
-                        selectedExercise === exercise && "bg-accent/50",
+                        selectedExercise === exercise.name && "bg-accent/50",
                       )}
                     >
                       <Check
-                        className={cn("mr-2 h-4 w-4", selectedExercise === exercise ? "opacity-100" : "opacity-0")}
+                        className={cn("mr-2 h-4 w-4", selectedExercise === exercise.name ? "opacity-100" : "opacity-0")}
                       />
-                      {exercise}
+                      {exercise.favorite && (
+                        <Star className="mr-2 h-4 w-4 fill-yellow-500 text-yellow-500" />
+                      )}
+                      {exercise.name}
                     </button>
                   ))
                 )}
@@ -134,7 +145,7 @@ export function LogView() {
         {/* Weight & Reps Row */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="weight">Weight (lbs)</Label>
+            <Label htmlFor="weight">Weight (kg)</Label>
             <Input
               id="weight"
               type="number"
@@ -186,7 +197,7 @@ export function LogView() {
                     <div>
                       <p className="font-medium">{set.exerciseName}</p>
                       <p className="text-sm text-muted-foreground">
-                        {set.weight} lbs × {set.reps} reps
+                        {formatWeight(set.weight, set.exerciseName)} × {set.reps} reps
                         {set.estimated1RM && <span className="ml-2 text-primary">~{set.estimated1RM} 1RM</span>}
                       </p>
                     </div>

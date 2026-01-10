@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { TrendingUp, ChevronDown, Check, Search } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts"
 import { Button } from "@/components/ui/button"
@@ -8,11 +8,39 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { useWorkout } from "@/lib/workout-context"
+import { getWorkoutHistory } from "@/app/actions"
 import { cn, formatDate } from "@/lib/utils"
+import type { WorkoutSet } from "@/lib/types"
 
 export function StatsView() {
-  const { history } = useWorkout()
+  const [history, setHistory] = useState<WorkoutSet[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchHistory() {
+      setIsLoading(true)
+      try {
+        const result = await getWorkoutHistory()
+        if (result.success && result.data) {
+          // Transform the data from the action to match WorkoutSet type
+          const transformedHistory: WorkoutSet[] = result.data.map((item, index) => ({
+            id: `history-${index}-${item.timestamp}`,
+            exerciseName: item.exerciseName,
+            weight: item.weight,
+            reps: item.reps,
+            timestamp: new Date(item.timestamp),
+            estimated1RM: item.oneRM,
+          }))
+          setHistory(transformedHistory)
+        }
+      } catch (error) {
+        console.error("Failed to fetch workout history:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchHistory()
+  }, [])
   const [selectedExercise, setSelectedExercise] = useState<string>("Bench Press")
   const [exerciseOpen, setExerciseOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -63,6 +91,20 @@ export function StatsView() {
 
     return { current, max, change, percentChange }
   }, [chartData])
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
+          <TrendingUp className="h-8 w-8 text-muted-foreground animate-pulse" />
+        </div>
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold">Loading Stats...</h2>
+          <p className="text-sm text-muted-foreground">Fetching your workout data</p>
+        </div>
+      </div>
+    )
+  }
 
   if (exercises.length === 0) {
     return (
@@ -148,11 +190,11 @@ export function StatsView() {
           <Card className="bg-secondary/50">
             <CardContent className="p-4">
               <p className="text-sm text-muted-foreground">Current 1RM</p>
-              <p className="text-2xl font-bold">{stats.current} lbs</p>
+              <p className="text-2xl font-bold">{stats.current} kg</p>
               {stats.change !== 0 && (
                 <p className={cn("text-sm font-medium", stats.change > 0 ? "text-primary" : "text-destructive")}>
                   {stats.change > 0 ? "+" : ""}
-                  {stats.change} lbs ({stats.percentChange}%)
+                  {stats.change} kg ({stats.percentChange}%)
                 </p>
               )}
             </CardContent>
@@ -160,7 +202,7 @@ export function StatsView() {
           <Card className="bg-secondary/50">
             <CardContent className="p-4">
               <p className="text-sm text-muted-foreground">All-Time Max</p>
-              <p className="text-2xl font-bold">{stats.max} lbs</p>
+              <p className="text-2xl font-bold">{stats.max} kg</p>
               <p className="text-sm text-muted-foreground">Estimated 1RM</p>
             </CardContent>
           </Card>

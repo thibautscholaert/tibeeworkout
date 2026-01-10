@@ -131,7 +131,7 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
       ...set,
       id: crypto.randomUUID(),
       timestamp: new Date(),
-      estimated1RM: calculateEstimated1RM(set.weight, set.reps),
+      estimated1RM: calculateEstimated1RM(set.weight, set.reps, set.exerciseName),
     }
     setCurrentSession((prev) => [...prev, newSet])
     setHistory((prev) => [...prev, newSet])

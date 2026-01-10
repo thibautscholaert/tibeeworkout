@@ -1,20 +1,17 @@
 "use client"
 
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Dumbbell, History, BarChart3 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-type Tab = "log" | "history" | "stats"
+export function BottomNav() {
+  const pathname = usePathname()
 
-interface BottomNavProps {
-  activeTab: Tab
-  onTabChange: (tab: Tab) => void
-}
-
-export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   const tabs = [
-    { id: "log" as const, label: "Log", icon: Dumbbell },
-    { id: "history" as const, label: "History", icon: History },
-    { id: "stats" as const, label: "Stats", icon: BarChart3 },
+    { id: "log", label: "Log", icon: Dumbbell, href: "/log" },
+    { id: "history", label: "History", icon: History, href: "/history" },
+    { id: "stats", label: "Stats", icon: BarChart3, href: "/stats" },
   ]
 
   return (
@@ -22,11 +19,11 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
       <div className="mx-auto flex h-16 max-w-md items-center justify-around">
         {tabs.map((tab) => {
           const Icon = tab.icon
-          const isActive = activeTab === tab.id
+          const isActive = pathname === tab.href
           return (
-            <button
+            <Link
               key={tab.id}
-              onClick={() => onTabChange(tab.id)}
+              href={tab.href}
               className={cn(
                 "flex flex-1 flex-col items-center justify-center gap-1 py-2 transition-all duration-200",
                 isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
@@ -41,7 +38,7 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
                 <Icon className={cn("h-5 w-5", isActive && "scale-110")} />
               </div>
               <span className="text-xs font-medium">{tab.label}</span>
-            </button>
+            </Link>
           )
         })}
       </div>

@@ -1,20 +1,62 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useEffect, useState } from "react"
 import { Calendar } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useWorkout } from "@/lib/workout-context"
-import { formatDate, groupSetsByDate, groupSetsByExercise } from "@/lib/utils"
+import { getWorkoutHistory } from "@/app/actions"
+import { formatDate, groupSetsByDate, groupSetsByExercise, formatWeight } from "@/lib/utils"
+import type { WorkoutSet } from "@/lib/types"
 
 export function HistoryView() {
-  const { history } = useWorkout()
+  const [history, setHistory] = useState<WorkoutSet[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchHistory() {
+      setIsLoading(true)
+      try {
+        const result = await getWorkoutHistory()
+        if (result.success && result.data) {
+          // Transform the data from the action to match WorkoutSet type
+          const transformedHistory: WorkoutSet[] = result.data.map((item, index) => ({
+            id: `history-${index}-${item.timestamp}`,
+            exerciseName: item.exerciseName,
+            weight: item.weight,
+            reps: item.reps,
+            timestamp: new Date(item.timestamp),
+            estimated1RM: item.oneRM,
+          }))
+          setHistory(transformedHistory)
+        }
+      } catch (error) {
+        console.error("Failed to fetch workout history:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchHistory()
+  }, [])
 
   const groupedByDate = useMemo(() => {
     const byDate = groupSetsByDate(history)
     // Sort by date descending
     return Array.from(byDate.entries()).sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime())
   }, [history])
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
+          <Calendar className="h-8 w-8 text-muted-foreground animate-pulse" />
+        </div>
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold">Loading History...</h2>
+          <p className="text-sm text-muted-foreground">Fetching your workout data</p>
+        </div>
+      </div>
+    )
+  }
 
   if (history.length === 0) {
     return (
@@ -66,7 +108,7 @@ export function HistoryView() {
                             <span className="font-medium">{exerciseName}</span>
                             <div className="flex items-center gap-3 text-sm text-muted-foreground">
                               <span>{exerciseSets.length} sets</span>
-                              <span className="text-primary font-medium">{maxWeight} lbs</span>
+                              <span className="text-primary font-medium">{formatWeight(maxWeight, exerciseName)}</span>
                             </div>
                           </div>
                         </AccordionTrigger>
@@ -82,7 +124,7 @@ export function HistoryView() {
                                     {idx + 1}
                                   </span>
                                   <span className="font-mono">
-                                    {set.weight} × {set.reps}
+                                    {formatWeight(set.weight, set.exerciseName)} × {set.reps}
                                   </span>
                                 </div>
                                 {set.estimated1RM && (
@@ -92,7 +134,7 @@ export function HistoryView() {
                             ))}
                             <div className="mt-2 flex justify-between border-t border-border/50 pt-2 text-sm text-muted-foreground">
                               <span>Total Volume</span>
-                              <span className="font-semibold text-foreground">{totalVolume.toLocaleString()} lbs</span>
+                              <span className="font-semibold text-foreground">{totalVolume.toLocaleString()} kg</span>
                             </div>
                           </div>
                         </AccordionContent>
