@@ -10,7 +10,26 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "LiftLog - Workout Tracker",
   description: "Track your workouts with quick data entry between sets",
-    generator: 'v0.app'
+  generator: 'v0.app',
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "LiftLog",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  openGraph: {
+    type: "website",
+    siteName: "LiftLog",
+    title: "LiftLog - Workout Tracker",
+    description: "Track your workouts with quick data entry between sets",
+  },
+  icons: {
+    icon: "/icon-light-32x32.png",
+    apple: "/apple-icon.png",
+  },
 }
 
 export const viewport: Viewport = {
