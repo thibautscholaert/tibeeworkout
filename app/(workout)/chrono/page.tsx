@@ -1,23 +1,20 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { Timer, Play, Pause, RotateCcw, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { toast } from "sonner"
+import { Pause, Play, RotateCcw, Timer } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
 
 interface ChronoState {
   time: number
   isRunning: boolean
   startTime: number | null
   initialStartTime: number | null
-  savedTimes: Array<{ time: number; date: string }>
 }
 
 export default function ChronoPage() {
   const [time, setTime] = useState(0)
   const [isRunning, setIsRunning] = useState(false)
-  const [savedTimes, setSavedTimes] = useState<Array<{ time: number; date: string }>>([])
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
   const startTimeRef = useRef<number | null>(null)
   const initialStartTimeRef = useRef<number | null>(null)
@@ -28,7 +25,6 @@ export default function ChronoPage() {
     if (savedState) {
       try {
         const parsed: ChronoState = JSON.parse(savedState)
-        setSavedTimes(parsed.savedTimes || [])
         
         // Si le chrono était en cours, calculer le temps écoulé depuis le début
         if (parsed.isRunning && parsed.initialStartTime) {
@@ -55,11 +51,10 @@ export default function ChronoPage() {
         isRunning,
         startTime: startTimeRef.current,
         initialStartTime: initialStartTimeRef.current,
-        savedTimes
       }
       localStorage.setItem("chronoState", JSON.stringify(stateToSave))
     }
-  }, [time, isRunning, savedTimes])
+  }, [time, isRunning])
 
   // Sauvegarder l'état final quand le chrono s'arrête
   useEffect(() => {
@@ -69,11 +64,10 @@ export default function ChronoPage() {
         isRunning: false,
         startTime: null,
         initialStartTime: initialStartTimeRef.current,
-        savedTimes
       }
       localStorage.setItem("chronoState", JSON.stringify(stateToSave))
     }
-  }, [isRunning, time, savedTimes])
+  }, [isRunning, time])
 
   // Gérer le chronomètre
   useEffect(() => {
@@ -118,7 +112,6 @@ export default function ChronoPage() {
         isRunning: true,
         startTime: Date.now(),
         initialStartTime: initialStartTimeRef.current,
-        savedTimes
       }
       localStorage.setItem("chronoState", JSON.stringify(stateToSave))
     }
@@ -141,20 +134,8 @@ export default function ChronoPage() {
       isRunning: false,
       startTime: null,
       initialStartTime: null,
-      savedTimes
     }
     localStorage.setItem("chronoState", JSON.stringify(stateToSave))
-  }
-
-  const handleSave = () => {
-    if (time > 0) {
-      const newEntry = {
-        time,
-        date: new Date().toLocaleString("fr-FR")
-      }
-      setSavedTimes(prev => [newEntry, ...prev])
-      toast.success("Temps sauvegardé!")
-    }
   }
 
   const formatTime = (milliseconds: number) => {
@@ -166,11 +147,6 @@ export default function ChronoPage() {
     return `${minutes.toString().padStart(2, "0")}:${seconds
       .toString()
       .padStart(2, "0")}.${ms.toString().padStart(2, "0")}`
-  }
-
-  const clearSavedTimes = () => {
-    setSavedTimes([])
-    toast.success("Temps sauvegardés effacés!")
   }
 
   return (
@@ -220,54 +196,11 @@ export default function ChronoPage() {
               >
                 <RotateCcw className="h-6 w-6" />
               </Button>
-
-              <Button
-                onClick={handleSave}
-                size="lg"
-                variant="outline"
-                className="w-20 h-20 rounded-full"
-                disabled={time === 0}
-              >
-                <Save className="h-6 w-6" />
-              </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Temps sauvegardés */}
-      {savedTimes.length > 0 && (
-        <Card className="bg-card/50 backdrop-blur-sm">
-          <CardContent className="p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Temps sauvegardés</h3>
-              <Button
-                onClick={clearSavedTimes}
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground hover:text-destructive"
-              >
-                Effacer tout
-              </Button>
-            </div>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {savedTimes.map((entry, index) => (
-                <div
-                  key={index}
-                  className="flex justify-between items-center p-2 rounded-lg bg-muted/50"
-                >
-                  <span className="font-mono text-sm">
-                    {formatTime(entry.time)}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {entry.date}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 }

@@ -1,0 +1,44 @@
+{
+  // --- TERMINAL (WSL FIRST) ---
+  "terminal.integrated.defaultProfile.windows": "WSL",
+  "terminal.integrated.profiles.windows": {
+    "WSL": {
+      "path": "wsl.exe",
+      "args": ["-d", "Ubuntu"]
+    }
+  },
+
+  // --- FORCE TS SERVER À UTILISER LE NODE WSL ---
+  "typescript.tsserver.useSeparateSyntaxServer": false,
+  "typescript.tsserver.experimental.enableProjectDiagnostics": true,
+  "typescript.tsserver.maxTsServerMemory": 4096,
+
+  // --- NODE / NPM ---
+  "npm.packageManager": "npm",
+  "npm.runSilent": true,
+
+  // --- NEXT.JS / REACT ---
+  "javascript.preferences.importModuleSpecifier": "non-relative",
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "typescript.preferences.importModuleSpecifierEnding": "auto",
+
+  // --- FORMAT & DX ---
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit"
+  },
+
+  // --- FILE WATCHING (WSL PERF) ---
+  "files.watcherExclude": {
+    "**/.git/**": true,
+    "**/node_modules/**": true,
+    "**/.next/**": true
+  },
+
+  // --- PREVENT WINDOWS NODE LEAK ---
+  "terminal.integrated.inheritEnv": false,
+
+  // --- TYPESCRIPT RELIABILITY ---
+  "typescript.enablePromptUseWorkspaceTsdk": true
+}

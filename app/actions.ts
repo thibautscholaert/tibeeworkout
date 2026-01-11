@@ -1,10 +1,10 @@
 "use server"
 
-import { GoogleSpreadsheet } from 'google-spreadsheet';
-import { JWT } from 'google-auth-library';
-import { revalidatePath } from 'next/cache';
 import type { SetFormData } from "@/lib/schemas";
 import { calculateEstimated1RM } from "@/lib/utils";
+import { JWT } from 'google-auth-library';
+import { GoogleSpreadsheet } from 'google-spreadsheet';
+import { revalidatePath } from 'next/cache';
 
 // Configuration de l'authentification
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
@@ -24,7 +24,7 @@ export async function saveWorkoutSet(data: SetFormData & { timestamp: Date }) {
 
     if (sheet.rowCount <= 1 && sheet.columnCount <= 1) {
       await sheet.setHeaderRow(['Exercise', 'Weight', 'Reps', 'Timestamp']);
-   }
+    }
 
     const newRow = {
       Timestamp: data.timestamp.toISOString(),
@@ -52,8 +52,6 @@ export async function getWorkoutHistory() {
     const sheet = doc.sheetsByTitle['Workouts'] || doc.sheetsByIndex[0];
     const rows = await sheet.getRows();
 
-    console.log("rows", rows);  
-
     const history = rows.map(row => {
       const weight = parseFloat(row.get('Weight'));
       const reps = parseInt(row.get('Reps'));
@@ -66,8 +64,6 @@ export async function getWorkoutHistory() {
         oneRM: calculateEstimated1RM(weight, reps, exerciseName),
       };
     });
-
-    console.log("history", history);
 
     return { success: true, data: history };
   } catch (error) {
