@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { ChronoIndicator } from "@/components/chrono-indicator"
 import { setFormSchema, type SetFormData } from "@/lib/schemas"
 import { EXERCISES } from "@/lib/exercises"
 import { useWorkout } from "@/lib/workout-context"
@@ -109,9 +110,12 @@ export function LogView() {
   return (
     <div className="flex flex-col gap-6 pb-6">
       {/* Header */}
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight">Log Workout</h1>
-        {/* <p className="text-sm text-muted-foreground">Quick entry between sets</p> */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight">Log Workout</h1>
+          {/* <p className="text-sm text-muted-foreground">Quick entry between sets</p> */}
+        </div>
+        <ChronoIndicator />
       </div>
 
       {/* Form */}

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Dumbbell, History, BarChart3 } from "lucide-react"
+import { Dumbbell, History, BarChart3, Timer } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export function BottomNav() {
@@ -10,6 +10,7 @@ export function BottomNav() {
 
   const tabs = [
     { id: "log", label: "Log", icon: Dumbbell, href: "/log" },
+    { id: "chrono", label: "Chrono", icon: Timer, href: "/chrono" },
     { id: "history", label: "History", icon: History, href: "/history" },
     { id: "stats", label: "Stats", icon: BarChart3, href: "/stats" },
   ]
