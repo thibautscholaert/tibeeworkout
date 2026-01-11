@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, X, Check, ChevronDown, Search, Star } from "lucide-react"
@@ -14,12 +14,33 @@ import { EXERCISES } from "@/lib/exercises"
 import { useWorkout } from "@/lib/workout-context"
 import { saveWorkoutSet } from "@/app/actions"
 import { cn, formatWeight } from "@/lib/utils"
+import { useWorkoutHistory } from "@/lib/use-workout-history"
 
 export function LogView() {
   const { currentSession, addSet, removeSet } = useWorkout()
+  const { history } = useWorkoutHistory()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [exerciseOpen, setExerciseOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+
+  // Calculate most practiced exercises (top 5 by number of sets)
+  const mostPracticedExercises = useMemo(() => {
+    const exerciseCounts = new Map<string, number>()
+    history.forEach((set) => {
+      const count = exerciseCounts.get(set.exerciseName) || 0
+      exerciseCounts.set(set.exerciseName, count + 1)
+    })
+    
+    return Array.from(exerciseCounts.entries())
+      .sort((a, b) => b[1] - a[1]) // Sort by count descending
+      .slice(0, 5) // Take top 5
+      .map(([name]) => name) // Extract just the names
+  }, [history])
+
+  // Get the most practiced exercise as default
+  const defaultExercise = mostPracticedExercises.length > 0 
+    ? mostPracticedExercises[0] 
+    : "Pull up"
 
   const {
     register,
@@ -31,13 +52,26 @@ export function LogView() {
   } = useForm<SetFormData>({
     resolver: zodResolver(setFormSchema),
     defaultValues: {
-      exerciseName: "Pull up",
+      exerciseName: defaultExercise,
       weight: 0,
       reps: 0,
     },
   })
 
+  // Update default exercise when history loads (only once)
+  const [hasSetDefault, setHasSetDefault] = useState(false)
+  useEffect(() => {
+    if (mostPracticedExercises.length > 0 && !hasSetDefault) {
+      setValue("exerciseName", mostPracticedExercises[0])
+      setHasSetDefault(true)
+    }
+  }, [mostPracticedExercises, setValue, hasSetDefault])
+
   const selectedExercise = watch("exerciseName")
+
+  const selectedExerciseData = useMemo(() => {
+    return EXERCISES.find((ex) => ex.name === selectedExercise)
+  }, [selectedExercise])
 
   const filteredExercises = useMemo(() => {
     let exercises = EXERCISES
@@ -77,11 +111,29 @@ export function LogView() {
       {/* Header */}
       <div className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight">Log Workout</h1>
-        <p className="text-sm text-muted-foreground">Quick entry between sets</p>
+        {/* <p className="text-sm text-muted-foreground">Quick entry between sets</p> */}
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* Exercise Shortcuts */}
+        {mostPracticedExercises.length > 0 && (
+          <div className="flex gap-2 flex-wrap items-center justify-center">
+            {mostPracticedExercises.map((exerciseName) => (
+              <Button
+                key={exerciseName}
+                type="button"
+                variant={selectedExercise === exerciseName ? "default" : "outline"}
+                size="sm"
+                onClick={() => setValue("exerciseName", exerciseName)}
+                className="flex-1"
+              >
+                {exerciseName}
+              </Button>
+            ))}
+          </div>
+        )}
+
         {/* Exercise Select */}
         <div className="space-y-2">
           <Label htmlFor="exercise">Exercise</Label>
@@ -157,7 +209,7 @@ export function LogView() {
             {errors.weight && <p className="text-sm text-destructive">{errors.weight.message}</p>}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="reps">Reps</Label>
+            <Label htmlFor="reps">{selectedExerciseData?.repType === "time" ? "Temps (s)" : "Reps"}</Label>
             <Input
               id="reps"
               type="number"
@@ -197,7 +249,8 @@ export function LogView() {
                     <div>
                       <p className="font-medium">{set.exerciseName}</p>
                       <p className="text-sm text-muted-foreground">
-                        {formatWeight(set.weight, set.exerciseName)} × {set.reps} reps
+                        {formatWeight(set.weight, set.exerciseName)} × {set.reps}{" "}
+                        {EXERCISES.find((ex) => ex.name === set.exerciseName)?.repType === "time" ? "s" : "reps"}
                         {set.estimated1RM && <span className="ml-2 text-primary">~{set.estimated1RM} 1RM</span>}
                       </p>
                     </div>

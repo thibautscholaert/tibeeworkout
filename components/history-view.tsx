@@ -1,42 +1,14 @@
 "use client"
 
-import { useMemo, useEffect, useState } from "react"
+import { useMemo } from "react"
 import { Calendar } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { getWorkoutHistory } from "@/app/actions"
-import { formatDate, groupSetsByDate, groupSetsByExercise, formatWeight } from "@/lib/utils"
-import type { WorkoutSet } from "@/lib/types"
+import { formatDate, groupSetsByDate, groupSetsByExercise, formatWeight, formatReps } from "@/lib/utils"
+import { useWorkoutHistory } from "@/lib/use-workout-history"
 
 export function HistoryView() {
-  const [history, setHistory] = useState<WorkoutSet[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    async function fetchHistory() {
-      setIsLoading(true)
-      try {
-        const result = await getWorkoutHistory()
-        if (result.success && result.data) {
-          // Transform the data from the action to match WorkoutSet type
-          const transformedHistory: WorkoutSet[] = result.data.map((item, index) => ({
-            id: `history-${index}-${item.timestamp}`,
-            exerciseName: item.exerciseName,
-            weight: item.weight,
-            reps: item.reps,
-            timestamp: new Date(item.timestamp),
-            estimated1RM: item.oneRM,
-          }))
-          setHistory(transformedHistory)
-        }
-      } catch (error) {
-        console.error("Failed to fetch workout history:", error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    fetchHistory()
-  }, [])
+  const { history, isLoading } = useWorkoutHistory()
 
   const groupedByDate = useMemo(() => {
     const byDate = groupSetsByDate(history)
@@ -124,7 +96,7 @@ export function HistoryView() {
                                     {idx + 1}
                                   </span>
                                   <span className="font-mono">
-                                    {formatWeight(set.weight, set.exerciseName)} × {set.reps}
+                                    {formatWeight(set.weight, set.exerciseName)} × {formatReps(set.reps, set.exerciseName)}
                                   </span>
                                 </div>
                                 {set.estimated1RM && (

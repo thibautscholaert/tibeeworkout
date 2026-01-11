@@ -36,6 +36,16 @@ export function formatWeight(weight: number, exerciseName?: string): string {
   return `${weight} kg`
 }
 
+export function formatReps(reps: number, exerciseName?: string): string {
+  if (exerciseName) {
+    const exercise = EXERCISES.find((ex) => ex.name === exerciseName)
+    if (exercise?.repType === "time") {
+      return `${reps}s`
+    }
+  }
+  return `${reps} reps`
+}
+
 export function formatDate(date: Date): string {
   const today = new Date()
   const yesterday = new Date(today)

@@ -8,88 +8,211 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { getWorkoutHistory } from "@/app/actions"
-import { cn, formatDate } from "@/lib/utils"
+import { cn, formatDate, formatWeight, formatReps } from "@/lib/utils"
+import { useWorkoutHistory } from "@/lib/use-workout-history"
+import { EXERCISES } from "@/lib/exercises"
 import type { WorkoutSet } from "@/lib/types"
 
-export function StatsView() {
-  const [history, setHistory] = useState<WorkoutSet[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+// Helper function to calculate 1RM for any non-bodyweight exercise
+function calculate1RM(weight: number, reps: number): number {
+  if (reps === 1) return weight
+  if (reps > 12) return Math.round(weight * (1 + reps / 30))
+  // Brzycki formula: weight × (36 / (37 - reps))
+  return Math.round(weight * (36 / (37 - reps)))
+}
 
-  useEffect(() => {
-    async function fetchHistory() {
-      setIsLoading(true)
-      try {
-        const result = await getWorkoutHistory()
-        if (result.success && result.data) {
-          // Transform the data from the action to match WorkoutSet type
-          const transformedHistory: WorkoutSet[] = result.data.map((item, index) => ({
-            id: `history-${index}-${item.timestamp}`,
-            exerciseName: item.exerciseName,
-            weight: item.weight,
-            reps: item.reps,
-            timestamp: new Date(item.timestamp),
-            estimated1RM: item.oneRM,
-          }))
-          setHistory(transformedHistory)
-        }
-      } catch (error) {
-        console.error("Failed to fetch workout history:", error)
-      } finally {
-        setIsLoading(false)
+// Helper function to group sets by session (day or 2h time range)
+function groupSetsBySession(sets: WorkoutSet[]): Map<string, WorkoutSet[]> {
+  const grouped = new Map<string, WorkoutSet[]>()
+  
+  // Sort sets by timestamp
+  const sortedSets = [...sets].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+  
+  sortedSets.forEach((set) => {
+    const setTime = set.timestamp.getTime()
+    let sessionKey: string | null = null
+    const twoHoursInMs = 2 * 60 * 60 * 1000
+    
+    // Try to find an existing session within 2 hours
+    // Check if the set is within 2h of any set in the session
+    for (const [key, sessionSets] of grouped.entries()) {
+      if (sessionSets.length === 0) continue
+      
+      // Check if set is within 2h of any set in this session
+      const isWithinRange = sessionSets.some((sessionSet) => {
+        const timeDiff = Math.abs(setTime - sessionSet.timestamp.getTime())
+        return timeDiff <= twoHoursInMs
+      })
+      
+      if (isWithinRange) {
+        sessionKey = key
+        break
       }
     }
-    fetchHistory()
-  }, [])
-  const [selectedExercise, setSelectedExercise] = useState<string>("Bench Press")
+    
+    // If no session found within 2h, create a new one based on date
+    if (!sessionKey) {
+      sessionKey = new Date(set.timestamp).toDateString()
+    }
+    
+    const existing = grouped.get(sessionKey) || []
+    grouped.set(sessionKey, [...existing, set])
+  })
+  
+  return grouped
+}
+
+export function StatsView() {
+  const { history, isLoading } = useWorkoutHistory()
+  const [selectedExercise, setSelectedExercise] = useState<string>("")
   const [exerciseOpen, setExerciseOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Get unique exercises from history
+  // Get unique exercises from history (same logic as history-view)
   const exercises = useMemo(() => {
     const unique = new Set(history.map((s) => s.exerciseName))
     return Array.from(unique).sort()
   }, [history])
+
+  // Calculate most practiced exercises (top 5 by number of sets)
+  const mostPracticedExercises = useMemo(() => {
+    const exerciseCounts = new Map<string, number>()
+    history.forEach((set) => {
+      const count = exerciseCounts.get(set.exerciseName) || 0
+      exerciseCounts.set(set.exerciseName, count + 1)
+    })
+    
+    return Array.from(exerciseCounts.entries())
+      .sort((a, b) => b[1] - a[1]) // Sort by count descending
+      .slice(0, 5) // Take top 5
+      .map(([name]) => name) // Extract just the names
+  }, [history])
+
+  // Set default exercise to most practiced, or first available if no history
+  useEffect(() => {
+    if (mostPracticedExercises.length > 0 && !selectedExercise) {
+      setSelectedExercise(mostPracticedExercises[0])
+    } else if (exercises.length > 0 && !exercises.includes(selectedExercise)) {
+      setSelectedExercise(exercises[0])
+    }
+  }, [exercises, selectedExercise, mostPracticedExercises])
 
   const filteredExercises = useMemo(() => {
     if (!searchQuery) return exercises
     return exercises.filter((ex) => ex.toLowerCase().includes(searchQuery.toLowerCase()))
   }, [exercises, searchQuery])
 
-  // Calculate chart data
+  // Get exercise data
+  const exerciseData = useMemo(() => {
+    return EXERCISES.find((ex) => ex.name === selectedExercise)
+  }, [selectedExercise])
+
+  const repType = exerciseData?.repType ?? "reps"
+
+  // Calculate chart data - cumulate reps/time per session
   const chartData = useMemo(() => {
     const exerciseSets = history.filter((s) => s.exerciseName === selectedExercise)
+    const sessions = groupSetsBySession(exerciseSets)
 
-    // Group by date and get max 1RM for each day
-    const byDate = new Map<string, number>()
-    exerciseSets.forEach((set) => {
-      const dateKey = new Date(set.timestamp).toDateString()
-      const current = byDate.get(dateKey) || 0
-      if (set.estimated1RM && set.estimated1RM > current) {
-        byDate.set(dateKey, set.estimated1RM)
+    // Cumulate reps/time per session
+    const sessionData = Array.from(sessions.entries()).map(([sessionKey, sets]) => {
+      const total = sets.reduce((sum, set) => sum + set.reps, 0)
+      return {
+        sessionKey,
+        value: total,
+        date: formatDate(new Date(sessionKey)),
       }
     })
 
-    return Array.from(byDate.entries())
-      .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime())
-      .map(([date, estimated1RM]) => ({
-        date: formatDate(new Date(date)),
-        estimated1RM,
+    return sessionData
+      .sort((a, b) => new Date(a.sessionKey).getTime() - new Date(b.sessionKey).getTime())
+      .map((d) => ({
+        date: d.date,
+        value: d.value,
+        label: repType === "time" ? "Total Time" : "Total Reps",
+        metricType: "reps" as const,
       }))
+  }, [history, selectedExercise, repType])
+
+  // Calculate max reps/time per set
+  const maxRepsPerSet = useMemo(() => {
+    const exerciseSets = history.filter((s) => s.exerciseName === selectedExercise)
+    if (exerciseSets.length === 0) return null
+    return Math.max(...exerciseSets.map((set) => set.reps))
   }, [history, selectedExercise])
+
+  // Calculate max per session (grouped by day or 2h range)
+  const maxPerSession = useMemo(() => {
+    const exerciseSets = history.filter((s) => s.exerciseName === selectedExercise)
+    if (exerciseSets.length === 0) return null
+    
+    const sessions = groupSetsBySession(exerciseSets)
+    const sessionTotals = Array.from(sessions.values()).map((sets) =>
+      sets.reduce((sum, set) => sum + set.reps, 0)
+    )
+    
+    return sessionTotals.length > 0 ? Math.max(...sessionTotals) : null
+  }, [history, selectedExercise])
+
+  // Calculate best performance (reps * weight)
+  const bestPerfRepsWeight = useMemo(() => {
+    const exerciseSets = history.filter((s) => s.exerciseName === selectedExercise)
+    if (exerciseSets.length === 0) return null
+    
+    // Calculate volume (reps * weight) for each set
+    const volumes = exerciseSets.map((set) => set.reps * set.weight)
+    const maxVolume = Math.max(...volumes)
+    
+    // Find the set with the best volume
+    const bestSet = exerciseSets.find((set) => set.reps * set.weight === maxVolume)
+    
+    return bestSet ? {
+      reps: bestSet.reps,
+      weight: bestSet.weight,
+      volume: maxVolume,
+    } : null
+  }, [history, selectedExercise])
+
+  // Calculate best 1RM (only for non-bodyweight exercises)
+  const best1RM = useMemo(() => {
+    if (!exerciseData || exerciseData.bodyweight) return null
+    
+    const exerciseSets = history.filter((s) => s.exerciseName === selectedExercise)
+    if (exerciseSets.length === 0) return null
+    
+    // Calculate 1RM for each set using the helper function
+    const oneRMs = exerciseSets
+      .map((set) => {
+        const oneRM = calculate1RM(set.weight, set.reps)
+        return { oneRM, weight: set.weight, reps: set.reps }
+      })
+    
+    if (oneRMs.length === 0) return null
+    
+    // Find the best 1RM
+    const best = oneRMs.reduce((max, current) => 
+      current.oneRM > max.oneRM ? current : max
+    )
+    
+    return best
+  }, [history, selectedExercise, exerciseData])
 
   // Calculate stats
   const stats = useMemo(() => {
     if (chartData.length === 0) return null
 
-    const values = chartData.map((d) => d.estimated1RM)
+    const values = chartData.map((d) => d.value)
     const current = values[values.length - 1]
     const previous = values.length > 1 ? values[values.length - 2] : current
     const max = Math.max(...values)
     const change = current - previous
     const percentChange = previous > 0 ? ((change / previous) * 100).toFixed(1) : "0"
+    const metricType = chartData[0]?.metricType || "reps"
+    
+    // Best session is the max cumulated reps/time
+    const bestSession = max
 
-    return { current, max, change, percentChange }
+    return { current, max, bestSession, change, percentChange, metricType }
   }, [chartData])
 
   if (isLoading) {
@@ -125,8 +248,26 @@ export function StatsView() {
       {/* Header */}
       <div className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight">Stats</h1>
-        <p className="text-sm text-muted-foreground">Track your progress over time</p>
+        {/* <p className="text-sm text-muted-foreground">Track your progress over time</p> */}
       </div>
+
+      {/* Exercise Shortcuts */}
+      {mostPracticedExercises.length > 0 && (
+        <div className="flex gap-2 flex-wrap items-center justify-center">
+          {mostPracticedExercises.map((exerciseName) => (
+            <Button
+              key={exerciseName}
+              type="button"
+              variant={selectedExercise === exerciseName ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedExercise(exerciseName)}
+              className="flex-1"
+            >
+              {exerciseName}
+            </Button>
+          ))}
+        </div>
+      )}
 
       {/* Exercise Selector */}
       <div className="space-y-2">
@@ -186,41 +327,74 @@ export function StatsView() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-2 gap-3">
-          <Card className="bg-secondary/50">
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">Current 1RM</p>
-              <p className="text-2xl font-bold">{stats.current} kg</p>
-              {stats.change !== 0 && (
-                <p className={cn("text-sm font-medium", stats.change > 0 ? "text-primary" : "text-destructive")}>
-                  {stats.change > 0 ? "+" : ""}
-                  {stats.change} kg ({stats.percentChange}%)
+        <div className="grid gap-3 grid-cols-2">
+          {maxRepsPerSet !== null && (
+            <Card className="bg-secondary/50">
+              <CardContent className="p-4">
+                <p className="text-sm text-muted-foreground">{repType === "time" ? "Max Time/Set" : "Max Reps/Set"}</p>
+                <p className="text-2xl font-bold">{formatReps(maxRepsPerSet, selectedExercise)}</p>
+                <p className="text-sm text-muted-foreground">Max en une série</p>
+              </CardContent>
+            </Card>
+          )}
+          {maxPerSession !== null && (
+            <Card className="bg-secondary/50">
+              <CardContent className="p-4">
+                <p className="text-sm text-muted-foreground">
+                  {repType === "time" ? "Max Time/Session" : "Max Reps/Session"}
                 </p>
-              )}
-            </CardContent>
-          </Card>
-          <Card className="bg-secondary/50">
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">All-Time Max</p>
-              <p className="text-2xl font-bold">{stats.max} kg</p>
-              <p className="text-sm text-muted-foreground">Estimated 1RM</p>
-            </CardContent>
-          </Card>
+                <p className="text-2xl font-bold">
+                  {formatReps(maxPerSession, selectedExercise)}
+                </p>
+                <p className="text-sm text-muted-foreground">Max par session</p>
+              </CardContent>
+            </Card>
+          )}
+          {bestPerfRepsWeight !== null && (
+            <Card className="bg-secondary/50">
+              <CardContent className="p-4">
+                <p className="text-sm text-muted-foreground">Meilleure perf</p>
+                <p className="text-2xl font-bold">
+                  {formatReps(bestPerfRepsWeight.reps, selectedExercise)} × {formatWeight(bestPerfRepsWeight.weight, selectedExercise)}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {bestPerfRepsWeight.volume} kg total
+                </p>
+              </CardContent>
+            </Card>
+          )}
+          {best1RM !== null && (
+            <Card className="bg-secondary/50">
+              <CardContent className="p-4">
+                <p className="text-sm text-muted-foreground">1RM Estimé</p>
+                <p className="text-2xl font-bold">
+                  {formatWeight(best1RM.oneRM, selectedExercise)}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {formatReps(best1RM.reps, selectedExercise)} × {formatWeight(best1RM.weight, selectedExercise)}
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
       {/* Chart */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Estimated 1RM Progress</CardTitle>
-          <CardDescription>Based on Brzycki formula</CardDescription>
+          <CardTitle className="text-base">
+            {repType === "time" ? "Total Time Progress" : "Total Reps Progress"}
+          </CardTitle>
+          <CardDescription>
+            {repType === "time" ? "Cumulé du temps par session" : "Cumulé des reps par session"}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {chartData.length > 0 ? (
             <ChartContainer
               config={{
-                estimated1RM: {
-                  label: "Est. 1RM",
+                value: {
+                  label: chartData[0]?.label || "Value",
                   color: "hsl(var(--chart-1))",
                 },
               }}
@@ -241,7 +415,7 @@ export function StatsView() {
                     tickLine={false}
                     axisLine={false}
                     className="fill-muted-foreground"
-                    domain={["dataMin - 10", "dataMax + 10"]}
+                    domain={["dataMin - 5", "dataMax + 5"]}
                   />
                   <ChartTooltip
                     content={<ChartTooltipContent />}
@@ -249,10 +423,10 @@ export function StatsView() {
                   />
                   <Line
                     type="monotone"
-                    dataKey="estimated1RM"
-                    stroke="var(--color-estimated1RM)"
+                    dataKey="value"
+                    stroke="var(--color-value)"
                     strokeWidth={2}
-                    dot={{ r: 4, fill: "var(--color-estimated1RM)" }}
+                    dot={{ r: 4, fill: "var(--color-value)" }}
                     activeDot={{ r: 6 }}
                   />
                 </LineChart>
