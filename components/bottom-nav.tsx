@@ -1,25 +1,31 @@
 "use client"
 
+import { cn } from "@/lib/utils"
+import {
+  BarChart3,
+  ClipboardList,
+  Clock,
+  Dumbbell,
+  TrendingUp
+} from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Dumbbell, History, BarChart3, Timer } from "lucide-react"
-import { cn } from "@/lib/utils"
 
 export function BottomNav() {
   const pathname = usePathname()
 
   const tabs = [
     { id: "log", label: "Log", icon: Dumbbell, href: "/log" },
-    { id: "chrono", label: "Chrono", icon: Timer, href: "/chrono" },
-    { id: "history", label: "History", icon: History, href: "/history" },
-    { id: "stats", label: "Stats", icon: BarChart3, href: "/stats" },
+    { id: "programs", label: "Programs", icon: ClipboardList, href: "/programs" },
+    { id: "chrono", label: "Chrono", icon: Clock, href: "/chrono" },
+    { id: "history", label: "History", icon: BarChart3, href: "/history" },
+    { id: "stats", label: "Stats", icon: TrendingUp, href: "/stats" },
   ]
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-lg">
       <div className="mx-auto flex h-16 max-w-md items-center justify-around">
         {tabs.map((tab) => {
-          const Icon = tab.icon
           const isActive = pathname === tab.href
           return (
             <Link
@@ -36,7 +42,7 @@ export function BottomNav() {
                   isActive && "bg-primary/15",
                 )}
               >
-                <Icon className={cn("h-5 w-5", isActive && "scale-110")} />
+                <tab.icon className={cn("h-5 w-5", isActive && "scale-110")} />
               </div>
               <span className="text-xs font-medium">{tab.label}</span>
             </Link>

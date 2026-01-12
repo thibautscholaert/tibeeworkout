@@ -1,17 +1,18 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
-import { TrendingUp, ChevronDown, Check, Search } from "lucide-react"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn, formatDate, formatWeight, formatReps } from "@/lib/utils"
-import { useWorkoutHistory } from "@/lib/use-workout-history"
+import { Separator } from "@/components/ui/separator"
 import { EXERCISES } from "@/lib/exercises"
 import type { WorkoutSet } from "@/lib/types"
+import { cn, formatDate, formatReps, formatWeight } from "@/lib/utils"
+import { useWorkout } from "@/lib/workout-context"
+import { BicepsFlexed, Check, ChevronDown, Search, Star, TrendingUp } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
 
 // Helper function to calculate 1RM for any non-bodyweight exercise
 function calculate1RM(weight: number, reps: number): number {
@@ -63,7 +64,7 @@ function groupSetsBySession(sets: WorkoutSet[]): Map<string, WorkoutSet[]> {
 }
 
 export function StatsView() {
-  const { history, isLoading } = useWorkoutHistory()
+  const { history, isLoading } = useWorkout()
   const [selectedExercise, setSelectedExercise] = useState<string>("")
   const [exerciseOpen, setExerciseOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -217,12 +218,12 @@ export function StatsView() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
-          <TrendingUp className="h-8 w-8 text-muted-foreground animate-pulse" />
+      <div className="flex flex-col items-center justify-center gap-6 py-16 text-center">
+        <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20">
+          <TrendingUp className="h-8 w-8 text-primary animate-pulse" />
         </div>
-        <div className="space-y-1">
-          <h2 className="text-lg font-semibold">Loading Stats...</h2>
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold">Loading Stats...</h2>
           <p className="text-sm text-muted-foreground">Fetching your workout data</p>
         </div>
       </div>
@@ -231,12 +232,12 @@ export function StatsView() {
 
   if (exercises.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
-          <TrendingUp className="h-8 w-8 text-muted-foreground" />
+      <div className="flex flex-col items-center justify-center gap-6 py-16 text-center">
+        <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20">
+          <TrendingUp className="h-8 w-8 text-primary" />
         </div>
-        <div className="space-y-1">
-          <h2 className="text-lg font-semibold">No Stats Yet</h2>
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold">No Stats Yet</h2>
           <p className="text-sm text-muted-foreground">Log some workouts to see your progress</p>
         </div>
       </div>
@@ -246,41 +247,62 @@ export function StatsView() {
   return (
     <div className="flex flex-col gap-6 pb-6">
       {/* Header */}
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight">Stats</h1>
-        {/* <p className="text-sm text-muted-foreground">Track your progress over time</p> */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight">Stats</h1>
+          {/* <p className="text-sm text-muted-foreground">Track your progress over time</p> */}
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary">
+            {exercises.length}
+          </div>
+          <span className="text-sm text-muted-foreground">exercices</span>
+        </div>
       </div>
 
-      {/* Exercise Shortcuts */}
+      <Separator className="my-2" />
+
+      {/* Exercise Favorites - Subtle suggestions */}
       {mostPracticedExercises.length > 0 && (
-        <div className="flex gap-2 flex-wrap items-center justify-center">
-          {mostPracticedExercises.map((exerciseName) => (
-            <Button
-              key={exerciseName}
-              type="button"
-              variant={selectedExercise === exerciseName ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedExercise(exerciseName)}
-              className="flex-1"
-            >
-              {exerciseName}
-            </Button>
-          ))}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 px-1">
+            <Star className="h-3 w-3 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground font-medium">Exercices favoris</span>
+            <div className="flex-1 h-px bg-border/50"></div>
+          </div>
+          <div className="flex gap-1.5 flex-wrap">
+            {mostPracticedExercises.map((exerciseName) => (
+              <button
+                key={exerciseName}
+                type="button"
+                onClick={() => setSelectedExercise(exerciseName)}
+                className={cn(
+                  "px-2.5 py-1.5 rounded-md text-xs font-medium transition-all duration-200",
+                  "border border-border/40 bg-muted/30 hover:bg-muted/60 hover:border-border/60",
+                  "text-muted-foreground hover:text-foreground",
+                  selectedExercise === exerciseName && "bg-primary/10 border-primary/30 text-primary"
+                )}
+              >
+                <span className="text-ellipsis overflow-hidden max-w-[120px] block truncate">
+                  {exerciseName}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
       {/* Exercise Selector */}
       <div className="space-y-2">
-        <label className="text-sm font-medium">Exercise</label>
         <Popover open={exerciseOpen} onOpenChange={setExerciseOpen}>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
               role="combobox"
               aria-expanded={exerciseOpen}
-              className="w-full justify-between h-12 bg-transparent"
+              className={cn("w-full justify-between h-12 text-base", !selectedExercise && "text-muted-foreground")}
             >
-              {selectedExercise}
+              {selectedExercise || "Select exercise..."}
               <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
@@ -325,120 +347,138 @@ export function StatsView() {
         </Popover>
       </div>
 
+      <Separator className="my-2" />
+
       {/* Stats Cards */}
       {stats && (
-        <div className="grid gap-3 grid-cols-2">
-          {maxRepsPerSet !== null && (
-            <Card className="bg-secondary/50">
-              <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">{repType === "time" ? "Max Time/Set" : "Max Reps/Set"}</p>
-                <p className="text-2xl font-bold">{formatReps(maxRepsPerSet, selectedExercise)}</p>
-                <p className="text-sm text-muted-foreground">Max en une série</p>
-              </CardContent>
-            </Card>
-          )}
-          {maxPerSession !== null && (
-            <Card className="bg-secondary/50">
-              <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">
-                  {repType === "time" ? "Max Time/Session" : "Max Reps/Session"}
-                </p>
-                <p className="text-2xl font-bold">
-                  {formatReps(maxPerSession, selectedExercise)}
-                </p>
-                <p className="text-sm text-muted-foreground">Max par session</p>
-              </CardContent>
-            </Card>
-          )}
-          {bestPerfRepsWeight !== null && (
-            <Card className="bg-secondary/50">
-              <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">Meilleure perf</p>
-                <p className="text-2xl font-bold">
-                  {formatReps(bestPerfRepsWeight.reps, selectedExercise)} × {formatWeight(bestPerfRepsWeight.weight, selectedExercise)}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {bestPerfRepsWeight.volume} kg total
-                </p>
-              </CardContent>
-            </Card>
-          )}
-          {best1RM !== null && (
-            <Card className="bg-secondary/50">
-              <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">1RM Estimé</p>
-                <p className="text-2xl font-bold">
-                  {formatWeight(best1RM.oneRM, selectedExercise)}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {formatReps(best1RM.reps, selectedExercise)} × {formatWeight(best1RM.weight, selectedExercise)}
-                </p>
-              </CardContent>
-            </Card>
-          )}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <BicepsFlexed className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold">Statistiques de performance</h2>
+          </div>
+          
+          <div className="grid gap-3 grid-cols-2">
+            {maxRepsPerSet !== null && (
+              <Card className="bg-gradient-to-br from-card to-card/50 border-border/50">
+                <CardContent className="p-4">
+                  <p className="text-sm text-muted-foreground">{repType === "time" ? "Max Time/Set" : "Max Reps/Set"}</p>
+                  <p className="text-2xl font-bold">{formatReps(maxRepsPerSet, selectedExercise)}</p>
+                  <p className="text-sm text-muted-foreground">Max en une série</p>
+                </CardContent>
+              </Card>
+            )}
+            {maxPerSession !== null && (
+              <Card className="bg-gradient-to-br from-card to-card/50 border-border/50">
+                <CardContent className="p-4">
+                  <p className="text-sm text-muted-foreground">
+                    {repType === "time" ? "Max Time/Session" : "Max Reps/Session"}
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {formatReps(maxPerSession, selectedExercise)}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Max par session</p>
+                </CardContent>
+              </Card>
+            )}
+            {bestPerfRepsWeight !== null && (
+              <Card className="bg-gradient-to-br from-card to-card/50 border-border/50">
+                <CardContent className="p-4">
+                  <p className="text-sm text-muted-foreground">Meilleure perf</p>
+                  <p className="text-2xl font-bold">
+                    {formatReps(bestPerfRepsWeight.reps, selectedExercise)} × {formatWeight(bestPerfRepsWeight.weight, selectedExercise)}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {bestPerfRepsWeight.volume} kg total
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+            {best1RM !== null && (
+              <Card className="bg-gradient-to-br from-card to-card/50 border-border/50">
+                <CardContent className="p-4">
+                  <p className="text-sm text-muted-foreground">1RM Estimé</p>
+                  <p className="text-2xl font-bold">
+                    {formatWeight(best1RM.oneRM, selectedExercise)}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatReps(best1RM.reps, selectedExercise)} × {formatWeight(best1RM.weight, selectedExercise)}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
       )}
 
+      <Separator className="my-2" />
+
       {/* Chart */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">
-            {repType === "time" ? "Total Time Progress" : "Total Reps Progress"}
-          </CardTitle>
-          <CardDescription>
-            {repType === "time" ? "Cumulé du temps par session" : "Cumulé des reps par session"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {chartData.length > 0 ? (
-            <ChartContainer
-              config={{
-                value: {
-                  label: chartData[0]?.label || "Value",
-                  color: "hsl(var(--chart-1))",
-                },
-              }}
-              className="h-[250px] w-full"
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 11 }}
-                    tickLine={false}
-                    axisLine={false}
-                    className="fill-muted-foreground"
-                  />
-                  <YAxis
-                    tick={{ fontSize: 11 }}
-                    tickLine={false}
-                    axisLine={false}
-                    className="fill-muted-foreground"
-                    domain={["dataMin - 5", "dataMax + 5"]}
-                  />
-                  <ChartTooltip
-                    content={<ChartTooltipContent />}
-                    cursor={{ stroke: "hsl(var(--muted-foreground))", strokeWidth: 1 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="var(--color-value)"
-                    strokeWidth={2}
-                    dot={{ r: 4, fill: "var(--color-value)" }}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          ) : (
-            <div className="flex h-[250px] items-center justify-center text-sm text-muted-foreground">
-              No data for this exercise yet
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold">Progression dans le temps</h2>
+        </div>
+        
+        <Card className="bg-gradient-to-br from-card to-card/50 border-border/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">
+              {repType === "time" ? "Total Time Progress" : "Total Reps Progress"}
+            </CardTitle>
+            <CardDescription>
+              {repType === "time" ? "Cumulé du temps par session" : "Cumulé des reps par session"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {chartData.length > 0 ? (
+              <ChartContainer
+                config={{
+                  value: {
+                    label: chartData[0]?.label || "Value",
+                    color: "hsl(var(--chart-1))",
+                  },
+                }}
+                className="h-[250px] w-full"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={false}
+                      className="fill-muted-foreground"
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={false}
+                      className="fill-muted-foreground"
+                      domain={["dataMin - 5", "dataMax + 5"]}
+                    />
+                    <ChartTooltip
+                      content={<ChartTooltipContent />}
+                      cursor={{ stroke: "hsl(var(--muted-foreground))", strokeWidth: 1 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      stroke="var(--color-value)"
+                      strokeWidth={2}
+                      dot={{ r: 4, fill: "var(--color-value)" }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            ) : (
+              <div className="flex h-[250px] items-center justify-center text-sm text-muted-foreground">
+                No data for this exercise yet
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

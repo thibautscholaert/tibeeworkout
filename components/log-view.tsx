@@ -1,28 +1,55 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Plus, X, Check, ChevronDown, Search, Star } from "lucide-react"
+import { saveWorkoutSet } from "@/app/actions"
+import { ChronoIndicator } from "@/components/chrono-indicator"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent } from "@/components/ui/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { ChronoIndicator } from "@/components/chrono-indicator"
-import { setFormSchema, type SetFormData } from "@/lib/schemas"
+import { Separator } from "@/components/ui/separator"
 import { EXERCISES } from "@/lib/exercises"
-import { useWorkout } from "@/lib/workout-context"
-import { saveWorkoutSet } from "@/app/actions"
+import { setFormSchema, type SetFormData } from "@/lib/schemas"
+import { getTodaySession, groupTodaySessionByExercise } from "@/lib/today-session"
 import { cn, formatWeight } from "@/lib/utils"
-import { useWorkoutHistory } from "@/lib/use-workout-history"
+import { useWorkout } from "@/lib/workout-context"
+import { getWorkoutSuggestions } from "@/lib/workout-suggestions"
+import { zodResolver } from "@hookform/resolvers/zod"
+import {
+  Check,
+  ChevronDown,
+  Dumbbell,
+  Flame,
+  Lightbulb,
+  Plus,
+  Search,
+  Star,
+  Zap
+} from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { useForm } from "react-hook-form"
 
 export function LogView() {
-  const { currentSession, addSet, removeSet } = useWorkout()
-  const { history } = useWorkoutHistory()
+  const { history, fetchHistory, workoutPrograms } = useWorkout()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [exerciseOpen, setExerciseOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+
+  // Obtenir les séries d'aujourd'hui
+  const todaySession = useMemo(() => {
+    return getTodaySession(history)
+  }, [history])
+
+  // Grouper les séries par exercice
+  const todaySessionGrouped = useMemo(() => {
+    return groupTodaySessionByExercise(todaySession)
+  }, [todaySession])
+
+  // Obtenir les suggestions intelligentes
+  const suggestions = useMemo(() => {
+    return getWorkoutSuggestions(workoutPrograms, history)
+  }, [workoutPrograms, history])
 
   // Calculate most practiced exercises (top 5 by number of sets)
   const mostPracticedExercises = useMemo(() => {
@@ -34,14 +61,13 @@ export function LogView() {
     
     return Array.from(exerciseCounts.entries())
       .sort((a, b) => b[1] - a[1]) // Sort by count descending
-      .slice(0, 5) // Take top 5
+      .slice(0, 7) // Take top x
       .map(([name]) => name) // Extract just the names
   }, [history])
 
-  // Get the most practiced exercise as default
-  const defaultExercise = mostPracticedExercises.length > 0 
-    ? mostPracticedExercises[0] 
-    : "Pull up"
+  // Get the suggested exercise as default, fallback to most practiced
+  const defaultExercise = suggestions.nextExercise || 
+    (mostPracticedExercises.length > 0 ? mostPracticedExercises[0] : "Pull up")
 
   const {
     register,
@@ -59,14 +85,14 @@ export function LogView() {
     },
   })
 
-  // Update default exercise when history loads (only once)
+  // Update default exercise when suggestions change (only once)
   const [hasSetDefault, setHasSetDefault] = useState(false)
   useEffect(() => {
-    if (mostPracticedExercises.length > 0 && !hasSetDefault) {
-      setValue("exerciseName", mostPracticedExercises[0])
+    if (defaultExercise && !hasSetDefault) {
+      setValue("exerciseName", defaultExercise)
       setHasSetDefault(true)
     }
-  }, [mostPracticedExercises, setValue, hasSetDefault])
+  }, [defaultExercise, setValue, hasSetDefault])
 
   const selectedExercise = watch("exerciseName")
 
@@ -92,12 +118,9 @@ export function LogView() {
     try {
       const timestamp = new Date()
       await saveWorkoutSet({ ...data, timestamp })
-      addSet({
-        exerciseName: data.exerciseName,
-        weight: data.weight,
-        reps: data.reps,
-      })
-      // Keep exercise selected, reset weight and reps for quick entry
+      // Rafraîchir l'historique pour mettre à jour la session du jour
+      fetchHistory()
+      // Optionnel : reset weight et reps pour une saisie rapide
       // setValue("weight", 0)
       // setValue("reps", 0)
     } catch (error) {
@@ -108,39 +131,110 @@ export function LogView() {
   }
 
   return (
-    <div className="flex flex-col gap-6 pb-6">
+    <div className="flex flex-col gap-4 pb-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight">Log Workout</h1>
-          {/* <p className="text-sm text-muted-foreground">Quick entry between sets</p> */}
+<p className="text-sm text-muted-foreground">{new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
         <ChronoIndicator />
       </div>
 
+      <Separator className="my-1" />
+
       {/* Form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* Exercise Shortcuts */}
-        {mostPracticedExercises.length > 0 && (
-          <div className="flex gap-2 flex-wrap items-center justify-center">
-            {mostPracticedExercises.map((exerciseName) => (
-              <Button
-                key={exerciseName}
-                type="button"
-                variant={selectedExercise === exerciseName ? "default" : "outline"}
-                size="sm"
-                onClick={() => setValue("exerciseName", exerciseName)}
-                className="flex-1"
-              >
-                {exerciseName}
-              </Button>
-            ))}
-          </div>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {/* Smart Suggestions */}
+        {suggestions.nextExercise && (
+          <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+            <CardContent className="px-2">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-1">
+                  <Flame className="h-4 w-4 text-orange-500" />
+                  <span className="font-semibold text-sm">
+                    {suggestions.isCompletingCurrentExercise ? "Complétez la série" : "Suggestion intelligente"}
+                  </span>
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  {suggestions.programName}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-medium text-sm">{suggestions.nextExercise}</p>
+                    <Badge variant={suggestions.isCompletingCurrentExercise ? "default" : "outline"} className="text-xs">
+                      {suggestions.completedSeries}/{suggestions.totalSeries} séries
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Bloc: {suggestions.blocName} • {suggestions.suggestedReps} reps
+                  </p>
+                  {suggestions.exerciseDetails?.charge && (
+                    <p className="text-xs text-muted-foreground">
+                      <Dumbbell className="inline h-3 w-3 mr-1" /> {suggestions.exerciseDetails.charge}
+                    </p>
+                  )}
+                  {suggestions.exerciseDetails?.notes && (
+                    <p className="text-xs text-primary/80 italic mt-1">
+                      <Lightbulb className="inline h-3 w-3 mr-1" /> {suggestions.exerciseDetails.notes}
+                    </p>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2 ml-3">
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setValue("exerciseName", suggestions.nextExercise!)
+                      if (suggestions.suggestedReps && !isNaN(parseInt(suggestions.suggestedReps))) {
+                        setValue("reps", parseInt(suggestions.suggestedReps))
+                      }
+                    }}
+                    className="text-sm"
+                  >
+                    <Zap className="mr-1 h-4 w-4" />
+                    Utiliser
+                  </Button>
+                  {suggestions.isCompletingCurrentExercise && (
+                    <p className="text-xs text-center text-muted-foreground">
+                      Série {suggestions.completedSeries + 1}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
+
 
         {/* Exercise Select */}
         <div className="space-y-2">
-          <Label htmlFor="exercise">Exercise</Label>
+          
+        {/* Exercise Favorites - Subtle suggestions */}
+        {mostPracticedExercises.length > 0 && (
+            <div className="flex gap-1 flex-wrap items-center justify-between">
+              {mostPracticedExercises.map((exerciseName) => (
+                <button
+                  key={exerciseName}
+                  type="button"
+                  onClick={() => setValue("exerciseName", exerciseName)}
+                  className={cn(
+                    "px-2.5 py-1.5 rounded-md text-xs font-medium transition-all duration-200",
+                    "border border-border/40 bg-muted/30 hover:bg-muted/60 hover:border-border/60",
+                    "text-muted-foreground hover:text-foreground",
+                    selectedExercise === exerciseName && "bg-primary/10 border-primary/30 text-primary"
+                  )}
+                >
+                  <span className="text-ellipsis overflow-hidden max-w-[120px] block truncate">
+                    {exerciseName}
+                  </span>
+                </button>
+              ))}
+            </div>
+        )}
+        
+          {/* <Label htmlFor="exercise">Exercise</Label> */}
           <Popover open={exerciseOpen} onOpenChange={setExerciseOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -229,48 +323,173 @@ export function LogView() {
         {/* Quick Add Button */}
         <Button type="submit" size="lg" className="w-full h-14 text-lg font-semibold" disabled={isSubmitting}>
           <Plus className="mr-2 h-5 w-5" />
-          {isSubmitting ? "Adding..." : "Quick Add"}
+          {isSubmitting ? "Ajout..." : "Ajouter"}
         </Button>
       </form>
 
-      {/* Current Session */}
-      {currentSession.length > 0 && (
-        <div className="space-y-3">
+      <Separator className="my-4" />
+
+      {/* Today's Session */}
+      {todaySession.length > 0 && (
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Current Session</h2>
-            <span className="text-sm text-muted-foreground">
-              {currentSession.length} set{currentSession.length !== 1 ? "s" : ""}
-            </span>
+            <div className="flex items-center gap-2">
+              <Dumbbell className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold">Session d'aujourd'hui</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary">
+                {todaySession.length}
+              </div>
+              <span className="text-sm text-muted-foreground">
+                série{todaySession.length !== 1 ? "s" : ""}
+              </span>
+            </div>
           </div>
-          <div className="space-y-2">
-            {currentSession.map((set, index) => (
-              <Card key={set.id} className="bg-secondary/50">
-                <CardContent className="flex items-center justify-between p-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary">
-                      {index + 1}
-                    </div>
-                    <div>
-                      <p className="font-medium">{set.exerciseName}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {formatWeight(set.weight, set.exerciseName)} × {set.reps}{" "}
-                        {EXERCISES.find((ex) => ex.name === set.exerciseName)?.repType === "time" ? "s" : "reps"}
-                        {set.estimated1RM && <span className="ml-2 text-primary">~{set.estimated1RM} 1RM</span>}
-                      </p>
+          
+          {/* Affichage groupé par exercice */}
+          <div className="space-y-4">
+            {todaySessionGrouped.map((exerciseGroup, groupIndex) => (
+              <div key={exerciseGroup.exerciseName} className="relative">
+                {/* Header de l'exercice */}
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20">
+                    <span className="text-lg font-bold text-primary">
+                      {groupIndex + 1}
+                    </span>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-base">{exerciseGroup.exerciseName}</h3>
+                    <p className="text-xs text-muted-foreground">
+                      {exerciseGroup.totalSets} série{exerciseGroup.totalSets !== 1 ? "s" : ""} • 
+                      {exerciseGroup.sets.reduce((total, set) => total + set.reps, 0)} reps au total
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(exerciseGroup.sets[0].timestamp).toLocaleTimeString('fr-FR', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}
+                      {exerciseGroup.sets.length > 1 && (
+                        <span> - {new Date(exerciseGroup.sets[exerciseGroup.sets.length - 1].timestamp).toLocaleTimeString('fr-FR', { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}</span>
+                      )}
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    onClick={() => removeSet(set.id)}
-                  >
-                    <X className="h-4 w-4" />
-                    <span className="sr-only">Remove set</span>
-                  </Button>
-                </CardContent>
-              </Card>
+                </div>
+                
+                {/* Séries en grille */}
+                <div className="grid grid-cols-1 gap-2 ml-13">
+                  {exerciseGroup.sets.map((set, index) => (
+                    <div
+                      key={set.id}
+                      className="group relative overflow-hidden rounded-lg border border-border/50 bg-gradient-to-r from-card to-card/50 p-3 transition-all hover:border-primary/30 hover:shadow-sm"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+                            {index + 1}
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1">
+                              <span className="text-sm font-medium">
+                                {formatWeight(set.weight, set.exerciseName)}
+                              </span>
+                              <span className="text-xs text-muted-foreground">×</span>
+                              <span className="text-sm font-medium">{set.reps}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {EXERCISES.find((ex) => ex.name === set.exerciseName)?.repType === "time" ? "s" : "reps"}
+                              </span>
+                            </div>
+                            {set.estimated1RM && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs text-muted-foreground">1RM:</span>
+                                <span className="text-xs font-medium text-primary">
+                                  ~{set.estimated1RM}kg
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(set.timestamp).toLocaleTimeString('fr-FR', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </div>
+                      </div>
+                      
+                      {/* Barre de progression visuelle */}
+                      <div className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-primary/20 to-primary/40 transition-all group-hover:h-1" 
+                           style={{ width: `${((index + 1) / exerciseGroup.totalSets) * 100}%` }} />
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Statistiques de l'exercice */}
+                <div className="mt-3 ml-13 flex items-center gap-4 rounded-lg bg-muted/30 p-2 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <BarChart3 className="h-3 w-3" />
+                    <span>Volume: {exerciseGroup.sets.reduce((total, set) => total + (set.weight * set.reps), 0)}kg</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    <span>
+                      Durée: {Math.round((new Date(exerciseGroup.sets[exerciseGroup.sets.length - 1].timestamp).getTime() - 
+                                        new Date(exerciseGroup.sets[0].timestamp).getTime()) / 60000)}min
+                    </span>
+                  </div>
+                  {exerciseGroup.sets.length > 1 && (
+                    <div className="flex items-center gap-1">
+                      <TrendingUp className="h-3 w-3" />
+                      <span>
+                        Progression: {exerciseGroup.sets[0].reps} → {exerciseGroup.sets[exerciseGroup.sets.length - 1].reps} reps
+                      </span>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Separator entre les exercices */}
+                {groupIndex < todaySessionGrouped.length - 1 && (
+                  <Separator className="mt-6" />
+                )}
+              </div>
             ))}
+          </div>
+          
+          <Separator className="my-3" />
+          
+          {/* Résumé global de la session */}
+          <div className="mt-6 rounded-xl bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-primary" />
+                <span className="font-semibold">Résumé de la session</span>
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-4 text-center">
+              <div>
+                <div className="text-lg font-bold text-primary">
+                  {todaySessionGrouped.length}
+                </div>
+                <div className="text-xs text-muted-foreground">Exercices</div>
+              </div>
+              <div>
+                <div className="text-lg font-bold text-primary">
+                  {todaySession.reduce((total, set) => total + (set.weight * set.reps), 0)}kg
+                </div>
+                <div className="text-xs text-muted-foreground">Volume total</div>
+              </div>
+              <div>
+                <div className="text-lg font-bold text-primary">
+                  {todaySession.reduce((total, set) => total + set.reps, 0)}
+                </div>
+                <div className="text-xs text-muted-foreground">Reps totales</div>
+              </div>
+            </div>
           </div>
         </div>
       )}

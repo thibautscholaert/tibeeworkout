@@ -18,6 +18,7 @@ const auth = new JWT({
 const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID || '', auth);
 
 export async function saveWorkoutSet(data: SetFormData & { timestamp: Date }) {
+  console.log("Saving workout set:", data);
   try {
     await doc.loadInfo();
     const sheet = doc.sheetsByTitle['Workouts'] || doc.sheetsByIndex[0];
@@ -47,6 +48,7 @@ export async function saveWorkoutSet(data: SetFormData & { timestamp: Date }) {
 }
 
 export async function getWorkoutHistory() {
+  console.log("Fetching workout history");
   try {
     await doc.loadInfo();
     const sheet = doc.sheetsByTitle['Workouts'] || doc.sheetsByIndex[0];
@@ -69,5 +71,78 @@ export async function getWorkoutHistory() {
   } catch (error) {
     console.error("Error fetching from Google Sheets:", error);
     return { success: false, data: [], error: "Failed to fetch data" };
+  }
+}
+
+export async function getPrograms() {
+  console.log("Fetching programs");
+  try {
+    await doc.loadInfo();
+    const sheet = doc.sheetsByTitle['Program'];
+
+    if (!sheet) {
+      console.error("Program sheet not found");
+      return { success: false, data: [], error: "Program sheet not found" };
+    }
+
+    const rows = await sheet.getRows();
+
+    // Grouper par Titre -> Jour -> Bloc -> Exercices
+    const programsMap = new Map();
+
+    rows.forEach((row: any) => {
+      const title = row.get('Titre') || '';
+      const day = row.get('Jour') || '';
+      const bloc = row.get('Bloc') || '';
+      const exerciseName = row.get('Exercice') || '';
+      const sets = parseInt(row.get('Séries') || '0');
+      const reps = row.get('Reps') || '';
+      const charge = row.get('Charge / Objectif') || '';
+      const recovery = row.get('Récup') || '';
+      const notes = row.get('Notes / Focus Technique') || '';
+
+      if (!title || !exerciseName) return;
+
+      // Créer le programme s'il n'existe pas
+      if (!programsMap.has(title)) {
+        programsMap.set(title, {
+          id: crypto.randomUUID(),
+          title,
+          days: []
+        });
+      }
+
+      const program = programsMap.get(title);
+
+      // Trouver ou créer le jour
+      let dayObj = program.days.find((d: any) => d.day === day);
+      if (!dayObj) {
+        dayObj = { day, blocs: [] };
+        program.days.push(dayObj);
+      }
+
+      // Trouver ou créer le bloc
+      let blocObj = dayObj.blocs.find((b: any) => b.name === bloc);
+      if (!blocObj) {
+        blocObj = { name: bloc, exercises: [] };
+        dayObj.blocs.push(blocObj);
+      }
+
+      // Ajouter l'exercice
+      blocObj.exercises.push({
+        exerciseName,
+        sets,
+        reps,
+        charge,
+        recovery,
+        notes
+      });
+    });
+
+    const programs = Array.from(programsMap.values());
+    return { success: true, data: programs };
+  } catch (error) {
+    console.error("Error fetching programs from Google Sheets:", error);
+    return { success: false, data: [], error: "Failed to fetch programs" };
   }
 }

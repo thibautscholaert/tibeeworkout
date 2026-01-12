@@ -1,11 +1,45 @@
 export interface Exercise {
   name: string
-  tags: string[]
+  tags: ExerciseTag[]
   favorite: boolean
   isPowerlifting: boolean
   bodyweight: boolean
   repType: "reps" | "time"
 }
+
+export const EXERCISE_TAGS = [
+  "Legs",
+  "Quads",
+  "Glutes",
+  "Compound",
+  "Powerlifting",
+  "Back",
+  "Hamstrings",
+  "Chest",
+  "Triceps",
+  "Shoulders",
+  "Core",
+  "Lats",
+  "Biceps",
+  "Pulling",
+  "Abs",
+  "Pushing",
+  "Grip",
+  "Isometric",
+  "Balance",
+  "Hip Flexors",
+  "Obliques",
+  "Calves",
+  "Isolation",
+  "Plyometric",
+  "Traps",
+  "Adductors",
+  "Cardio",
+  "Full Body"
+] as const
+
+export type ExerciseTag = typeof EXERCISE_TAGS[number]
+
 
 export const EXERCISES: Exercise[] = [
   // ===== POWERLIFTING =====
@@ -94,6 +128,7 @@ export const EXERCISES: Exercise[] = [
   { name: "Dumbbell flyes", tags: ["Chest", "Isolation", "Pushing"], favorite: false, isPowerlifting: false, bodyweight: false, repType: "reps" },
   { name: "Cable flyes", tags: ["Chest", "Isolation", "Pushing"], favorite: false, isPowerlifting: false, bodyweight: false, repType: "reps" },
   { name: "Overhead press", tags: ["Shoulders", "Triceps", "Core", "Compound", "Pushing"], favorite: false, isPowerlifting: false, bodyweight: false, repType: "reps" },
+  { name: "Overhead press dumbell", tags: ["Shoulders", "Triceps", "Core", "Compound", "Pushing"], favorite: true, isPowerlifting: false, bodyweight: false, repType: "reps" },
   { name: "Dumbbell shoulder press", tags: ["Shoulders", "Triceps", "Compound", "Pushing"], favorite: false, isPowerlifting: false, bodyweight: false, repType: "reps" },
   { name: "Lateral raises", tags: ["Shoulders", "Isolation", "Pushing"], favorite: false, isPowerlifting: false, bodyweight: false, repType: "reps" },
   { name: "Front raises", tags: ["Shoulders", "Isolation", "Pushing"], favorite: false, isPowerlifting: false, bodyweight: false, repType: "reps" },

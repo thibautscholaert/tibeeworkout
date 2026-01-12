@@ -19,3 +19,28 @@ export interface ExerciseHistory {
     sets: WorkoutSet[]
   }[]
 }
+
+export interface Program {
+  id: string
+  title: string
+  days: ProgramDay[]
+}
+
+export interface ProgramDay {
+  day: string
+  blocs: ProgramBloc[]
+}
+
+export interface ProgramBloc {
+  name: string
+  exercises: ProgramExercise[]
+}
+
+export interface ProgramExercise {
+  exerciseName: string
+  sets: number
+  reps: string
+  charge?: string
+  recovery?: string
+  notes?: string
+}
