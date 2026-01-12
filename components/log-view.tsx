@@ -17,14 +17,18 @@ import { useWorkout } from "@/lib/workout-context"
 import { getWorkoutSuggestions } from "@/lib/workout-suggestions"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
+  BarChart3,
   Check,
   ChevronDown,
+  Clock,
   Dumbbell,
   Flame,
   Lightbulb,
   Plus,
   Search,
   Star,
+  Target,
+  TrendingUp,
   Zap
 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"

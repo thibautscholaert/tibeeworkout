@@ -9,19 +9,21 @@ interface WorkoutContextType {
   history: WorkoutSet[]
   workoutPrograms: Program[]
   fetchHistory: () => void
+  isLoading: boolean
 }
 
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined)
 
 export function WorkoutProvider({ children }: { children: ReactNode }) {
-  const { history, fetchHistory } = useWorkoutHistory()
-  const { workoutPrograms } = useWorkoutPrograms()
+  const { history, fetchHistory, isLoading: isLoadingHistory } = useWorkoutHistory()
+  const { workoutPrograms , isLoading: isLoadingPrograms } = useWorkoutPrograms()
 
   return (
     <WorkoutContext.Provider value={{ 
       history, 
       fetchHistory, 
-      workoutPrograms 
+      workoutPrograms,
+      isLoading: isLoadingHistory || isLoadingPrograms
     }}>
       {children}
     </WorkoutContext.Provider>
