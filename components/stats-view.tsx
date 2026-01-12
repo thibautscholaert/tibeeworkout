@@ -85,7 +85,7 @@ export function StatsView() {
     
     return Array.from(exerciseCounts.entries())
       .sort((a, b) => b[1] - a[1]) // Sort by count descending
-      .slice(0, 5) // Take top 5
+      .slice(0, 10)
       .map(([name]) => name) // Extract just the names
   }, [history])
 
@@ -160,17 +160,14 @@ export function StatsView() {
     const exerciseSets = history.filter((s) => s.exerciseName === selectedExercise)
     if (exerciseSets.length === 0) return null
     
-    // Calculate volume (reps * weight) for each set
-    const volumes = exerciseSets.map((set) => set.reps * set.weight)
-    const maxVolume = Math.max(...volumes)
-    
-    // Find the set with the best volume
-    const bestSet = exerciseSets.find((set) => set.reps * set.weight === maxVolume)
+    // Find the set with the best weight
+    const maxWeight = Math.max(...exerciseSets.map((set) => set.weight))
+    const bestSet = exerciseSets.find((set) => set.weight === maxWeight)
     
     return bestSet ? {
       reps: bestSet.reps,
       weight: bestSet.weight,
-      volume: maxVolume,
+      volume: bestSet.reps * bestSet.weight,
     } : null
   }, [history, selectedExercise])
 

@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import type { WorkoutSet } from "./types"
 import { EXERCISES } from "./exercises"
+import type { WorkoutSet } from "./types"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -24,7 +24,7 @@ export function calculateEstimated1RM(weight: number, reps: number, exerciseName
 
 export function formatWeight(weight: number, exerciseName?: string): string {
   if (exerciseName) {
-    const exercise = EXERCISES.find((ex) => ex.name === exerciseName)
+    const exercise = EXERCISES.find((ex) => ex.name.toLocaleLowerCase() === exerciseName.toLocaleLowerCase())
     if (exercise?.bodyweight) {
       if (weight === 0) {
         return "BW"
@@ -38,7 +38,7 @@ export function formatWeight(weight: number, exerciseName?: string): string {
 
 export function formatReps(reps: number, exerciseName?: string): string {
   if (exerciseName) {
-    const exercise = EXERCISES.find((ex) => ex.name === exerciseName)
+    const exercise = EXERCISES.find((ex) => ex.name.toLocaleLowerCase() === exerciseName.toLocaleLowerCase())
     if (exercise?.repType === "time") {
       return `${reps}s`
     }

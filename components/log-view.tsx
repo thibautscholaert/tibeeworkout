@@ -20,7 +20,6 @@ import {
   BarChart3,
   Check,
   ChevronDown,
-  Clock,
   Dumbbell,
   Flame,
   Lightbulb,
@@ -28,7 +27,7 @@ import {
   Search,
   Star,
   Target,
-  TrendingUp,
+  Trophy,
   Zap
 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
@@ -39,6 +38,7 @@ export function LogView() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [exerciseOpen, setExerciseOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [targetWeight, setTargetWeight] = useState<number>(0)
 
   // Obtenir les séries d'aujourd'hui
   const todaySession = useMemo(() => {
@@ -103,6 +103,62 @@ export function LogView() {
   const selectedExerciseData = useMemo(() => {
     return EXERCISES.find((ex) => ex.name === selectedExercise)
   }, [selectedExercise])
+
+  // Calculate best 1RM for selected exercise (for target weight default)
+  const best1RM = useMemo(() => {
+    if (!selectedExerciseData || selectedExerciseData.bodyweight) return null
+    
+    const exerciseSets = history.filter((set) => set.exerciseName === selectedExercise)
+    if (exerciseSets.length === 0) return null
+    
+    // Find the best estimated 1RM from history
+    const oneRMs = exerciseSets
+      .filter((set) => set.estimated1RM)
+      .map((set) => set.estimated1RM!)
+    
+    if (oneRMs.length === 0) return null
+    return Math.max(...oneRMs)
+  }, [history, selectedExercise, selectedExerciseData])
+
+  // Calculate best set for each exercise (today vs all time)
+  const getBestSetComparison = useMemo(() => {
+    return (exerciseName: string, todaySets: any[]) => {
+      // Best set from today's session
+      const todayBest = todaySets.reduce<any>((best, set) => {
+        if (!best) return set
+        // Compare by estimated 1RM if available, otherwise by weight * reps
+        const bestScore = best.estimated1RM || (best.weight * best.reps)
+        const setScore = set.estimated1RM || (set.weight * set.reps)
+        return setScore > bestScore ? set : best
+      }, null)
+
+      // Best set from all time
+      const allTimeSets = history.filter(set => set.exerciseName === exerciseName)
+      const allTimeBest = allTimeSets.reduce<any>((best, set) => {
+        if (!best) return set
+        const bestScore = best.estimated1RM || (best.weight * best.reps)
+        const setScore = set.estimated1RM || (set.weight * set.reps)
+        return setScore > bestScore ? set : best
+      }, null)
+
+      return { todayBest, allTimeBest }
+    }
+  }, [history])
+
+  // Update target weight when exercise changes
+  useEffect(() => {
+    if (selectedExerciseData?.warmupProtocol?.some(w => w.weightUnit === '%')) {
+      if (best1RM) {
+        setTargetWeight(best1RM)
+      } else {
+        // Fallback to first non-percentage weight in warmup protocol
+        const firstFixedWeight = selectedExerciseData.warmupProtocol.find(w => w.weightUnit !== '%')
+        if (firstFixedWeight) {
+          setTargetWeight(parseFloat(firstFixedWeight.weight))
+        }
+      }
+    }
+  }, [selectedExercise, best1RM, selectedExerciseData])
 
   const filteredExercises = useMemo(() => {
     let exercises = EXERCISES
@@ -296,6 +352,59 @@ export function LogView() {
           {errors.exerciseName && <p className="text-sm text-destructive">{errors.exerciseName.message}</p>}
         </div>
 
+        {/* Warmup Protocol - Compact */}
+        {selectedExerciseData?.warmupProtocol && (
+          <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Flame className="h-3 w-3 text-orange-500" />
+                <span className="text-xs font-medium text-muted-foreground">Échauffement</span>
+              </div>
+              {selectedExerciseData.warmupProtocol.some(w => w.weightUnit === '%') && (
+                <div className="flex items-center gap-1">
+                  <Input
+                    type="number"
+                    placeholder="Poids cible"
+                    value={targetWeight || ''}
+                    onChange={(e) => setTargetWeight(parseFloat(e.target.value) || 0)}
+                    className="h-6 w-28 text-xs text-center border-border/50"
+                  />
+                  <span className="text-xs text-muted-foreground">kg</span>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-1 flex-wrap">
+              {selectedExerciseData.warmupProtocol.map((warmupSet, index) => {
+                const calculatedWeight = warmupSet.weightUnit === '%' && targetWeight 
+                  ? Math.round(targetWeight * (parseFloat(warmupSet.weight) / 100))
+                  : parseFloat(warmupSet.weight)
+                
+                return (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => {
+                      setValue("weight", calculatedWeight)
+                      setValue("reps", warmupSet.reps)
+                    }}
+                    className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-background border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                  >
+                    <span className="font-medium">
+                      {warmupSet.weightUnit === '%' && targetWeight 
+                        ? `${calculatedWeight}kg` 
+                        : warmupSet.weightUnit === '%' 
+                        ? `${warmupSet.weight}%`
+                        : `${warmupSet.weight}kg`
+                      }
+                    </span>
+                    <span className="text-muted-foreground">×{warmupSet.reps}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Weight & Reps Row */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -404,8 +513,8 @@ export function LogView() {
                               </span>
                               <span className="text-xs text-muted-foreground">×</span>
                               <span className="text-sm font-medium">{set.reps}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {EXERCISES.find((ex) => ex.name === set.exerciseName)?.repType === "time" ? "s" : "reps"}
+                              <span className="text-sm text-muted-foreground">
+                                {EXERCISES.find((ex) => ex.name.toLocaleLowerCase() === set.exerciseName.toLocaleLowerCase())?.repType === "time" ? "seconds" : "reps"}
                               </span>
                             </div>
                             {set.estimated1RM && (
@@ -433,28 +542,42 @@ export function LogView() {
                   ))}
                 </div>
                 
-                {/* Statistiques de l'exercice */}
-                <div className="mt-3 ml-13 flex items-center gap-4 rounded-lg bg-muted/30 p-2 text-xs text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <BarChart3 className="h-3 w-3" />
-                    <span>Volume: {exerciseGroup.sets.reduce((total, set) => total + (set.weight * set.reps), 0)}kg</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    <span>
-                      Durée: {Math.round((new Date(exerciseGroup.sets[exerciseGroup.sets.length - 1].timestamp).getTime() - 
-                                        new Date(exerciseGroup.sets[0].timestamp).getTime()) / 60000)}min
-                    </span>
-                  </div>
-                  {exerciseGroup.sets.length > 1 && (
-                    <div className="flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3" />
-                      <span>
-                        Progression: {exerciseGroup.sets[0].reps} → {exerciseGroup.sets[exerciseGroup.sets.length - 1].reps} reps
-                      </span>
+                {/* Statistiques de l'exercice - Améliorées */}
+                {(() => {
+                  const { todayBest, allTimeBest } = getBestSetComparison(exerciseGroup.exerciseName, exerciseGroup.sets)
+                  const totalReps = exerciseGroup.sets.reduce((total, set) => total + set.reps, 0)
+                  
+                  const todayScore = todayBest?.estimated1RM || (todayBest?.weight * todayBest?.reps) || 0
+                  const allTimeScore = allTimeBest?.estimated1RM || (allTimeBest?.weight * allTimeBest?.reps) || 0
+                  const isNewRecord = todayScore >= allTimeScore
+                  
+                  return (
+                    <div className="mt-3 ml-13 flex items-center gap-4 rounded-lg bg-muted/30 p-2 text-xs text-muted-foreground">
+                      <div className={`flex items-center gap-1 ${isNewRecord ? 'text-green-600 font-medium' : ''}`}>
+                        <Trophy className={`h-3 w-3 ${isNewRecord ? 'text-green-600' : ''}`} />
+                        <span>
+                          Aujourd'hui: {formatWeight(todayBest?.weight || 0, exerciseGroup.exerciseName)} × {todayBest?.reps || 0}
+                          {todayBest?.estimated1RM && ` (~${todayBest.estimated1RM}kg)`}
+                          {isNewRecord && todayScore > 0 && ' 🔥'}
+                        </span>
+                      </div>
+                      {allTimeBest && (
+                        <div className={`flex items-center gap-1 ${!isNewRecord ? 'text-amber-600 font-medium' : ''}`}>
+                          <Star className={`h-3 w-3 ${!isNewRecord ? 'text-amber-600' : ''}`} />
+                          <span>
+                            Record: {formatWeight(allTimeBest.weight, exerciseGroup.exerciseName)} × {allTimeBest.reps}
+                            {allTimeBest.estimated1RM && ` (~${allTimeBest.estimated1RM}kg)`}
+                            {!isNewRecord && ' 👑'}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1">
+                        <BarChart3 className="h-3 w-3" />
+                        <span>{totalReps} reps total</span>
+                      </div>
                     </div>
-                  )}
-                </div>
+                  )
+                })()}
                 
                 {/* Separator entre les exercices */}
                 {groupIndex < todaySessionGrouped.length - 1 && (
@@ -466,7 +589,7 @@ export function LogView() {
           
           <Separator className="my-3" />
           
-          {/* Résumé global de la session */}
+          {/* Résumé global de la session - Amélioré */}
           <div className="mt-6 rounded-xl bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -483,9 +606,9 @@ export function LogView() {
               </div>
               <div>
                 <div className="text-lg font-bold text-primary">
-                  {todaySession.reduce((total, set) => total + (set.weight * set.reps), 0)}kg
+                  {todaySession.length}
                 </div>
-                <div className="text-xs text-muted-foreground">Volume total</div>
+                <div className="text-xs text-muted-foreground">Séries totales</div>
               </div>
               <div>
                 <div className="text-lg font-bold text-primary">

@@ -5,6 +5,7 @@ export interface Exercise {
   isPowerlifting: boolean
   bodyweight: boolean
   repType: "reps" | "time"
+  warmupProtocol?: { exo?: string, weight: string, reps: number, weightUnit: 'kg' | '%' }[]
 }
 
 export const EXERCISE_TAGS = [
@@ -43,8 +44,8 @@ export type ExerciseTag = typeof EXERCISE_TAGS[number]
 
 export const EXERCISES: Exercise[] = [
   // ===== POWERLIFTING =====
-  { name: "Squat", tags: ["Legs", "Quads", "Glutes", "Compound", "Powerlifting"], favorite: true, isPowerlifting: true, bodyweight: false, repType: "reps" },
-  { name: "Deadlift", tags: ["Back", "Legs", "Hamstrings", "Glutes", "Compound", "Powerlifting"], favorite: true, isPowerlifting: true, bodyweight: false, repType: "reps" },
+  { name: "Squat", tags: ["Legs", "Quads", "Glutes", "Compound", "Powerlifting"], favorite: true, isPowerlifting: true, bodyweight: false, repType: "reps", warmupProtocol: [{ weight: "20", reps: 10, weightUnit: "kg" }, { weight: "60", reps: 5, weightUnit: "%" }, { weight: "85", reps: 2, weightUnit: "%" }] },
+  { name: "Deadlift", tags: ["Back", "Legs", "Hamstrings", "Glutes", "Compound", "Powerlifting"], favorite: true, isPowerlifting: true, bodyweight: false, repType: "reps", warmupProtocol: [{ weight: "40", reps: 10, weightUnit: "%" }, { weight: "70", reps: 4, weightUnit: "%" }, { weight: "90", reps: 1, weightUnit: "%" }] },
   { name: "Bench Press", tags: ["Chest", "Triceps", "Shoulders", "Compound", "Powerlifting"], favorite: true, isPowerlifting: true, bodyweight: false, repType: "reps" },
   { name: "Overhead Press", tags: ["Shoulders", "Triceps", "Core", "Compound", "Powerlifting"], favorite: false, isPowerlifting: true, bodyweight: false, repType: "reps" },
 
