@@ -6,6 +6,7 @@ export interface Exercise {
   bodyweight: boolean
   repType: "reps" | "time"
   warmupProtocol?: { exo?: string, weight: string, reps: number, weightUnit: 'kg' | '%' }[]
+  description?: string
 }
 
 export const EXERCISE_TAGS = [
@@ -129,7 +130,16 @@ export const EXERCISES: Exercise[] = [
   { name: "Dumbbell flyes", tags: ["Chest", "Isolation", "Pushing"], favorite: false, isPowerlifting: false, bodyweight: false, repType: "reps" },
   { name: "Cable flyes", tags: ["Chest", "Isolation", "Pushing"], favorite: false, isPowerlifting: false, bodyweight: false, repType: "reps" },
   { name: "Overhead press", tags: ["Shoulders", "Triceps", "Core", "Compound", "Pushing"], favorite: false, isPowerlifting: false, bodyweight: false, repType: "reps" },
-  { name: "Overhead press dumbell", tags: ["Shoulders", "Triceps", "Core", "Compound", "Pushing"], favorite: true, isPowerlifting: false, bodyweight: false, repType: "reps" },
+  {
+    name: "Overhead press dumbell", tags: ["Shoulders", "Triceps", "Core", "Compound", "Pushing"], favorite: true, isPowerlifting: false, bodyweight: false, repType: "reps", description: `<div class="space-y-2">
+      <p class="font-medium text-primary">Focus : Stabilité scapulaire & Force de poussée verticale.</p>
+      <ul class="list-disc pl-4 text-sm space-y-1">
+        <li><strong>Placement :</strong> Haltères aux épaules, coudes orientés à 45° vers l'avant (pas sur les côtés).</li>
+        <li><strong>Exécution :</strong> Presse verticalement en gardant les abdos contractés pour ne pas cambrer.</li>
+        <li><strong>Skill Transfer :</strong> Travaille la phase de verrouillage utile pour tes <strong>HSPU</strong>.</li>
+      </ul>
+    </div>
+  ` },
   { name: "Dumbbell shoulder press", tags: ["Shoulders", "Triceps", "Compound", "Pushing"], favorite: false, isPowerlifting: false, bodyweight: false, repType: "reps" },
   { name: "Lateral raises", tags: ["Shoulders", "Isolation", "Pushing"], favorite: false, isPowerlifting: false, bodyweight: false, repType: "reps" },
   { name: "Front raises", tags: ["Shoulders", "Isolation", "Pushing"], favorite: false, isPowerlifting: false, bodyweight: false, repType: "reps" },
@@ -141,7 +151,17 @@ export const EXERCISES: Exercise[] = [
   { name: "Close grip bench press", tags: ["Triceps", "Chest", "Compound", "Pushing"], favorite: false, isPowerlifting: false, bodyweight: false, repType: "reps" },
 
   // ===== MUSCULATION CLASSIQUE - UPPER BODY PULLING =====
-  { name: "Barbell row", tags: ["Back", "Lats", "Biceps", "Compound", "Pulling"], favorite: false, isPowerlifting: false, bodyweight: false, repType: "reps" },
+  {
+    name: "Barbell row", tags: ["Back", "Lats", "Biceps", "Compound", "Pulling"], favorite: true, isPowerlifting: false, bodyweight: false, repType: "reps", description: `
+    <div class="space-y-2">
+      <p class="font-medium text-primary">Focus : Épaisseur du dos & Transfert Muscle-up.</p>
+      <ul class="list-disc pl-4 text-sm space-y-1">
+        <li><strong>Placement :</strong> Buste à 45°, dos plat, genoux déverrouillés.</li>
+        <li><strong>Exécution :</strong> Tire la barre vers le nombril en resserrant volontairement les omoplates.</li>
+        <li><strong>Astuce :</strong> Imagine que tu veux couder quelqu'un derrière toi pour engager les dorsaux.</li>
+      </ul>
+    </div>
+  ` },
   { name: "T-bar row", tags: ["Back", "Lats", "Biceps", "Compound", "Pulling"], favorite: false, isPowerlifting: false, bodyweight: false, repType: "reps" },
   { name: "Cable row", tags: ["Back", "Lats", "Biceps", "Compound", "Pulling"], favorite: false, isPowerlifting: false, bodyweight: false, repType: "reps" },
   { name: "Seated cable row", tags: ["Back", "Lats", "Biceps", "Compound", "Pulling"], favorite: false, isPowerlifting: false, bodyweight: false, repType: "reps" },

@@ -62,7 +62,7 @@ export function LogView() {
       const count = exerciseCounts.get(set.exerciseName) || 0
       exerciseCounts.set(set.exerciseName, count + 1)
     })
-    
+
     return Array.from(exerciseCounts.entries())
       .sort((a, b) => b[1] - a[1]) // Sort by count descending
       .slice(0, 7) // Take top x
@@ -70,7 +70,7 @@ export function LogView() {
   }, [history])
 
   // Get the suggested exercise as default, fallback to most practiced
-  const defaultExercise = suggestions.nextExercise || 
+  const defaultExercise = suggestions.nextExercise ||
     (mostPracticedExercises.length > 0 ? mostPracticedExercises[0] : "Pull up")
 
   const {
@@ -107,15 +107,15 @@ export function LogView() {
   // Calculate best 1RM for selected exercise (for target weight default)
   const best1RM = useMemo(() => {
     if (!selectedExerciseData || selectedExerciseData.bodyweight) return null
-    
+
     const exerciseSets = history.filter((set) => set.exerciseName === selectedExercise)
     if (exerciseSets.length === 0) return null
-    
+
     // Find the best estimated 1RM from history
     const oneRMs = exerciseSets
       .filter((set) => set.estimated1RM)
       .map((set) => set.estimated1RM!)
-    
+
     if (oneRMs.length === 0) return null
     return Math.max(...oneRMs)
   }, [history, selectedExercise, selectedExerciseData])
@@ -196,7 +196,7 @@ export function LogView() {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight">Log Workout</h1>
-<p className="text-sm text-muted-foreground">{new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <p className="text-sm text-muted-foreground">{new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
         <ChronoIndicator />
       </div>
@@ -270,9 +270,9 @@ export function LogView() {
 
         {/* Exercise Select */}
         <div className="space-y-2">
-          
-        {/* Exercise Favorites - Subtle suggestions */}
-        {mostPracticedExercises.length > 0 && (
+
+          {/* Exercise Favorites - Subtle suggestions */}
+          {mostPracticedExercises.length > 0 && (
             <div className="flex gap-1 flex-wrap items-center justify-between">
               {mostPracticedExercises.map((exerciseName) => (
                 <button
@@ -292,8 +292,8 @@ export function LogView() {
                 </button>
               ))}
             </div>
-        )}
-        
+          )}
+
           {/* <Label htmlFor="exercise">Exercise</Label> */}
           <Popover open={exerciseOpen} onOpenChange={setExerciseOpen}>
             <PopoverTrigger asChild>
@@ -375,10 +375,10 @@ export function LogView() {
             </div>
             <div className="flex gap-1 flex-wrap">
               {selectedExerciseData.warmupProtocol.map((warmupSet, index) => {
-                const calculatedWeight = warmupSet.weightUnit === '%' && targetWeight 
+                const calculatedWeight = warmupSet.weightUnit === '%' && targetWeight
                   ? Math.round(targetWeight * (parseFloat(warmupSet.weight) / 100))
                   : parseFloat(warmupSet.weight)
-                
+
                 return (
                   <button
                     key={index}
@@ -390,11 +390,11 @@ export function LogView() {
                     className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-background border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-colors"
                   >
                     <span className="font-medium">
-                      {warmupSet.weightUnit === '%' && targetWeight 
-                        ? `${calculatedWeight}kg` 
-                        : warmupSet.weightUnit === '%' 
-                        ? `${warmupSet.weight}%`
-                        : `${warmupSet.weight}kg`
+                      {warmupSet.weightUnit === '%' && targetWeight
+                        ? `${calculatedWeight}kg`
+                        : warmupSet.weightUnit === '%'
+                          ? `${warmupSet.weight}%`
+                          : `${warmupSet.weight}kg`
                       }
                     </span>
                     <span className="text-muted-foreground">×{warmupSet.reps}</span>
@@ -440,6 +440,14 @@ export function LogView() {
         </Button>
       </form>
 
+
+      {selectedExerciseData?.description && (
+        <div
+          className="mt-4 p-3 bg-muted rounded-lg border border-border"
+          dangerouslySetInnerHTML={{ __html: selectedExerciseData.description }}
+        />
+      )}
+
       <Separator className="my-4" />
 
       {/* Today's Session */}
@@ -459,7 +467,7 @@ export function LogView() {
               </span>
             </div>
           </div>
-          
+
           {/* Affichage groupé par exercice */}
           <div className="space-y-4">
             {todaySessionGrouped.map((exerciseGroup, groupIndex) => (
@@ -474,26 +482,26 @@ export function LogView() {
                   <div className="flex-1">
                     <h3 className="font-semibold text-base">{exerciseGroup.exerciseName}</h3>
                     <p className="text-xs text-muted-foreground">
-                      {exerciseGroup.totalSets} série{exerciseGroup.totalSets !== 1 ? "s" : ""} • 
+                      {exerciseGroup.totalSets} série{exerciseGroup.totalSets !== 1 ? "s" : ""} •
                       {exerciseGroup.sets.reduce((total, set) => total + set.reps, 0)} reps au total
                     </p>
                   </div>
                   <div className="text-right">
                     <div className="text-xs text-muted-foreground">
-                      {new Date(exerciseGroup.sets[0].timestamp).toLocaleTimeString('fr-FR', { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
+                      {new Date(exerciseGroup.sets[0].timestamp).toLocaleTimeString('fr-FR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
                       })}
                       {exerciseGroup.sets.length > 1 && (
-                        <span> - {new Date(exerciseGroup.sets[exerciseGroup.sets.length - 1].timestamp).toLocaleTimeString('fr-FR', { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
+                        <span> - {new Date(exerciseGroup.sets[exerciseGroup.sets.length - 1].timestamp).toLocaleTimeString('fr-FR', {
+                          hour: '2-digit',
+                          minute: '2-digit'
                         })}</span>
                       )}
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Séries en grille */}
                 <div className="grid grid-cols-1 gap-2 ml-13">
                   {exerciseGroup.sets.map((set, index) => (
@@ -528,29 +536,29 @@ export function LogView() {
                           </div>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {new Date(set.timestamp).toLocaleTimeString('fr-FR', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
+                          {new Date(set.timestamp).toLocaleTimeString('fr-FR', {
+                            hour: '2-digit',
+                            minute: '2-digit'
                           })}
                         </div>
                       </div>
-                      
+
                       {/* Barre de progression visuelle */}
-                      <div className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-primary/20 to-primary/40 transition-all group-hover:h-1" 
-                           style={{ width: `${((index + 1) / exerciseGroup.totalSets) * 100}%` }} />
+                      <div className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-primary/20 to-primary/40 transition-all group-hover:h-1"
+                        style={{ width: `${((index + 1) / exerciseGroup.totalSets) * 100}%` }} />
                     </div>
                   ))}
                 </div>
-                
+
                 {/* Statistiques de l'exercice - Améliorées */}
                 {(() => {
                   const { todayBest, allTimeBest } = getBestSetComparison(exerciseGroup.exerciseName, exerciseGroup.sets)
                   const totalReps = exerciseGroup.sets.reduce((total, set) => total + set.reps, 0)
-                  
+
                   const todayScore = todayBest?.estimated1RM || (todayBest?.weight * todayBest?.reps) || 0
                   const allTimeScore = allTimeBest?.estimated1RM || (allTimeBest?.weight * allTimeBest?.reps) || 0
                   const isNewRecord = todayScore >= allTimeScore
-                  
+
                   return (
                     <div className="mt-3 ml-13 flex items-center gap-4 rounded-lg bg-muted/30 p-2 text-xs text-muted-foreground">
                       <div className={`flex items-center gap-1 ${isNewRecord ? 'text-green-600 font-medium' : ''}`}>
@@ -578,7 +586,7 @@ export function LogView() {
                     </div>
                   )
                 })()}
-                
+
                 {/* Separator entre les exercices */}
                 {groupIndex < todaySessionGrouped.length - 1 && (
                   <Separator className="mt-6" />
@@ -586,9 +594,9 @@ export function LogView() {
               </div>
             ))}
           </div>
-          
+
           <Separator className="my-3" />
-          
+
           {/* Résumé global de la session - Amélioré */}
           <div className="mt-6 rounded-xl bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 p-4">
             <div className="flex items-center justify-between">
