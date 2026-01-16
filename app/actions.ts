@@ -1,7 +1,7 @@
-"use server"
+'use server';
 
-import type { SetFormData } from "@/lib/schemas";
-import { calculateEstimated1RM } from "@/lib/utils";
+import type { SetFormData } from '@/lib/schemas';
+import { calculateEstimated1RM } from '@/lib/utils';
 import { JWT } from 'google-auth-library';
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { revalidatePath } from 'next/cache';
@@ -18,7 +18,7 @@ const auth = new JWT({
 const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID || '', auth);
 
 export async function saveWorkoutSet(data: SetFormData & { timestamp: Date }) {
-  console.log("Saving workout set:", data);
+  console.log('Saving workout set:', data);
   try {
     await doc.loadInfo();
     const sheet = doc.sheetsByTitle['Workouts'] || doc.sheetsByIndex[0];
@@ -42,19 +42,19 @@ export async function saveWorkoutSet(data: SetFormData & { timestamp: Date }) {
 
     return { success: true, id: crypto.randomUUID() };
   } catch (error) {
-    console.error("Error saving to Google Sheets:", error);
-    return { success: false, error: "Failed to save data" };
+    console.error('Error saving to Google Sheets:', error);
+    return { success: false, error: 'Failed to save data' };
   }
 }
 
 export async function getWorkoutHistory() {
-  console.log("Fetching workout history");
+  console.log('Fetching workout history');
   try {
     await doc.loadInfo();
     const sheet = doc.sheetsByTitle['Workouts'] || doc.sheetsByIndex[0];
     const rows = await sheet.getRows();
 
-    const history = rows.map(row => {
+    const history = rows.map((row) => {
       const weight = parseFloat(row.get('Weight'));
       const reps = parseInt(row.get('Reps'));
       const exerciseName = row.get('Exercise');
@@ -69,20 +69,20 @@ export async function getWorkoutHistory() {
 
     return { success: true, data: history };
   } catch (error) {
-    console.error("Error fetching from Google Sheets:", error);
-    return { success: false, data: [], error: "Failed to fetch data" };
+    console.error('Error fetching from Google Sheets:', error);
+    return { success: false, data: [], error: 'Failed to fetch data' };
   }
 }
 
 export async function getPrograms() {
-  console.log("Fetching programs");
+  console.log('Fetching programs');
   try {
     await doc.loadInfo();
     const sheet = doc.sheetsByTitle['Program'];
 
     if (!sheet) {
-      console.error("Program sheet not found");
-      return { success: false, data: [], error: "Program sheet not found" };
+      console.error('Program sheet not found');
+      return { success: false, data: [], error: 'Program sheet not found' };
     }
 
     const rows = await sheet.getRows();
@@ -108,7 +108,7 @@ export async function getPrograms() {
         programsMap.set(title, {
           id: crypto.randomUUID(),
           title,
-          days: []
+          days: [],
         });
       }
 
@@ -135,14 +135,14 @@ export async function getPrograms() {
         reps,
         charge,
         recovery,
-        notes
+        notes,
       });
     });
 
     const programs = Array.from(programsMap.values());
     return { success: true, data: programs };
   } catch (error) {
-    console.error("Error fetching programs from Google Sheets:", error);
-    return { success: false, data: [], error: "Failed to fetch programs" };
+    console.error('Error fetching programs from Google Sheets:', error);
+    return { success: false, data: [], error: 'Failed to fetch programs' };
   }
 }

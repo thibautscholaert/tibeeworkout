@@ -1,38 +1,30 @@
-"use client"
+'use client';
 
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { formatDate, formatReps, formatWeight, groupSetsByDate, groupSetsByExercise } from "@/lib/utils"
-import { useWorkout } from "@/lib/workout-context"
-import {
-  BarChart3,
-  Calendar,
-  Flame,
-  Target,
-  TrendingUp,
-  Trophy,
-} from "lucide-react"
-import { useMemo } from "react"
-
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { formatDate, formatReps, formatWeight, groupSetsByDate, groupSetsByExercise } from '@/lib/utils';
+import { useWorkout } from '@/lib/workout-context';
+import { BarChart3, Calendar, Flame, Target, TrendingUp, Trophy } from 'lucide-react';
+import { useMemo } from 'react';
 
 export function HistoryView() {
-  const { history } = useWorkout()
-  
+  const { history } = useWorkout();
+
   const groupedByDate = useMemo(() => {
-    const byDate = groupSetsByDate(history)
+    const byDate = groupSetsByDate(history);
     // Sort by date descending
-    return Array.from(byDate.entries()).sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime())
-  }, [history])
+    return Array.from(byDate.entries()).sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime());
+  }, [history]);
 
   // Calculer les statistiques globales
   const totalStats = useMemo(() => {
-    const totalVolume = history.reduce((acc, set) => acc + (set.weight * set.reps), 0)
-    const totalReps = history.reduce((acc, set) => acc + set.reps, 0)
-    const uniqueExercises = new Set(history.map(set => set.exerciseName)).size
-    const totalDays = groupedByDate.length
-    
-    return { totalVolume, totalReps, uniqueExercises, totalDays }
-  }, [history, groupedByDate])
+    const totalVolume = history.reduce((acc, set) => acc + set.weight * set.reps, 0);
+    const totalReps = history.reduce((acc, set) => acc + set.reps, 0);
+    const uniqueExercises = new Set(history.map((set) => set.exerciseName)).size;
+    const totalDays = groupedByDate.length;
+
+    return { totalVolume, totalReps, uniqueExercises, totalDays };
+  }, [history, groupedByDate]);
 
   if (history.length === 0) {
     return (
@@ -42,12 +34,10 @@ export function HistoryView() {
         </div>
         <div className="space-y-2">
           <h2 className="text-xl font-semibold">Aucun historique</h2>
-          <p className="text-sm text-muted-foreground max-w-sm">
-            Commencez à enregistrer vos séries pour voir votre historique d'entraînement ici
-          </p>
+          <p className="text-sm text-muted-foreground max-w-sm">Commencez à enregistrer vos séries pour voir votre historique d'entraînement ici</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -59,9 +49,7 @@ export function HistoryView() {
           <h1 className="text-2xl font-bold tracking-tight">Historique</h1>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary">
-            {history.length}
-          </div>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary">{history.length}</div>
           <span className="text-sm text-muted-foreground">séries</span>
         </div>
       </div>
@@ -99,36 +87,24 @@ export function HistoryView() {
       {/* Sessions par date */}
       <div className="space-y-6">
         {groupedByDate.map(([dateString, sets], dateIndex) => {
-          const byExercise = groupSetsByExercise(sets)
-          const exerciseEntries = Array.from(byExercise.entries())
-          const date = new Date(dateString)
-          const isToday = dateString === new Date().toISOString().split('T')[0]
-          const sessionVolume = sets.reduce((acc, set) => acc + (set.weight * set.reps), 0)
+          const byExercise = groupSetsByExercise(sets);
+          const exerciseEntries = Array.from(byExercise.entries());
+          const date = new Date(dateString);
+          const isToday = dateString === new Date().toISOString().split('T')[0];
+          const sessionVolume = sets.reduce((acc, set) => acc + set.weight * set.reps, 0);
 
           return (
             <div key={dateString} className="space-y-4">
               {/* Header de la session */}
-              <div className={`rounded-lg p-4 border-l-4 ${
-                isToday 
-                  ? 'border-l-primary bg-primary/5 shadow-sm' 
-                  : 'border-l-muted bg-muted/20'
-              }`}>
+              <div className={`rounded-lg p-4 border-l-4 ${isToday ? 'border-l-primary bg-primary/5 shadow-sm' : 'border-l-muted bg-muted/20'}`}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20">
-                      <span className="text-lg font-bold text-primary">
-                        {dateIndex + 1}
-                      </span>
+                      <span className="text-lg font-bold text-primary">{dateIndex + 1}</span>
                     </div>
                     <div>
-                      <h3 className={`font-semibold text-base flex items-center gap-2 ${
-                        isToday ? 'text-primary' : ''
-                      }`}>
-                        {isToday ? (
-                          <Flame className="h-4 w-4 text-orange-500" />
-                        ) : (
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                        )}
+                      <h3 className={`font-semibold text-base flex items-center gap-2 ${isToday ? 'text-primary' : ''}`}>
+                        {isToday ? <Flame className="h-4 w-4 text-orange-500" /> : <Calendar className="h-4 w-4 text-muted-foreground" />}
                         {formatDate(date)}
                         {isToday && (
                           <Badge variant="default" className="ml-2 text-xs">
@@ -137,8 +113,7 @@ export function HistoryView() {
                         )}
                       </h3>
                       <p className="text-xs text-muted-foreground">
-                        {exerciseEntries.length} exercice{exerciseEntries.length > 1 ? 's' : ''} • 
-                        {sets.length} série{sets.length > 1 ? 's' : ''} • 
+                        {exerciseEntries.length} exercice{exerciseEntries.length > 1 ? 's' : ''} •{sets.length} série{sets.length > 1 ? 's' : ''} •
                         {sessionVolume.toLocaleString()}kg
                       </p>
                     </div>
@@ -149,9 +124,9 @@ export function HistoryView() {
               {/* Exercices de la session */}
               <div className="space-y-3 ml-14">
                 {exerciseEntries.map(([exerciseName, exerciseSets], exerciseIndex) => {
-                  const totalVolume = exerciseSets.reduce((acc, s) => acc + s.weight * s.reps, 0)
-                  const maxWeight = Math.max(...exerciseSets.map((s) => s.weight))
-                  const avgReps = Math.round(exerciseSets.reduce((acc, s) => acc + s.reps, 0) / exerciseSets.length)
+                  const totalVolume = exerciseSets.reduce((acc, s) => acc + s.weight * s.reps, 0);
+                  const maxWeight = Math.max(...exerciseSets.map((s) => s.weight));
+                  const avgReps = Math.round(exerciseSets.reduce((acc, s) => acc + s.reps, 0) / exerciseSets.length);
 
                   return (
                     <div key={exerciseName} className="space-y-2">
@@ -175,9 +150,7 @@ export function HistoryView() {
                           <div
                             key={set.id}
                             className={`group relative overflow-hidden rounded-lg border border-border/50 p-2 transition-all hover:border-primary/30 hover:shadow-sm ${
-                              isToday 
-                                ? 'bg-primary/5 hover:bg-primary/10' 
-                                : 'bg-card hover:bg-muted/50'
+                              isToday ? 'bg-primary/5 hover:bg-primary/10' : 'bg-card hover:bg-muted/50'
                             }`}
                           >
                             <div className="flex items-center justify-between">
@@ -186,34 +159,30 @@ export function HistoryView() {
                                   {setIndex + 1}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium font-mono">
-                                    {formatWeight(set.weight, set.exerciseName)}
-                                  </span>
+                                  <span className="text-sm font-medium font-mono">{formatWeight(set.weight, set.exerciseName)}</span>
                                   <span className="text-xs text-muted-foreground">×</span>
-                                  <span className="text-sm font-medium font-mono">
-                                    {formatReps(set.reps, set.exerciseName)}
-                                  </span>
+                                  <span className="text-sm font-medium font-mono">{formatReps(set.reps, set.exerciseName)}</span>
                                 </div>
                                 {set.estimated1RM && (
                                   <div className="flex items-center gap-1">
                                     <span className="text-xs text-muted-foreground">1RM:</span>
-                                    <span className="text-xs font-medium text-primary">
-                                      ~{set.estimated1RM}kg
-                                    </span>
+                                    <span className="text-xs font-medium text-primary">~{set.estimated1RM}kg</span>
                                   </div>
                                 )}
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                {new Date(set.timestamp).toLocaleTimeString('fr-FR', { 
-                                  hour: '2-digit', 
-                                  minute: '2-digit' 
+                                {new Date(set.timestamp).toLocaleTimeString('fr-FR', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
                                 })}
                               </div>
                             </div>
-                            
+
                             {/* Barre de progression */}
-                            <div className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-primary/20 to-primary/40 transition-all group-hover:h-1" 
-                                 style={{ width: `${((setIndex + 1) / exerciseSets.length) * 100}%` }} />
+                            <div
+                              className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-primary/20 to-primary/40 transition-all group-hover:h-1"
+                              style={{ width: `${((setIndex + 1) / exerciseSets.length) * 100}%` }}
+                            />
                           </div>
                         ))}
                       </div>
@@ -234,18 +203,16 @@ export function HistoryView() {
                         </div>
                       </div>
                     </div>
-                  )
+                  );
                 })}
               </div>
 
               {/* Separator entre les sessions */}
-              {dateIndex < groupedByDate.length - 1 && (
-                <Separator className="mt-6" />
-              )}
+              {dateIndex < groupedByDate.length - 1 && <Separator className="mt-6" />}
             </div>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }

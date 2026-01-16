@@ -1,5 +1,5 @@
-import { LogView } from "@/components/log-view"
+import { LogView } from '@/components/log-view';
 
 export default function LogPage() {
-  return <LogView />
+  return <LogView />;
 }

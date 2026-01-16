@@ -1,46 +1,46 @@
 export interface WorkoutSet {
-  id: string
-  exerciseName: string
-  weight: number
-  reps: number
-  timestamp: Date
-  estimated1RM?: number
+  id: string;
+  exerciseName: string;
+  weight: number;
+  reps: number;
+  timestamp: Date;
+  estimated1RM?: number;
 }
 
 export interface WorkoutSession {
-  date: string
-  sets: WorkoutSet[]
+  date: string;
+  sets: WorkoutSet[];
 }
 
 export interface ExerciseHistory {
-  exerciseName: string
+  exerciseName: string;
   sessions: {
-    date: string
-    sets: WorkoutSet[]
-  }[]
+    date: string;
+    sets: WorkoutSet[];
+  }[];
 }
 
 export interface Program {
-  id: string
-  title: string
-  days: ProgramDay[]
+  id: string;
+  title: string;
+  days: ProgramDay[];
 }
 
 export interface ProgramDay {
-  day: string
-  blocs: ProgramBloc[]
+  day: string;
+  blocs: ProgramBloc[];
 }
 
 export interface ProgramBloc {
-  name: string
-  exercises: ProgramExercise[]
+  name: string;
+  exercises: ProgramExercise[];
 }
 
 export interface ProgramExercise {
-  exerciseName: string
-  sets: number
-  reps: string
-  charge?: string
-  recovery?: string
-  notes?: string
+  exerciseName: string;
+  sets: number;
+  reps: string;
+  charge?: string;
+  recovery?: string;
+  notes?: string;
 }
