@@ -58,7 +58,7 @@ export function formatDate(date: Date): string {
     return 'Yesterday';
   }
 
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString('fr-FR', {
     weekday: 'short',
     month: 'short',
     day: 'numeric',

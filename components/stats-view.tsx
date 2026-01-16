@@ -136,21 +136,35 @@ export function StatsView() {
   }, [history, selectedExercise, repType]);
 
   // Calculate max reps/time per set
+  // Calcule le maximum de répétitions en une seule série avec la date associée
   const maxRepsPerSet = useMemo(() => {
     const exerciseSets = history.filter((s) => s.exerciseName === selectedExercise);
     if (exerciseSets.length === 0) return null;
-    return Math.max(...exerciseSets.map((set) => set.reps));
+
+    // On cherche l'objet "set" complet qui a le plus grand nombre de reps
+    const bestSet = exerciseSets.reduce((max, current) => (current.reps > (max?.reps ?? -1) ? current : max), exerciseSets[0]);
+
+    return {
+      date: bestSet.timestamp,
+      count: bestSet.reps,
+    };
   }, [history, selectedExercise]);
 
-  // Calculate max per session (grouped by day or 2h range)
+  // Calcule le max par session avec la date associée
   const maxPerSession = useMemo(() => {
     const exerciseSets = history.filter((s) => s.exerciseName === selectedExercise);
     if (exerciseSets.length === 0) return null;
 
     const sessions = groupSetsBySession(exerciseSets);
-    const sessionTotals = Array.from(sessions.values()).map((sets) => sets.reduce((sum, set) => sum + set.reps, 0));
 
-    return sessionTotals.length > 0 ? Math.max(...sessionTotals) : null;
+    // On transforme la Map en un tableau d'objets { date, total }
+    const sessionTotals = Array.from(sessions.entries()).map(([sessionKey, sets]) => ({
+      date: new Date(sessionKey),
+      count: sets.reduce((sum, set) => sum + set.reps, 0),
+    }));
+
+    // On récupère la session avec le count le plus élevé
+    return sessionTotals.reduce((max, current) => (current.count > (max?.count ?? -1) ? current : max), sessionTotals[0]);
   }, [history, selectedExercise]);
 
   // Calculate best performance (reps * weight)
@@ -167,6 +181,7 @@ export function StatsView() {
           reps: bestSet.reps,
           weight: bestSet.weight,
           volume: bestSet.reps * bestSet.weight,
+          date: new Date(bestSet.timestamp),
         }
       : null;
   }, [history, selectedExercise]);
@@ -350,8 +365,8 @@ export function StatsView() {
               <Card className="bg-gradient-to-br from-card to-card/50 border-border/50">
                 <CardContent className="p-4">
                   <p className="text-sm text-muted-foreground">{repType === 'time' ? 'Max Time/Set' : 'Max Reps/Set'}</p>
-                  <p className="text-2xl font-bold">{formatReps(maxRepsPerSet, selectedExercise)}</p>
-                  <p className="text-sm text-muted-foreground">Max en une série</p>
+                  <p className="text-2xl font-bold">{formatReps(maxRepsPerSet.count, selectedExercise)}</p>
+                  <p className="text-sm text-muted-foreground">{formatDate(new Date(maxRepsPerSet.date))}</p>
                 </CardContent>
               </Card>
             )}
@@ -359,8 +374,8 @@ export function StatsView() {
               <Card className="bg-gradient-to-br from-card to-card/50 border-border/50">
                 <CardContent className="p-4">
                   <p className="text-sm text-muted-foreground">{repType === 'time' ? 'Max Time/Session' : 'Max Reps/Session'}</p>
-                  <p className="text-2xl font-bold">{formatReps(maxPerSession, selectedExercise)}</p>
-                  <p className="text-sm text-muted-foreground">Max par session</p>
+                  <p className="text-2xl font-bold">{formatReps(maxPerSession.count, selectedExercise)}</p>
+                  <p className="text-sm text-muted-foreground">{formatDate(maxPerSession.date)}</p>
                 </CardContent>
               </Card>
             )}
@@ -371,7 +386,7 @@ export function StatsView() {
                   <p className="text-2xl font-bold">
                     {formatReps(bestPerfRepsWeight.reps, selectedExercise)} × {formatWeight(bestPerfRepsWeight.weight, selectedExercise)}
                   </p>
-                  <p className="text-sm text-muted-foreground">{bestPerfRepsWeight.volume} kg total</p>
+                  <p className="text-sm text-muted-foreground">{formatDate(bestPerfRepsWeight.date)}</p>
                 </CardContent>
               </Card>
             )}
@@ -427,14 +442,7 @@ export function StatsView() {
                       domain={['dataMin - 5', 'dataMax + 5']}
                     />
                     <ChartTooltip content={<ChartTooltipContent />} cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1 }} />
-                    <Line
-                      type="monotone"
-                      dataKey="value"
-                      stroke="var(--color-value)"
-                      strokeWidth={2}
-                      dot={{ r: 4, fill: 'var(--color-value)' }}
-                      activeDot={{ r: 6 }}
-                    />
+                    <Line type="monotone" dataKey="value" />
                   </LineChart>
                 </ResponsiveContainer>
               </ChartContainer>
