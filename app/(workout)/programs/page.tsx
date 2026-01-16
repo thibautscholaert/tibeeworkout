@@ -73,15 +73,16 @@ export default async function ProgramsPage() {
     )
   }
 
-  const currentDay = getCurrentDayInFrench()
+  const currentDay = getCurrentDayInFrench();
+  console.log(currentDay);
 
   return (
     <div className="container mx-auto p-4 pb-20">
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-2">Programmes d'entraînement</h1>
-        {/* <p className="text-muted-foreground">
+        <p className="text-muted-foreground">
           Aujourd'hui: {currentDay} • Découvrez vos programmes personnalisés
-        </p> */}
+        </p>
       </div>
 
       <div className="space-y-6">
