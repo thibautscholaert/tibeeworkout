@@ -98,7 +98,7 @@ export default async function ProgramsPage() {
                     return (
                       <div
                         key={dayIndex}
-                        className={`rounded-lg p-4 border-l-4 transition-all ${
+                        className={`rounded-lg p-2 pr-0 border-l-4 transition-all ${
                           isToday ? 'border-l-primary bg-primary/5 shadow-md' : 'border-l-muted bg-muted/20'
                         }`}
                       >
@@ -163,11 +163,10 @@ export default async function ProgramsPage() {
                                               isToday ? 'bg-primary/10 border border-primary/20' : 'bg-muted/50'
                                             }`}
                                           >
-                                            <span className="font-medium flex items-center gap-1">
+                                            <span className="flex items-center gap-1">
                                               <Lightbulb className="h-3 w-3" />
-                                              Focus:
+                                              <span className="font-medium ">Focus:</span> {exercise.notes}
                                             </span>
-                                            {exercise.notes}
                                           </div>
                                         )}
                                       </div>

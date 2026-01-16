@@ -50,10 +50,12 @@ export function LogView() {
       exerciseCounts.set(set.exerciseName, count + 1);
     });
 
-    return Array.from(exerciseCounts.entries())
-      .sort((a, b) => b[1] - a[1]) // Sort by count descending
-      .slice(0, 7) // Take top x
-      .map(([name]) => name); // Extract just the names
+    return (
+      Array.from(exerciseCounts.entries())
+        .sort((a, b) => b[1] - a[1]) // Sort by count descending
+        // .slice(0, 19) // Take top x
+        .map(([name]) => name)
+    ); // Extract just the names
   }, [history]);
 
   // Get the suggested exercise as default, fallback to most practiced
@@ -222,9 +224,9 @@ export function LogView() {
                   <p className="text-xs text-muted-foreground mb-1">
                     Bloc: {suggestions.blocName} • {suggestions.suggestedReps} reps
                   </p>
-                  {suggestions.exerciseDetails?.charge && (
+                  {suggestions.suggestedCharge && (
                     <p className="text-xs text-muted-foreground">
-                      <Dumbbell className="inline h-3 w-3 mr-1" /> {suggestions.exerciseDetails.charge}
+                      <Dumbbell className="inline h-3 w-3 mr-1" /> {suggestions.suggestedCharge} kg
                     </p>
                   )}
                   {suggestions.exerciseDetails?.notes && (
@@ -241,8 +243,13 @@ export function LogView() {
                       if (suggestions.suggestedReps && !isNaN(parseInt(suggestions.suggestedReps))) {
                         setValue('reps', parseInt(suggestions.suggestedReps));
                       }
-                      if (suggestions.exerciseDetails?.charge) {
-                        setValue('weight', Number(suggestions.exerciseDetails?.charge) || 0);
+                      console.log(suggestions);
+                      if (suggestions.suggestedCharge && !isNaN(parseFloat(suggestions.suggestedCharge))) {
+                        console.log(parseFloat(suggestions.suggestedCharge));
+                        setValue('weight', parseFloat(suggestions.suggestedCharge));
+                      } else {
+                        console.log(targetWeight);
+                        setValue('weight', targetWeight);
                       }
                     }}
                     className="text-sm"
@@ -263,20 +270,20 @@ export function LogView() {
         <div className="space-y-2">
           {/* Exercise Favorites - Subtle suggestions */}
           {mostPracticedExercises.length > 0 && (
-            <div className="flex gap-1 flex-wrap items-center justify-between">
+            <div className="flex gap-1 flex-wrap items-center justify-between overflow-y-auto h-16">
               {mostPracticedExercises.map((exerciseName) => (
                 <button
                   key={exerciseName}
                   type="button"
                   onClick={() => setValue('exerciseName', exerciseName)}
                   className={cn(
-                    'px-2.5 py-1.5 rounded-md text-xs font-medium transition-all duration-200',
+                    'px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-200',
                     'border border-border/40 bg-muted/30 hover:bg-muted/60 hover:border-border/60',
                     'text-muted-foreground hover:text-foreground',
                     selectedExercise === exerciseName && 'bg-primary/10 border-primary/30 text-primary'
                   )}
                 >
-                  <span className="text-ellipsis overflow-hidden max-w-[120px] block truncate">{exerciseName}</span>
+                  <span className="text-ellipsis overflow-hidden max-w-[6rem] block truncate">{exerciseName}</span>
                 </button>
               ))}
             </div>
