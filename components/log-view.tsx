@@ -270,7 +270,7 @@ export function LogView() {
         <div className="space-y-2">
           {/* Exercise Favorites - Subtle suggestions */}
           {mostPracticedExercises.length > 0 && (
-            <div className="flex gap-1 flex-wrap items-center justify-between overflow-y-auto h-16">
+            <div className="flex gap-1 flex-wrap items-center justify-between overflow-y-auto h-16 pr-2">
               {mostPracticedExercises.map((exerciseName) => (
                 <button
                   key={exerciseName}

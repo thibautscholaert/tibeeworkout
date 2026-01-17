@@ -8,11 +8,45 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Separator } from '@/components/ui/separator';
 import { EXERCISES } from '@/lib/exercises';
 import type { WorkoutSet } from '@/lib/types';
-import { cn, formatDate, formatReps, formatWeight } from '@/lib/utils';
+import { calculateEstimated1RM, cn, formatDate, formatReps, formatWeight } from '@/lib/utils';
 import { useWorkout } from '@/lib/workout-context';
-import { BicepsFlexed, Check, ChevronDown, Search, Star, TrendingUp } from 'lucide-react';
+import { BicepsFlexed, Check, ChevronDown, Search, TrendingUp } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
+
+// Custom tooltip for best performance chart
+function BestPerfTooltip({ active, payload, label, exerciseData, selectedExercise }: any) {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="rounded-lg border bg-background p-3 shadow-md">
+        <p className="text-sm font-medium mb-2">{label}</p>
+        <div className="space-y-1">
+          {exerciseData?.bodyweight ? (
+            <>
+              <p className="text-sm">
+                <span className="text-muted-foreground">Reps:</span> {data.reps}
+              </p>
+              <p className="text-sm font-medium">
+                <span className="text-muted-foreground">Performance:</span> {data.reps} reps
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm">
+                <span className="text-muted-foreground">Set:</span> {data.reps} reps × {formatWeight(data.weight, selectedExercise)}
+              </p>
+              <p className="text-sm font-medium">
+                <span className="text-muted-foreground">1RM Estimé:</span> {formatWeight(data.oneRM, selectedExercise)}
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
 
 // Helper function to calculate 1RM for any non-bodyweight exercise
 function calculate1RM(weight: number, reps: number): number {
@@ -83,10 +117,12 @@ export function StatsView() {
       exerciseCounts.set(set.exerciseName, count + 1);
     });
 
-    return Array.from(exerciseCounts.entries())
-      .sort((a, b) => b[1] - a[1]) // Sort by count descending
-      .slice(0, 10)
-      .map(([name]) => name); // Extract just the names
+    return (
+      Array.from(exerciseCounts.entries())
+        .sort((a, b) => b[1] - a[1]) // Sort by count descending
+        //.slice(0, 10)
+        .map(([name]) => name)
+    ); // Extract just the names
   }, [history]);
 
   // Set default exercise to most practiced, or first available if no history
@@ -135,6 +171,61 @@ export function StatsView() {
       }));
   }, [history, selectedExercise, repType]);
 
+  // Calculate best performance chart data - track 1RM of best set per session
+  const bestPerfChartData = useMemo(() => {
+    const exerciseSets = history.filter((s) => s.exerciseName === selectedExercise);
+    const sessions = groupSetsBySession(exerciseSets);
+
+    // Find best set per session and calculate its 1RM
+    const sessionBestPerf = Array.from(sessions.entries()).map(([sessionKey, sets]) => {
+      const bestSet = sets.sort((a, b) => {
+        // For bodyweight exercises, compare reps directly
+        if (exerciseData?.bodyweight) {
+          return b.reps - a.reps; // Higher reps first
+        }
+        // For weighted exercises, compare volume (reps * weight)
+        const volumeA = a.reps * a.weight;
+        const volumeB = b.reps * b.weight;
+        if (volumeB !== volumeA) {
+          return volumeB - volumeA; // Higher volume first
+        }
+        return b.weight - a.weight; // If same volume, higher weight first
+      })[0];
+
+      // Calculate 1RM for the best set
+      let value: number;
+      if (exerciseData?.bodyweight) {
+        // For bodyweight exercises, just use reps
+        value = bestSet.reps;
+      } else {
+        // For weighted exercises, calculate 1RM
+        const oneRM = calculateEstimated1RM(bestSet.weight, bestSet.reps, selectedExercise);
+        value = oneRM || bestSet.weight; // Fallback to weight if 1RM calculation fails
+      }
+
+      return {
+        sessionKey,
+        value,
+        date: formatDate(new Date(sessionKey)),
+        reps: bestSet.reps,
+        weight: bestSet.weight,
+        oneRM: value,
+      };
+    });
+
+    return sessionBestPerf
+      .sort((a, b) => new Date(a.sessionKey).getTime() - new Date(b.sessionKey).getTime())
+      .map((d) => ({
+        date: d.date,
+        value: d.value,
+        label: exerciseData?.bodyweight ? 'Meilleure perf (Reps)' : 'Meilleure perf (1RM)',
+        metricType: exerciseData?.bodyweight ? ('reps' as const) : ('1rm' as const),
+        reps: d.reps,
+        weight: d.weight,
+        oneRM: d.oneRM,
+      }));
+  }, [history, selectedExercise, exerciseData]);
+
   // Calculate max reps/time per set
   // Calcule le maximum de répétitions en une seule série avec la date associée
   const maxRepsPerSet = useMemo(() => {
@@ -147,6 +238,7 @@ export function StatsView() {
     return {
       date: bestSet.timestamp,
       count: bestSet.reps,
+      weight: bestSet.weight,
     };
   }, [history, selectedExercise]);
 
@@ -172,17 +264,21 @@ export function StatsView() {
     const exerciseSets = history.filter((s) => s.exerciseName === selectedExercise);
     if (exerciseSets.length === 0) return null;
 
-    // Find the set with the best weight
-    const maxWeight = Math.max(...exerciseSets.map((set) => set.weight));
-    const bestSet = exerciseSets.find((set) => set.weight === maxWeight);
+    // Sort by weight first, then by reps to get the best performance
+    const bestSet = exerciseSets.sort((a, b) => {
+      if (b.weight !== a.weight) {
+        return b.weight - a.weight; // Higher weight first
+      }
+      return b.reps - a.reps; // If same weight, higher reps first
+    })[0];
 
     return bestSet
       ? {
-          reps: bestSet.reps,
-          weight: bestSet.weight,
-          volume: bestSet.reps * bestSet.weight,
-          date: new Date(bestSet.timestamp),
-        }
+        reps: bestSet.reps,
+        weight: bestSet.weight,
+        volume: bestSet.reps * bestSet.weight,
+        date: new Date(bestSet.timestamp),
+      }
       : null;
   }, [history, selectedExercise]);
 
@@ -270,30 +366,24 @@ export function StatsView() {
       <Separator className="my-2" />
 
       {/* Exercise Favorites - Subtle suggestions */}
+
       {mostPracticedExercises.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 px-1">
-            <Star className="h-3 w-3 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground font-medium">Exercices favoris</span>
-            <div className="flex-1 h-px bg-border/50"></div>
-          </div>
-          <div className="flex gap-1.5 flex-wrap">
-            {mostPracticedExercises.map((exerciseName) => (
-              <button
-                key={exerciseName}
-                type="button"
-                onClick={() => setSelectedExercise(exerciseName)}
-                className={cn(
-                  'px-2.5 py-1.5 rounded-md text-xs font-medium transition-all duration-200',
-                  'border border-border/40 bg-muted/30 hover:bg-muted/60 hover:border-border/60',
-                  'text-muted-foreground hover:text-foreground',
-                  selectedExercise === exerciseName && 'bg-primary/10 border-primary/30 text-primary'
-                )}
-              >
-                <span className="text-ellipsis overflow-hidden max-w-[120px] block truncate">{exerciseName}</span>
-              </button>
-            ))}
-          </div>
+        <div className="flex gap-1 flex-wrap items-center justify-between overflow-y-auto h-16 pr-2">
+          {mostPracticedExercises.map((exerciseName) => (
+            <button
+              key={exerciseName}
+              type="button"
+              onClick={() => setSelectedExercise(exerciseName)}
+              className={cn(
+                'px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-200',
+                'border border-border/40 bg-muted/30 hover:bg-muted/60 hover:border-border/60',
+                'text-muted-foreground hover:text-foreground',
+                selectedExercise === exerciseName && 'bg-primary/10 border-primary/30 text-primary'
+              )}
+            >
+              <span className="text-ellipsis overflow-hidden max-w-[6rem] block truncate">{exerciseName}</span>
+            </button>
+          ))}
         </div>
       )}
 
@@ -361,27 +451,9 @@ export function StatsView() {
           </div>
 
           <div className="grid gap-3 grid-cols-2">
-            {maxRepsPerSet !== null && (
-              <Card className="bg-gradient-to-br from-card to-card/50 border-border/50">
-                <CardContent className="p-4">
-                  <p className="text-sm text-muted-foreground">{repType === 'time' ? 'Max Time/Set' : 'Max Reps/Set'}</p>
-                  <p className="text-2xl font-bold">{formatReps(maxRepsPerSet.count, selectedExercise)}</p>
-                  <p className="text-sm text-muted-foreground">{formatDate(new Date(maxRepsPerSet.date))}</p>
-                </CardContent>
-              </Card>
-            )}
-            {maxPerSession !== null && (
-              <Card className="bg-gradient-to-br from-card to-card/50 border-border/50">
-                <CardContent className="p-4">
-                  <p className="text-sm text-muted-foreground">{repType === 'time' ? 'Max Time/Session' : 'Max Reps/Session'}</p>
-                  <p className="text-2xl font-bold">{formatReps(maxPerSession.count, selectedExercise)}</p>
-                  <p className="text-sm text-muted-foreground">{formatDate(maxPerSession.date)}</p>
-                </CardContent>
-              </Card>
-            )}
             {bestPerfRepsWeight !== null && (
-              <Card className="bg-gradient-to-br from-card to-card/50 border-border/50">
-                <CardContent className="p-4">
+              <Card className="bg-gradient-to-br from-card to-card/50 border-border/50 py-0">
+                <CardContent className="py-2 px-4">
                   <p className="text-sm text-muted-foreground">Meilleure perf</p>
                   <p className="text-2xl font-bold">
                     {formatReps(bestPerfRepsWeight.reps, selectedExercise)} × {formatWeight(bestPerfRepsWeight.weight, selectedExercise)}
@@ -391,13 +463,33 @@ export function StatsView() {
               </Card>
             )}
             {best1RM !== null && (
-              <Card className="bg-gradient-to-br from-card to-card/50 border-border/50">
-                <CardContent className="p-4">
+              <Card className="bg-gradient-to-br from-card to-card/50 border-border/50 py-0">
+                <CardContent className="py-2 px-4">
                   <p className="text-sm text-muted-foreground">1RM Estimé</p>
                   <p className="text-2xl font-bold">{formatWeight(best1RM.oneRM, selectedExercise)}</p>
                   <p className="text-sm text-muted-foreground">
                     {formatReps(best1RM.reps, selectedExercise)} × {formatWeight(best1RM.weight, selectedExercise)}
                   </p>
+                </CardContent>
+              </Card>
+            )}
+            {maxRepsPerSet !== null && (
+              <Card className="bg-gradient-to-br from-card to-card/50 border-border/50 py-0">
+                <CardContent className="py-2 px-4">
+                  <p className="text-sm text-muted-foreground">{repType === 'time' ? 'Max Time/Set' : 'Max Reps/Set'}</p>
+                  <p className="text-2xl font-bold">
+                    {formatReps(maxRepsPerSet.count, selectedExercise)} x {formatWeight(maxRepsPerSet.weight, selectedExercise)}
+                  </p>
+                  <p className="text-sm text-muted-foreground">{formatDate(new Date(maxRepsPerSet.date))}</p>
+                </CardContent>
+              </Card>
+            )}
+            {maxPerSession !== null && (
+              <Card className="bg-gradient-to-br from-card to-card/50 border-border/50 py-0">
+                <CardContent className="py-2 px-4">
+                  <p className="text-sm text-muted-foreground">{repType === 'time' ? 'Max Time/Session' : 'Max Reps/Session'}</p>
+                  <p className="text-2xl font-bold">{formatReps(maxPerSession.count, selectedExercise)}</p>
+                  <p className="text-sm text-muted-foreground">{formatDate(maxPerSession.date)}</p>
                 </CardContent>
               </Card>
             )}
@@ -413,6 +505,51 @@ export function StatsView() {
           <TrendingUp className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-semibold">Progression dans le temps</h2>
         </div>
+
+        <Card className="bg-gradient-to-br from-card to-card/50 border-border/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Meilleure perf Progress</CardTitle>
+            <CardDescription>
+              {exerciseData?.bodyweight ? 'Meilleure performance (reps) par session' : 'Meilleure performance (1RM estimé) par session'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {bestPerfChartData.length > 0 ? (
+              <ChartContainer
+                config={{
+                  value: {
+                    label: exerciseData?.bodyweight ? 'Reps' : '1RM (kg)',
+                    color: 'hsl(var(--chart-1))',
+                  },
+                }}
+                className="h-[250px] w-full"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={bestPerfChartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} className="fill-muted-foreground" />
+                    <YAxis
+                      tick={{ fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={false}
+                      className="fill-muted-foreground"
+                      domain={['dataMin - 5', 'dataMax + 5']}
+                    />
+                    <ChartTooltip
+                      content={<BestPerfTooltip exerciseData={exerciseData} selectedExercise={selectedExercise} />}
+                      cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1 }}
+                    />
+                    <Line type="monotone" dataKey="value" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            ) : (
+              <div className="flex h-[250px] items-center justify-center text-sm text-muted-foreground">
+                No performance data for this exercise yet
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <Card className="bg-gradient-to-br from-card to-card/50 border-border/50">
           <CardHeader className="pb-2">
