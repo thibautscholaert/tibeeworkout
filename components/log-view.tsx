@@ -11,8 +11,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Separator } from '@/components/ui/separator';
 import { EXERCISES } from '@/lib/exercises';
 import { setFormSchema, type SetFormData } from '@/lib/schemas';
+import { getWithTTL, setWithTTL } from '@/lib/storage';
 import { getTodaySession, groupTodaySessionByExercise } from '@/lib/today-session';
-import { cn, formatWeight } from '@/lib/utils';
+import { cn, formatReps, formatWeight, roundToNearest5 } from '@/lib/utils';
 import { useWorkout } from '@/lib/workout-context';
 import { getWorkoutSuggestions } from '@/lib/workout-suggestions';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -26,6 +27,57 @@ export function LogView() {
   const [exerciseOpen, setExerciseOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [targetWeight, setTargetWeight] = useState<number>(0);
+  const [targetReps, setTargetReps] = useState<number>(0);
+  const [selectedProgram, setSelectedProgram] = useState<string>('');
+  const [selectedDay, setSelectedDay] = useState<string>('');
+  const [programOpen, setProgramOpen] = useState(false);
+  const [dayOpen, setDayOpen] = useState(false);
+
+  // Load selected program/day from localStorage on mount
+  useEffect(() => {
+    const storedProgramTitle = getWithTTL<string>('selectedProgram');
+    const storedDay = getWithTTL<string>('selectedDay');
+
+    if (storedProgramTitle && workoutPrograms.length > 0) {
+      console.log('Loaded program title from storage:', storedProgramTitle);
+      console.log(workoutPrograms);
+      // Find program by title instead of ID
+      const program = workoutPrograms.find(p => p.title === storedProgramTitle);
+      if (program) {
+        setSelectedProgram(program.id); // Store ID for internal use
+        if (storedDay) {
+          console.log('Loaded day from storage:', storedDay);
+          setSelectedDay(storedDay);
+        }
+      } else {
+        console.log('Program not found in loaded programs, clearing storage');
+        // Clear invalid program from storage
+        localStorage.removeItem('selectedProgram');
+        localStorage.removeItem('selectedDay');
+      }
+    }
+  }, [workoutPrograms]);
+
+  // Save selected program to localStorage with 2-hour TTL (using title)
+  const handleProgramSelect = (programId: string) => {
+    console.log('Program selected:', programId);
+    const program = workoutPrograms.find(p => p.id === programId);
+    if (program) {
+      console.log('Saving program title to storage:', program.title);
+      setSelectedProgram(programId);
+      setSelectedDay(''); // Reset day when program changes
+      setProgramOpen(false);
+      setWithTTL('selectedProgram', program.title, 2 * 60 * 60 * 1000); // Store title, not ID
+    }
+  };
+
+  // Save selected day to localStorage with 2-hour TTL
+  const handleDaySelect = (day: string) => {
+    console.log('Day selected:', day);
+    setSelectedDay(day);
+    setDayOpen(false);
+    setWithTTL('selectedDay', day, 2 * 60 * 60 * 1000); // 2 hours in milliseconds
+  };
 
   // Obtenir les séries d'aujourd'hui
   const todaySession = useMemo(() => {
@@ -39,8 +91,9 @@ export function LogView() {
 
   // Obtenir les suggestions intelligentes
   const suggestions = useMemo(() => {
-    return getWorkoutSuggestions(workoutPrograms, history);
-  }, [workoutPrograms, history]);
+    console.log('LogView: Recalculating suggestions with:', { selectedProgram, selectedDay });
+    return getWorkoutSuggestions(workoutPrograms, history, selectedProgram, selectedDay);
+  }, [workoutPrograms, history, selectedProgram, selectedDay]);
 
   // Calculate most practiced exercises (top 5 by number of sets)
   const mostPracticedExercises = useMemo(() => {
@@ -58,8 +111,19 @@ export function LogView() {
     ); // Extract just the names
   }, [history]);
 
+
   // Get the suggested exercise as default, fallback to most practiced
   const defaultExercise = suggestions.nextExercise || (mostPracticedExercises.length > 0 ? mostPracticedExercises[0] : 'Pull up');
+
+  // Get selected program details
+  const selectedProgramData = useMemo(() => {
+    return workoutPrograms.find((program) => program.id === selectedProgram);
+  }, [workoutPrograms, selectedProgram]);
+
+  // Get available days for selected program
+  const availableDays = useMemo(() => {
+    return selectedProgramData?.days || [];
+  }, [selectedProgramData]);
 
   const {
     register,
@@ -89,22 +153,35 @@ export function LogView() {
   const selectedExercise = watch('exerciseName');
 
   const selectedExerciseData = useMemo(() => {
-    return EXERCISES.find((ex) => ex.name === selectedExercise);
+    return EXERCISES.find((ex) => ex.name.toLowerCase() === selectedExercise.toLowerCase());
   }, [selectedExercise]);
 
-  // Calculate best 1RM for selected exercise (for target weight default)
+  // Calculate best 1RM for selected exercise (for target weight default / warmup)
   const best1RM = useMemo(() => {
     if (!selectedExerciseData || selectedExerciseData.bodyweight) return null;
 
     const exerciseSets = history.filter((set) => set.exerciseName === selectedExercise);
     if (exerciseSets.length === 0) return null;
 
-    // Find the best estimated 1RM from history
     const oneRMs = exerciseSets.filter((set) => set.estimated1RM).map((set) => set.estimated1RM!);
-
     if (oneRMs.length === 0) return null;
     return Math.max(...oneRMs);
   }, [history, selectedExercise, selectedExerciseData]);
+
+  // Best perf (same as stats page): best set by weight then reps
+  const bestPerfRepsWeight = useMemo(() => {
+    const exerciseSets = history.filter((s) => s.exerciseName === selectedExercise);
+    if (exerciseSets.length === 0) return null;
+
+    const bestSet = [...exerciseSets].sort((a, b) => {
+      if (b.weight !== a.weight) return b.weight - a.weight;
+      return b.reps - a.reps;
+    })[0];
+
+    return bestSet
+      ? { reps: bestSet.reps, weight: bestSet.weight }
+      : null;
+  }, [history, selectedExercise]);
 
   // Calculate best set for each exercise (today vs all time)
   const getBestSetComparison = useMemo(() => {
@@ -131,20 +208,26 @@ export function LogView() {
     };
   }, [history]);
 
-  // Update target weight when exercise changes
+  // Update target weight and target reps when exercise changes
   useEffect(() => {
     if (selectedExerciseData?.warmupProtocol?.some((w) => w.weightUnit === '%')) {
       if (best1RM) {
-        setTargetWeight(best1RM);
+        setTargetWeight(roundToNearest5(best1RM));
+        setTargetReps(1);
       } else {
-        // Fallback to first non-percentage weight in warmup protocol
         const firstFixedWeight = selectedExerciseData.warmupProtocol.find((w) => w.weightUnit !== '%');
         if (firstFixedWeight) {
-          setTargetWeight(parseFloat(firstFixedWeight.weight));
+          setTargetWeight(roundToNearest5(parseFloat(firstFixedWeight.weight)));
+        } else {
+          setTargetWeight(0);
         }
+        setTargetReps(bestPerfRepsWeight?.reps ?? 1);
       }
+    } else {
+      setTargetWeight(bestPerfRepsWeight?.weight ?? 0);
+      setTargetReps(bestPerfRepsWeight?.reps ?? 0);
     }
-  }, [selectedExercise, best1RM, selectedExerciseData]);
+  }, [selectedExercise, best1RM, selectedExerciseData, bestPerfRepsWeight]);
 
   const filteredExercises = useMemo(() => {
     let exercises = EXERCISES;
@@ -194,10 +277,102 @@ export function LogView() {
         <ChronoIndicator />
       </div>
 
-      <Separator className="my-1" />
+      <Separator className="" />
+
+      {/* Program and Day Selection */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="program">Programme</Label>
+          <Popover open={programOpen} onOpenChange={setProgramOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={programOpen}
+                className="w-full justify-between"
+              >
+                {selectedProgramData?.title || 'Select program...'}
+                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[calc(100vw-3rem)] max-w-md p-0" align="start">
+              <div className="max-h-[300px] overflow-y-auto p-1">
+                {workoutPrograms.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-muted-foreground">No programs found.</p>
+                ) : (
+                  workoutPrograms.map((program) => (
+                    <button
+                      key={program.id}
+                      type="button"
+                      onClick={() => {
+                        handleProgramSelect(program.id);
+                      }}
+                      className={cn(
+                        'relative flex w-full cursor-pointer items-center rounded-md px-3 py-2.5 text-sm outline-none transition-colors',
+                        'hover:bg-accent hover:text-accent-foreground',
+                        selectedProgram === program.id && 'bg-accent/50'
+                      )}
+                    >
+                      <Check className={cn('mr-2 h-4 w-4', selectedProgram === program.id ? 'opacity-100' : 'opacity-0')} />
+                      {program.title}
+                    </button>
+                  ))
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="day">Jour</Label>
+          <Popover open={dayOpen} onOpenChange={setDayOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={dayOpen}
+                className="w-full justify-between"
+                disabled={!selectedProgram}
+              >
+                {selectedDay || 'Select day...'}
+                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[calc(100vw-3rem)] max-w-md p-0" align="start">
+              <div className="max-h-[300px] overflow-y-auto p-1">
+                {availableDays.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-muted-foreground">
+                    {selectedProgram ? 'No days found.' : 'Select a program first.'}
+                  </p>
+                ) : (
+                  availableDays.map((day) => (
+                    <button
+                      key={day.day}
+                      type="button"
+                      onClick={() => {
+                        handleDaySelect(day.day);
+                      }}
+                      className={cn(
+                        'relative flex w-full cursor-pointer items-center rounded-md px-3 py-2.5 text-sm outline-none transition-colors',
+                        'hover:bg-accent hover:text-accent-foreground',
+                        selectedDay === day.day && 'bg-accent/50'
+                      )}
+                    >
+                      <Check className={cn('mr-2 h-4 w-4', selectedDay === day.day ? 'opacity-100' : 'opacity-0')} />
+                      {day.day}
+                    </button>
+                  ))
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+
+      <Separator className="" />
 
       {/* Form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {/* Smart Suggestions */}
         {suggestions.nextExercise && (
           <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
@@ -240,16 +415,16 @@ export function LogView() {
                     type="button"
                     onClick={() => {
                       setValue('exerciseName', suggestions.nextExercise!);
-                      if (suggestions.suggestedReps && !isNaN(parseInt(suggestions.suggestedReps))) {
-                        setValue('reps', parseInt(suggestions.suggestedReps));
+                      if (suggestions.suggestedReps !== null) {
+                        setValue('reps', (suggestions.suggestedReps));
                       }
                       console.log(suggestions);
-                      if (suggestions.suggestedCharge && !isNaN(parseFloat(suggestions.suggestedCharge))) {
-                        console.log(parseFloat(suggestions.suggestedCharge));
-                        setValue('weight', parseFloat(suggestions.suggestedCharge));
+                      if (suggestions.suggestedCharge !== null) {
+                        console.log(suggestions.suggestedCharge);
+                        setValue('weight', suggestions.suggestedCharge);
                       } else {
-                        console.log(targetWeight);
                         setValue('weight', targetWeight);
+                        setValue('reps', targetReps);
                       }
                     }}
                     className="text-sm"
@@ -296,7 +471,7 @@ export function LogView() {
                 variant="outline"
                 role="combobox"
                 aria-expanded={exerciseOpen}
-                className={cn('w-full justify-between h-12 text-base', !selectedExercise && 'text-muted-foreground')}
+                className={cn('w-full justify-between ', !selectedExercise && 'text-muted-foreground')}
               >
                 {selectedExercise || 'Select exercise...'}
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -343,35 +518,62 @@ export function LogView() {
           {errors.exerciseName && <p className="text-sm text-destructive">{errors.exerciseName.message}</p>}
         </div>
 
-        {/* Warmup Protocol - Compact */}
-        {selectedExerciseData?.warmupProtocol && (
-          <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Flame className="h-3 w-3 text-orange-500" />
-                <span className="text-xs font-medium text-muted-foreground">Échauffement</span>
-              </div>
-              {selectedExerciseData.warmupProtocol.some((w) => w.weightUnit === '%') && (
-                <div className="flex items-center">
-                  <TargetIcon className="h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="number"
-                    placeholder="Poids cible"
-                    step={0.5}
-                    value={targetWeight || ''}
-                    onChange={(e) => setTargetWeight(parseFloat(e.target.value) || 0)}
-                    className="h-6 w-20 text-xs text-center border-border/50"
-                  />
-                  <span className="text-xs text-muted-foreground">kg</span>
-                </div>
-              )}
+        {/* Warmup Protocol + Target + Best perf */}
+        <div className="bg-muted/30 rounded-lg p-2 border border-border/50 flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-1 flex-wrap">
+              <button
+                type="button"
+                onClick={() => {
+                  setValue('weight', roundToNearest5(targetWeight));
+                  setValue('reps', targetReps);
+                }}
+              >
+                <TargetIcon className="h-5 w-5 text-green-600" />
+              </button>
+              <Input
+                type="number"
+                placeholder="target"
+                step={0.5}
+                value={targetWeight}
+                onChange={(e) => setTargetWeight(parseFloat(e.target.value) || 0)}
+                className="h-6 w-10 text-xs text-center border-border/50 cursor-pointer hover:bg-accent/50 transition-colors"
+              />
+              <span className="text-xs font-bold text-muted-foreground">kg</span>
+              <span className="text-xs text-muted-foreground">×</span>
+              <Input
+                type="number"
+                placeholder="reps"
+                min={1}
+                value={targetReps || ''}
+                onChange={(e) => setTargetReps(parseInt(e.target.value, 10) || 0)}
+                className="h-6 w-9 text-xs text-center border-border/50 cursor-pointer hover:bg-accent/50 transition-colors"
+              />
+              {/* <span className="text-xs text-muted-foreground">reps</span> */}
             </div>
-            <div className="flex gap-1 flex-wrap">
+            {bestPerfRepsWeight != null && (
+              <button
+                type="button"
+                onClick={() => {
+                  setValue('weight', bestPerfRepsWeight.weight);
+                  setValue('reps', bestPerfRepsWeight.reps);
+                }}
+                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 hover:border-primary/40 transition-colors cursor-pointer"
+              >
+                <Trophy className="h-3.5 w-3.5" />
+                {formatReps(bestPerfRepsWeight.reps, selectedExercise)} × {formatWeight(bestPerfRepsWeight.weight, selectedExercise)}
+              </button>
+            )}
+          </div>
+          {selectedExerciseData?.warmupProtocol && (
+            <div className="flex gap-1 flex-wrap items-center justify-center">
+              <Flame className="h-3 w-3 text-orange-500" />
+              <span className="text-xs text-muted-foreground">Warmup</span>
               {selectedExerciseData.warmupProtocol.map((warmupSet, index) => {
                 const calculatedWeight =
                   warmupSet.weightUnit === '%' && targetWeight
-                    ? Math.round(targetWeight * (parseFloat(warmupSet.weight) / 100))
-                    : parseFloat(warmupSet.weight);
+                    ? roundToNearest5(targetWeight * (parseFloat(warmupSet.weight) / 100))
+                    : roundToNearest5(parseFloat(warmupSet.weight));
 
                 return (
                   <button
@@ -395,32 +597,32 @@ export function LogView() {
                 );
               })}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Weight & Reps Row */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="weight">Weight (kg)</Label>
+          <div className="flex flex-col items-center justify-center gap-1">
+            <Label htmlFor="weight" className='text-sm text-muted-foreground'>Weight (kg)</Label>
             <Input
               id="weight"
               type="number"
               step={0.5}
               inputMode="decimal"
               placeholder="0"
-              className="h-14 text-xl font-semibold text-center"
+              className="h-10 text-lg font-semibold text-center"
               {...register('weight', { valueAsNumber: true })}
             />
             {errors.weight && <p className="text-sm text-destructive">{errors.weight.message}</p>}
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="reps">{selectedExerciseData?.repType === 'time' ? 'Temps (s)' : 'Reps'}</Label>
+          <div className="flex flex-col items-center justify-center gap-1">
+            <Label htmlFor="reps" className='text-sm text-muted-foreground'>{selectedExerciseData?.repType === 'time' ? 'Temps (s)' : 'Reps'}</Label>
             <Input
               id="reps"
               type="number"
               inputMode="numeric"
               placeholder="0"
-              className="h-14 text-xl font-semibold text-center"
+              className="h-10 text-lg font-semibold text-center"
               {...register('reps', { valueAsNumber: true })}
             />
             {errors.reps && <p className="text-sm text-destructive">{errors.reps.message}</p>}

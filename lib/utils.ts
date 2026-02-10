@@ -83,3 +83,7 @@ export function groupSetsByExercise(sets: WorkoutSet[]): Map<string, WorkoutSet[
   });
   return grouped;
 }
+
+export function roundToNearest5(weight: number): number {
+  return Math.round(weight / 5) * 5;
+}

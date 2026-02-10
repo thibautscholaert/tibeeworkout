@@ -10,6 +10,7 @@ function getCurrentDayInFrench(): string {
 // Fonction pour normaliser les noms de jours
 function normalizeDayName(day: string): string {
   const dayMap: { [key: string]: string } = {
+    // French variations
     lundi: 'Lundi',
     mardi: 'Mardi',
     mercredi: 'Mercredi',
@@ -17,6 +18,7 @@ function normalizeDayName(day: string): string {
     vendredi: 'Vendredi',
     samedi: 'Samedi',
     dimanche: 'Dimanche',
+    // English variations
     monday: 'Lundi',
     tuesday: 'Mardi',
     wednesday: 'Mercredi',
@@ -24,9 +26,33 @@ function normalizeDayName(day: string): string {
     friday: 'Vendredi',
     saturday: 'Samedi',
     sunday: 'Dimanche',
+    // Short variations
+    lun: 'Lundi',
+    mar: 'Mardi',
+    mer: 'Mercredi',
+    jeu: 'Jeudi',
+    ven: 'Vendredi',
+    sam: 'Samedi',
+    dim: 'Dimanche',
+    mon: 'Lundi',
+    tue: 'Mardi',
+    wed: 'Mercredi',
+    thu: 'Jeudi',
+    fri: 'Vendredi',
+    sat: 'Samedi',
+    sun: 'Dimanche',
+    // Numeric variations (1 = Monday, 7 = Sunday)
+    '1': 'Lundi',
+    '2': 'Mardi',
+    '3': 'Mercredi',
+    '4': 'Jeudi',
+    '5': 'Vendredi',
+    '6': 'Samedi',
+    '7': 'Dimanche',
   };
 
-  return dayMap[day.toLowerCase()] || day;
+  const normalized = dayMap[day.toLowerCase().trim()];
+  return normalized || day;
 }
 
 // Fonction pour obtenir les séries réalisées aujourd'hui par exercice
@@ -59,30 +85,49 @@ function isExerciseCompleted(exercise: ProgramExercise, completedSets: WorkoutSe
 // Fonction principale pour obtenir les suggestions
 export function getWorkoutSuggestions(
   programs: Program[],
-  history: WorkoutSet[]
+  history: WorkoutSet[],
+  selectedProgramId?: string,
+  selectedDay?: string
 ): {
   nextExercise: string | null;
   programName: string | null;
   blocName: string | null;
   completedSeries: number;
   totalSeries: number;
-  suggestedReps: string | null;
-  suggestedCharge: string | null;
+  suggestedReps: number | null;
+  suggestedCharge: number | null;
   exerciseDetails: ProgramExercise | null;
   completedExercises: string[];
   remainingExercises: string[];
   isCompletingCurrentExercise: boolean;
 } {
-  const currentDay = getCurrentDayInFrench();
+  console.log('getWorkoutSuggestions called with:', { selectedProgramId, selectedDay, programsCount: programs.length });
+
+  const currentDay = selectedDay || getCurrentDayInFrench();
   const todayStats = getTodayExerciseStats(history);
 
-  // Trouver le programme du jour actuel
-  for (const program of programs) {
-    const todayProgram = program.days.find((day) => normalizeDayName(day.day) === currentDay);
+  // Filtrer les programmes selon la sélection
+  const programsToCheck = selectedProgramId
+    ? programs.filter(program => program.id === selectedProgramId)
+    : programs;
 
-    if (todayProgram) {
+
+  // Trouver le programme du jour actuel ou du programme sélectionné
+  for (const program of programsToCheck) {
+
+    const todayProgram = program.days.find((day) => {
+      const normalizedDay = normalizeDayName(day.day);
+      const normalizedCurrentDay = normalizeDayName(currentDay);
+      return normalizedDay === normalizedCurrentDay;
+    });
+
+    console.log('todayProgram', todayProgram);
+
+    const selectedProgram = todayProgram ?? program.days[0];
+
+    if (selectedProgram) {
       // Parcourir les blocs dans l'ordre
-      for (const bloc of todayProgram.blocs) {
+      for (const bloc of selectedProgram.blocs) {
         // Trouver le premier exercice non complété dans ce bloc
         for (const exercise of bloc.exercises) {
           const completedSets = todayStats.get(exercise.exerciseName) || [];
@@ -107,7 +152,7 @@ export function getWorkoutSuggestions(
               return setScore > bestScore ? set : best;
             }, null);
 
-            const suggestedCharge = allTimeBest.estimated1RM ?? allTimeBest.weight;
+            const suggestedCharge = parseFloat(allTimeBest.estimated1RM ?? allTimeBest.weight);
 
             return {
               nextExercise: exercise.exerciseName,
@@ -115,8 +160,8 @@ export function getWorkoutSuggestions(
               blocName: bloc.name,
               completedSeries: completedSets.length,
               totalSeries: exercise.sets,
-              suggestedReps: exercise.reps,
-              suggestedCharge: suggestedCharge,
+              suggestedReps: parseInt(exercise.reps),
+              suggestedCharge,
               exerciseDetails: exercise,
               completedExercises: completedExerciseNames,
               remainingExercises: remainingInBloc,

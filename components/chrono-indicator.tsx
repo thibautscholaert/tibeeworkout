@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Timer } from 'lucide-react';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 interface ChronoState {
   time: number;
@@ -90,13 +90,13 @@ export function ChronoIndicator() {
     <Link href="/chrono">
       <div
         className={cn(
-          'flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-200',
+          'flex items-center gap-4 px-3 py-1.5 rounded-full transition-all duration-200',
           'bg-primary/10 hover:bg-primary/20 border border-primary/20 hover:border-primary/30',
           isRunning && 'animate-pulse'
         )}
       >
-        <Timer className={cn('h-4 w-4', isRunning ? 'text-primary' : 'text-muted-foreground')} />
-        <span className={cn('text-sm font-mono font-medium', isRunning ? 'text-primary' : 'text-muted-foreground')}>{formatTime(time)}</span>
+        <Timer className={cn('h-5 w-5', isRunning ? 'text-primary' : 'text-muted-foreground')} />
+        <span className={cn('text-2xl font-mono font-medium', isRunning ? 'text-primary' : 'text-muted-foreground')}>{formatTime(time)}</span>
         {isRunning && <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />}
       </div>
     </Link>

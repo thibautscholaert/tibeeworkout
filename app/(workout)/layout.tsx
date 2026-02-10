@@ -8,7 +8,7 @@ export default function WorkoutLayout({ children }: { children: React.ReactNode 
     <WorkoutProvider>
       <main className="min-h-screen bg-background">
         {/* Content Area */}
-        <div className="mx-auto max-w-md px-3 pt-6 pb-24">{children}</div>
+        <div className="mx-auto max-w-md px-3 pt-3 pb-24">{children}</div>
 
         {/* Bottom Navigation */}
         <BottomNav />
