@@ -2,9 +2,10 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { formatDate, formatReps, formatWeight, groupSetsByDate, groupSetsByExercise } from '@/lib/utils';
+import { cn, formatDate, formatReps, formatWeight, groupSetsByDate, groupSetsByExercise } from '@/lib/utils';
 import { useWorkout } from '@/lib/workout-context';
-import { BarChart3, Calendar, Flame, Target, TrendingUp, Trophy } from 'lucide-react';
+import { isWarmupSet } from '@/lib/workout-suggestions';
+import { BarChart3, BicepsFlexedIcon, Calendar, Flame, Target, TrendingUp, Trophy } from 'lucide-react';
 import { useMemo } from 'react';
 
 export function HistoryView() {
@@ -122,11 +123,20 @@ export function HistoryView() {
               </div>
 
               {/* Exercices de la session */}
-              <div className="space-y-3 ml-14">
+              <div className="space-y-3 ml-10">
                 {exerciseEntries.map(([exerciseName, exerciseSets], exerciseIndex) => {
                   const totalVolume = exerciseSets.reduce((acc, s) => acc + s.weight * s.reps, 0);
                   const maxWeight = Math.max(...exerciseSets.map((s) => s.weight));
                   const avgReps = Math.round(exerciseSets.reduce((acc, s) => acc + s.reps, 0) / exerciseSets.length);
+
+                  // Get all-time best for this exercise to determine warmup sets
+                  const allTimeSetsForExercise = history.filter((set) => set.exerciseName === exerciseName);
+                  const allTimeBest = allTimeSetsForExercise.reduce<any>((best, set) => {
+                    if (!best) return set;
+                    const bestScore = best.estimated1RM || best.weight * best.reps;
+                    const setScore = set.estimated1RM || set.weight * set.reps;
+                    return setScore > bestScore ? set : best;
+                  }, null);
 
                   return (
                     <div key={exerciseName} className="space-y-2">
@@ -146,45 +156,67 @@ export function HistoryView() {
 
                       {/* Séries */}
                       <div className="grid grid-cols-1 gap-1">
-                        {exerciseSets.map((set, setIndex) => (
-                          <div
-                            key={set.id}
-                            className={`group relative overflow-hidden rounded-lg border border-border/50 p-2 transition-all hover:border-primary/30 hover:shadow-sm ${
-                              isToday ? 'bg-primary/5 hover:bg-primary/10' : 'bg-card hover:bg-muted/50'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
-                                  {setIndex + 1}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium font-mono">{formatWeight(set.weight, set.exerciseName)}</span>
-                                  <span className="text-xs text-muted-foreground">×</span>
-                                  <span className="text-sm font-medium font-mono">{formatReps(set.reps, set.exerciseName)}</span>
-                                </div>
-                                {set.estimated1RM && (
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-xs text-muted-foreground">1RM:</span>
-                                    <span className="text-xs font-medium text-primary">~{set.estimated1RM}kg</span>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {new Date(set.timestamp).toLocaleTimeString('fr-FR', {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
-                              </div>
-                            </div>
+                        {exerciseSets.map((set, setIndex) => {
+                          const isWarmup = isWarmupSet(set, allTimeBest);
 
-                            {/* Barre de progression */}
+                          return (
                             <div
-                              className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-primary/20 to-primary/40 transition-all group-hover:h-1"
-                              style={{ width: `${((setIndex + 1) / exerciseSets.length) * 100}%` }}
-                            />
-                          </div>
-                        ))}
+                              key={set.id}
+                              className={cn(
+                                'group relative overflow-hidden rounded-lg border p-2 transition-all',
+                                isWarmup
+                                  ? 'border-orange-200/30 bg-orange-50/5 hover:bg-orange-50/10 hover:border-orange-300/50 hover:shadow-md'
+                                  : isToday
+                                    ? 'border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 hover:shadow-md'
+                                    : 'border-primary/30 bg-card hover:bg-muted/50 hover:border-primary/50 hover:shadow-md'
+                              )}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div
+                                    className={cn(
+                                      'flex h-6 w-6 items-center justify-center rounded-lg text-xs font-bold',
+                                      isWarmup ? 'bg-orange-100/20 text-orange-400' : 'bg-primary/10 text-primary'
+                                    )}
+                                  >
+                                    {setIndex + 1}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {isWarmup ? (
+                                      <Flame className="h-3 w-3 text-orange-500 mr-0.5" />
+                                    ) : (
+                                      <BicepsFlexedIcon className="h-3 w-3 text-primary mr-0.5" />
+                                    )}
+                                    <span className="text-sm font-medium font-mono">{formatWeight(set.weight, set.exerciseName)}</span>
+                                    <span className="text-xs text-muted-foreground">×</span>
+                                    <span className="text-sm font-medium font-mono">{formatReps(set.reps, set.exerciseName)}</span>
+                                  </div>
+                                  {set.estimated1RM && (
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-xs text-muted-foreground">1RM:</span>
+                                      <span className="text-xs font-medium text-primary">~{set.estimated1RM}kg</span>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {new Date(set.timestamp).toLocaleTimeString('fr-FR', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </div>
+                              </div>
+
+                              {/* Barre de progression */}
+                              <div
+                                className={cn(
+                                  'absolute bottom-0 left-0 h-0.5 transition-all group-hover:h-1',
+                                  isWarmup ? 'bg-gradient-to-r from-orange-300/30 to-orange-400/50' : 'bg-gradient-to-r from-primary/30 to-primary/60'
+                                )}
+                                style={{ width: `${((setIndex + 1) / exerciseSets.length) * 100}%` }}
+                              />
+                            </div>
+                          );
+                        })}
                       </div>
 
                       {/* Statistiques de l'exercice */}

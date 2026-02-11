@@ -31,34 +31,98 @@ Continue building your app on:
 
 ## API Endpoints
 
-The application provides REST API endpoints to access workout data in JSON format:
+The application provides REST API endpoints to access workout data in JSON format.
 
-### GET /api/history
+### Base URL
 
-Returns the complete workout history from Google Sheets.
+- Development: `http://localhost:3000/api`
+- Production: `https://your-domain.com/api`
 
-**Response format:**
+---
+
+### 1. GET /api/data
+
+Récupère l'historique des séances et les programmes d'entraînement en une seule requête.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "history": [
+      {
+        "sessionKey": "Mon Feb 09 2026",
+        "sets": [
+          {
+            "timestamp": "2026-02-09T11:26:43.896Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 3,
+            "oneRM": 50
+          }
+        ]
+      }
+    ],
+    "programs": [
+      {
+        "id": "uuid",
+        "title": "Force & Callisthénie v1",
+        "sessions": [...]
+      }
+    ]
+  }
+}
+```
+
+**Notes:**
+
+- `history`: Array des 10 dernières sessions d'entraînement
+- Chaque session groupe les sets effectués dans une fenêtre de 2 heures
+- `sessionKey`: Date de la session (format: "Day Month DD YYYY")
+- `sets`: Array des exercices effectués pendant la session
+- `oneRM`: 1RM estimé (One Rep Max) - présent uniquement pour les exercices avec charge
+
+---
+
+### 2. GET /api/history
+
+Récupère uniquement l'historique des séances d'entraînement.
+
+**Response:**
 
 ```json
 {
   "success": true,
   "data": [
     {
-      "timestamp": "2026-02-11T10:30:00.000Z",
-      "exerciseName": "Squat",
-      "weight": 100,
-      "reps": 10,
-      "oneRM": 133.33
+      "sessionKey": "Mon Feb 09 2026",
+      "sets": [
+        {
+          "timestamp": "2026-02-09T11:26:43.896Z",
+          "exerciseName": "Muscle up",
+          "weight": 0,
+          "reps": 3
+        }
+      ]
     }
   ]
 }
 ```
 
-### GET /api/programs
+**Notes:**
 
-Returns all workout programs with their sessions, blocs, and exercises. Programs are organized by sessions (which include the associated day).
+- Limité aux 10 sessions les plus récentes
+- Sessions triées par date décroissante (plus récentes en premier)
+- Groupement automatique des sets par session (fenêtre de 2h)
 
-**Response format:**
+---
+
+### 3. GET /api/programs
+
+Récupère la liste des programmes d'entraînement.
+
+**Response:**
 
 ```json
 {
@@ -66,22 +130,22 @@ Returns all workout programs with their sessions, blocs, and exercises. Programs
   "data": [
     {
       "id": "uuid",
-      "title": "Program Name",
+      "title": "Force & Callisthénie v1",
       "sessions": [
         {
-          "session": "Session A",
-          "day": "Monday",
+          "session": "Salle pull",
+          "day": "LUNDI",
           "blocs": [
             {
-              "name": "Warm-up",
+              "name": "Skill",
               "exercises": [
                 {
-                  "exerciseName": "Squat",
-                  "sets": 3,
-                  "reps": "10",
-                  "charge": "60kg",
-                  "recovery": "2min",
-                  "notes": "Focus on form"
+                  "exerciseName": "Muscle up",
+                  "sets": 2,
+                  "reps": "3",
+                  "charge": "Qualité / Transition",
+                  "recovery": "3'",
+                  "notes": "Focus False Grip & Transition rapide"
                 }
               ]
             }
@@ -93,18 +157,58 @@ Returns all workout programs with their sessions, blocs, and exercises. Programs
 }
 ```
 
-### GET /api/data
+**Structure d'un programme:**
 
-Returns both history and programs in a single request.
+- `id`: Identifiant unique du programme
+- `title`: Nom du programme
+- `sessions`: Array des séances du programme
+  - `session`: Nom de la séance
+  - `day`: Jour recommandé (ou "ANY" pour flexible)
+  - `blocs`: Groupes d'exercices
+    - `name`: Type de bloc (Skill, Lourd, Volume, Core, etc.)
+    - `exercises`: Array des exercices du bloc
+      - `exerciseName`: Nom de l'exercice
+      - `sets`: Nombre de séries
+      - `reps`: Nombre de répétitions (peut être range: "5-8")
+      - `charge`: Indication de charge/poids
+      - `recovery`: Temps de récupération
+      - `notes`: Instructions spécifiques
 
-**Response format:**
+---
+
+## Concepts clés
+
+### Session
+
+Une session regroupe tous les sets effectués dans une fenêtre de 2 heures. Si un set est effectué plus de 2 heures après le dernier set d'une session, une nouvelle session est créée.
+
+### 1RM (One Rep Max)
+
+Le 1RM estimé est calculé automatiquement pour les exercices avec charge selon la formule de Brzycki:
+
+- Si reps = 1: 1RM = poids
+- Si reps > 12: 1RM = poids × (1 + reps / 30)
+- Sinon: 1RM = poids × (36 / (37 - reps))
+
+### Types d'exercices
+
+- **Bodyweight (PDC)**: weight = 0
+- **Weighted**: weight > 0
+
+---
+
+## Gestion des erreurs
+
+En cas d'erreur, l'API retourne:
 
 ```json
 {
-  "success": true,
-  "data": {
-    "history": [...],
-    "programs": [...]
-  }
+  "success": false,
+  "error": "Message d'erreur descriptif"
 }
 ```
+
+**Codes HTTP:**
+
+- `200`: Succès
+- `500`: Erreur serveur

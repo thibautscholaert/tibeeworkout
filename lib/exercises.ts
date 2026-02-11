@@ -42,6 +42,12 @@ export const EXERCISE_TAGS = [
 
 export type ExerciseTag = (typeof EXERCISE_TAGS)[number];
 
+export const defaultWarmupProtocol = [
+  { weight: '30', reps: 10, weightUnit: '%' },
+  { weight: '60', reps: 5, weightUnit: '%' },
+  { weight: '85', reps: 2, weightUnit: '%' },
+];
+
 export const EXERCISES: Exercise[] = [
   // ===== POWERLIFTING =====
   {
@@ -65,7 +71,8 @@ export const EXERCISES: Exercise[] = [
     bodyweight: false,
     repType: 'reps',
     warmupProtocol: [
-      { weight: '40', reps: 10, weightUnit: '%' },
+      { weight: '20', reps: 10, weightUnit: 'kg' },
+      { weight: '40', reps: 8, weightUnit: '%' },
       { weight: '70', reps: 4, weightUnit: '%' },
       { weight: '90', reps: 1, weightUnit: '%' },
     ],
@@ -577,6 +584,23 @@ export const EXERCISES: Exercise[] = [
   `,
   },
   {
+    name: 'Overhead press dumbell - standing',
+    tags: ['Shoulders', 'Triceps', 'Compound', 'Pushing'],
+    favorite: true,
+    isPowerlifting: false,
+    bodyweight: false,
+    repType: 'reps',
+    description: `<div class="space-y-2">
+      <p class="font-medium text-primary">Focus : Stabilité scapulaire & Force de poussée verticale.</p>
+      <ul class="list-disc pl-4 text-sm space-y-1">
+        <li><strong>Placement :</strong> Haltères aux épaules, coudes orientés à 45° vers l'avant (pas sur les côtés).</li>
+        <li><strong>Exécution :</strong> Presse verticalement en gardant les abdos contractés pour ne pas cambrer.</li>
+        <li><strong>Skill Transfer :</strong> Travaille la phase de verrouillage utile pour tes <strong>HSPU</strong>.</li>
+      </ul>
+    </div>
+  `,
+  },
+  {
     name: 'Dumbbell shoulder press',
     tags: ['Shoulders', 'Triceps', 'Compound', 'Pushing'],
     favorite: false,
@@ -830,6 +854,12 @@ export const EXERCISES: Exercise[] = [
     repType: 'reps',
   },
   { name: 'Burpees', tags: ['Core', 'Full Body', 'Cardio', 'Compound'], favorite: false, isPowerlifting: false, bodyweight: true, repType: 'reps' },
-];
+].map(
+  (exercise) =>
+    ({
+      ...exercise,
+      warmupProtocol: exercise.warmupProtocol ? exercise.warmupProtocol : exercise.bodyweight ? undefined : defaultWarmupProtocol,
+    }) as Exercise
+);
 
 export type ExerciseName = Exercise['name'];
