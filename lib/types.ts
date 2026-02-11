@@ -23,10 +23,11 @@ export interface ExerciseHistory {
 export interface Program {
   id: string;
   title: string;
-  days: ProgramDay[];
+  sessions: ProgramSession[];
 }
 
-export interface ProgramDay {
+export interface ProgramSession {
+  session: string;
   day: string;
   blocs: ProgramBloc[];
 }

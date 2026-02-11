@@ -101,8 +101,6 @@ export function getWorkoutSuggestions(
   remainingExercises: string[];
   isCompletingCurrentExercise: boolean;
 } {
-  console.log('getWorkoutSuggestions called with:', { selectedProgramId, selectedDay, programsCount: programs.length });
-
   const currentDay = selectedDay || getCurrentDayInFrench();
   const todayStats = getTodayExerciseStats(history);
 
@@ -115,15 +113,13 @@ export function getWorkoutSuggestions(
   // Trouver le programme du jour actuel ou du programme sélectionné
   for (const program of programsToCheck) {
 
-    const todayProgram = program.days.find((day) => {
-      const normalizedDay = normalizeDayName(day.day);
+    const todayProgram = program.sessions.find((session) => {
+      const normalizedDay = normalizeDayName(session.day);
       const normalizedCurrentDay = normalizeDayName(currentDay);
       return normalizedDay === normalizedCurrentDay;
     });
 
-    console.log('todayProgram', todayProgram);
-
-    const selectedProgram = todayProgram ?? program.days[0];
+    const selectedProgram = todayProgram ?? program.sessions[0];
 
     if (selectedProgram) {
       // Parcourir les blocs dans l'ordre
@@ -141,8 +137,6 @@ export function getWorkoutSuggestions(
             const remainingInBloc = bloc.exercises
               .filter((ex) => !isExerciseCompleted(ex, todayStats.get(ex.exerciseName) || []))
               .map((ex) => ex.exerciseName);
-
-            console.log(exercise);
 
             const allTimeSets = history.filter((set) => set.exerciseName === exercise.exerciseName);
             const allTimeBest = allTimeSets.reduce<any>((best, set) => {

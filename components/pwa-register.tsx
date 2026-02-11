@@ -8,7 +8,6 @@ export function PWARegister() {
       navigator.serviceWorker
         .register('/sw.js')
         .then((registration) => {
-          console.log('Service Worker enregistré avec succès:', registration.scope);
 
           // Vérifier les mises à jour
           registration.addEventListener('updatefound', () => {
@@ -18,14 +17,13 @@ export function PWARegister() {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                   // Nouveau service worker disponible
                   // Optionnel: afficher une notification
-                  console.log('Nouvelle version disponible');
                 }
               });
             }
           });
         })
         .catch((error) => {
-          console.log("Erreur lors de l'enregistrement du service worker:", error);
+          console.error("Erreur lors de l'enregistrement du service worker:", error);
         });
     }
   }, []);

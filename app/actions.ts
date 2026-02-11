@@ -18,7 +18,6 @@ const auth = new JWT({
 const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID || '', auth);
 
 export async function saveWorkoutSet(data: SetFormData & { timestamp: Date }) {
-  console.log('Saving workout set:', data);
   try {
     await doc.loadInfo();
     const sheet = doc.sheetsByTitle['Workouts'] || doc.sheetsByIndex[0];
@@ -48,7 +47,6 @@ export async function saveWorkoutSet(data: SetFormData & { timestamp: Date }) {
 }
 
 export async function getWorkoutHistory() {
-  console.log('Fetching workout history');
   try {
     await doc.loadInfo();
     const sheet = doc.sheetsByTitle['Workouts'] || doc.sheetsByIndex[0];
@@ -75,7 +73,6 @@ export async function getWorkoutHistory() {
 }
 
 export async function getPrograms() {
-  console.log('Fetching programs');
   try {
     await doc.loadInfo();
     const sheet = doc.sheetsByTitle['Program'];
@@ -87,11 +84,12 @@ export async function getPrograms() {
 
     const rows = await sheet.getRows();
 
-    // Grouper par Titre -> Jour -> Bloc -> Exercices
+    // Grouper par Titre -> Session -> Bloc -> Exercices
     const programsMap = new Map();
 
     rows.forEach((row: any) => {
       const title = row.get('Titre') || '';
+      const session = row.get('Session') || '';
       const day = row.get('Jour') || '';
       const bloc = row.get('Bloc') || '';
       const exerciseName = row.get('Exercice') || '';
@@ -101,31 +99,31 @@ export async function getPrograms() {
       const recovery = row.get('Récup') || '';
       const notes = row.get('Notes / Focus Technique') || '';
 
-      if (!title || !exerciseName) return;
+      if (!title || !exerciseName || !session) return;
 
       // Créer le programme s'il n'existe pas
       if (!programsMap.has(title)) {
         programsMap.set(title, {
           id: crypto.randomUUID(),
           title,
-          days: [],
+          sessions: [],
         });
       }
 
       const program = programsMap.get(title);
 
-      // Trouver ou créer le jour
-      let dayObj = program.days.find((d: any) => d.day === day);
-      if (!dayObj) {
-        dayObj = { day, blocs: [] };
-        program.days.push(dayObj);
+      // Trouver ou créer la session
+      let sessionObj = program.sessions.find((s: any) => s.session === session);
+      if (!sessionObj) {
+        sessionObj = { session, day, blocs: [] };
+        program.sessions.push(sessionObj);
       }
 
       // Trouver ou créer le bloc
-      let blocObj = dayObj.blocs.find((b: any) => b.name === bloc);
+      let blocObj = sessionObj.blocs.find((b: any) => b.name === bloc);
       if (!blocObj) {
         blocObj = { name: bloc, exercises: [] };
-        dayObj.blocs.push(blocObj);
+        sessionObj.blocs.push(blocObj);
       }
 
       // Ajouter l'exercice

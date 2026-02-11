@@ -28,3 +28,83 @@ Continue building your app on:
 2. Deploy your chats from the v0 interface
 3. Changes are automatically pushed to this repository
 4. Vercel deploys the latest version from this repository
+
+## API Endpoints
+
+The application provides REST API endpoints to access workout data in JSON format:
+
+### GET /api/history
+
+Returns the complete workout history from Google Sheets.
+
+**Response format:**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "timestamp": "2026-02-11T10:30:00.000Z",
+      "exerciseName": "Squat",
+      "weight": 100,
+      "reps": 10,
+      "oneRM": 133.33
+    }
+  ]
+}
+```
+
+### GET /api/programs
+
+Returns all workout programs with their sessions, blocs, and exercises. Programs are organized by sessions (which include the associated day).
+
+**Response format:**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "title": "Program Name",
+      "sessions": [
+        {
+          "session": "Session A",
+          "day": "Monday",
+          "blocs": [
+            {
+              "name": "Warm-up",
+              "exercises": [
+                {
+                  "exerciseName": "Squat",
+                  "sets": 3,
+                  "reps": "10",
+                  "charge": "60kg",
+                  "recovery": "2min",
+                  "notes": "Focus on form"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+### GET /api/data
+
+Returns both history and programs in a single request.
+
+**Response format:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "history": [...],
+    "programs": [...]
+  }
+}
+```

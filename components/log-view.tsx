@@ -29,54 +29,47 @@ export function LogView() {
   const [targetWeight, setTargetWeight] = useState<number>(0);
   const [targetReps, setTargetReps] = useState<number>(0);
   const [selectedProgram, setSelectedProgram] = useState<string>('');
-  const [selectedDay, setSelectedDay] = useState<string>('');
+  const [selectedSession, setSelectedSession] = useState<string>('');
   const [programOpen, setProgramOpen] = useState(false);
-  const [dayOpen, setDayOpen] = useState(false);
+  const [sessionOpen, setSessionOpen] = useState(false);
 
   // Load selected program/day from localStorage on mount
   useEffect(() => {
     const storedProgramTitle = getWithTTL<string>('selectedProgram');
-    const storedDay = getWithTTL<string>('selectedDay');
+    const storedDay = getWithTTL<string>('selectedSession');
 
     if (storedProgramTitle && workoutPrograms.length > 0) {
-      console.log('Loaded program title from storage:', storedProgramTitle);
-      console.log(workoutPrograms);
       // Find program by title instead of ID
-      const program = workoutPrograms.find(p => p.title === storedProgramTitle);
+      const program = workoutPrograms.find((p) => p.title === storedProgramTitle);
       if (program) {
         setSelectedProgram(program.id); // Store ID for internal use
         if (storedDay) {
-          console.log('Loaded day from storage:', storedDay);
-          setSelectedDay(storedDay);
+          setSelectedSession(storedDay);
         }
       } else {
-        console.log('Program not found in loaded programs, clearing storage');
         // Clear invalid program from storage
         localStorage.removeItem('selectedProgram');
-        localStorage.removeItem('selectedDay');
+        localStorage.removeItem('selectedSession');
       }
     }
   }, [workoutPrograms]);
 
   // Save selected program to localStorage with 2-hour TTL (using title)
   const handleProgramSelect = (programId: string) => {
-    console.log('Program selected:', programId);
-    const program = workoutPrograms.find(p => p.id === programId);
+    const program = workoutPrograms.find((p) => p.id === programId);
     if (program) {
-      console.log('Saving program title to storage:', program.title);
       setSelectedProgram(programId);
-      setSelectedDay(''); // Reset day when program changes
+      setSelectedSession(''); // Reset day when program changes
       setProgramOpen(false);
       setWithTTL('selectedProgram', program.title, 2 * 60 * 60 * 1000); // Store title, not ID
     }
   };
 
   // Save selected day to localStorage with 2-hour TTL
-  const handleDaySelect = (day: string) => {
-    console.log('Day selected:', day);
-    setSelectedDay(day);
-    setDayOpen(false);
-    setWithTTL('selectedDay', day, 2 * 60 * 60 * 1000); // 2 hours in milliseconds
+  const handleSessionSelect = (day: string) => {
+    setSelectedSession(day);
+    setSessionOpen(false);
+    setWithTTL('selectedSession', day, 2 * 60 * 60 * 1000); // 2 hours in milliseconds
   };
 
   // Obtenir les séries d'aujourd'hui
@@ -91,9 +84,8 @@ export function LogView() {
 
   // Obtenir les suggestions intelligentes
   const suggestions = useMemo(() => {
-    console.log('LogView: Recalculating suggestions with:', { selectedProgram, selectedDay });
-    return getWorkoutSuggestions(workoutPrograms, history, selectedProgram, selectedDay);
-  }, [workoutPrograms, history, selectedProgram, selectedDay]);
+    return getWorkoutSuggestions(workoutPrograms, history, selectedProgram, selectedSession);
+  }, [workoutPrograms, history, selectedProgram, selectedSession]);
 
   // Calculate most practiced exercises (top 5 by number of sets)
   const mostPracticedExercises = useMemo(() => {
@@ -111,7 +103,6 @@ export function LogView() {
     ); // Extract just the names
   }, [history]);
 
-
   // Get the suggested exercise as default, fallback to most practiced
   const defaultExercise = suggestions.nextExercise || (mostPracticedExercises.length > 0 ? mostPracticedExercises[0] : 'Pull up');
 
@@ -120,10 +111,14 @@ export function LogView() {
     return workoutPrograms.find((program) => program.id === selectedProgram);
   }, [workoutPrograms, selectedProgram]);
 
-  // Get available days for selected program
+  // Get available sessions for selected program
   const availableDays = useMemo(() => {
-    return selectedProgramData?.days || [];
+    return selectedProgramData?.sessions || [];
   }, [selectedProgramData]);
+
+  const hasOnlyAnyDay = useMemo(() => {
+    return availableDays.every((session) => session.day.toLowerCase() === 'any');
+  }, [availableDays]);
 
   const {
     register,
@@ -178,9 +173,7 @@ export function LogView() {
       return b.reps - a.reps;
     })[0];
 
-    return bestSet
-      ? { reps: bestSet.reps, weight: bestSet.weight }
-      : null;
+    return bestSet ? { reps: bestSet.reps, weight: bestSet.weight } : null;
   }, [history, selectedExercise]);
 
   // Calculate best set for each exercise (today vs all time)
@@ -282,15 +275,12 @@ export function LogView() {
       {/* Program and Day Selection */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="program">Programme</Label>
+          <Label htmlFor="program" className="text-sm text-muted-foreground">
+            Programme
+          </Label>
           <Popover open={programOpen} onOpenChange={setProgramOpen}>
             <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={programOpen}
-                className="w-full justify-between"
-              >
+              <Button variant="outline" role="combobox" aria-expanded={programOpen} className="w-full justify-between">
                 {selectedProgramData?.title || 'Select program...'}
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
@@ -324,17 +314,13 @@ export function LogView() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="day">Jour</Label>
-          <Popover open={dayOpen} onOpenChange={setDayOpen}>
+          <Label htmlFor="day" className="text-sm text-muted-foreground">
+            {hasOnlyAnyDay ? 'Session' : 'Jour'}
+          </Label>
+          <Popover open={sessionOpen} onOpenChange={setSessionOpen}>
             <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={dayOpen}
-                className="w-full justify-between"
-                disabled={!selectedProgram}
-              >
-                {selectedDay || 'Select day...'}
+              <Button variant="outline" role="combobox" aria-expanded={sessionOpen} className="w-full justify-between" disabled={!selectedProgram}>
+                {selectedSession || `Select ${hasOnlyAnyDay ? 'session' : 'jour'}...`}
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
@@ -342,26 +328,34 @@ export function LogView() {
               <div className="max-h-[300px] overflow-y-auto p-1">
                 {availableDays.length === 0 ? (
                   <p className="py-6 text-center text-sm text-muted-foreground">
-                    {selectedProgram ? 'No days found.' : 'Select a program first.'}
+                    {selectedProgram ? 'No sessions found.' : 'Select a program first.'}
                   </p>
                 ) : (
-                  availableDays.map((day) => (
-                    <button
-                      key={day.day}
-                      type="button"
-                      onClick={() => {
-                        handleDaySelect(day.day);
-                      }}
-                      className={cn(
-                        'relative flex w-full cursor-pointer items-center rounded-md px-3 py-2.5 text-sm outline-none transition-colors',
-                        'hover:bg-accent hover:text-accent-foreground',
-                        selectedDay === day.day && 'bg-accent/50'
-                      )}
-                    >
-                      <Check className={cn('mr-2 h-4 w-4', selectedDay === day.day ? 'opacity-100' : 'opacity-0')} />
-                      {day.day}
-                    </button>
-                  ))
+                  availableDays.map((session) => {
+                    const isAnyDay = session.day.toLowerCase() === 'any';
+                    return (
+                      <button
+                        key={session.session}
+                        type="button"
+                        onClick={() => {
+                          handleSessionSelect(isAnyDay ? session.session : session.day);
+                        }}
+                        className={cn(
+                          'relative flex w-full cursor-pointer items-center rounded-md px-3 py-2.5 text-sm outline-none transition-colors',
+                          'hover:bg-accent hover:text-accent-foreground',
+                          (selectedSession === session.session || selectedSession === session.day) && 'bg-accent/50'
+                        )}
+                      >
+                        <Check
+                          className={cn(
+                            'mr-2 h-4 w-4',
+                            selectedSession === session.session || selectedSession === session.day ? 'opacity-100' : 'opacity-0'
+                          )}
+                        />
+                        {isAnyDay ? `${session.session}` : `${session.day}`}
+                      </button>
+                    );
+                  })
                 )}
               </div>
             </PopoverContent>
@@ -399,7 +393,7 @@ export function LogView() {
                   <p className="text-xs text-muted-foreground mb-1">
                     Bloc: {suggestions.blocName} • {suggestions.suggestedReps} reps
                   </p>
-                  {suggestions.suggestedCharge && (
+                  {suggestions.suggestedCharge && suggestions.suggestedCharge > 0 && (
                     <p className="text-xs text-muted-foreground">
                       <Dumbbell className="inline h-3 w-3 mr-1" /> {suggestions.suggestedCharge} kg
                     </p>
@@ -416,11 +410,9 @@ export function LogView() {
                     onClick={() => {
                       setValue('exerciseName', suggestions.nextExercise!);
                       if (suggestions.suggestedReps !== null) {
-                        setValue('reps', (suggestions.suggestedReps));
+                        setValue('reps', suggestions.suggestedReps);
                       }
-                      console.log(suggestions);
                       if (suggestions.suggestedCharge !== null) {
-                        console.log(suggestions.suggestedCharge);
                         setValue('weight', suggestions.suggestedCharge);
                       } else {
                         setValue('weight', targetWeight);
@@ -518,6 +510,8 @@ export function LogView() {
           {errors.exerciseName && <p className="text-sm text-destructive">{errors.exerciseName.message}</p>}
         </div>
 
+        <Separator className="" />
+
         {/* Warmup Protocol + Target + Best perf */}
         <div className="bg-muted/30 rounded-lg p-2 border border-border/50 flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -537,7 +531,7 @@ export function LogView() {
                 step={0.5}
                 value={targetWeight}
                 onChange={(e) => setTargetWeight(parseFloat(e.target.value) || 0)}
-                className="h-6 w-10 text-xs text-center border-border/50 cursor-pointer hover:bg-accent/50 transition-colors"
+                className="h-6 w-14 text-xs text-center border-border/50 cursor-pointer hover:bg-accent/50 transition-colors"
               />
               <span className="text-xs font-bold text-muted-foreground">kg</span>
               <span className="text-xs text-muted-foreground">×</span>
@@ -547,7 +541,7 @@ export function LogView() {
                 min={1}
                 value={targetReps || ''}
                 onChange={(e) => setTargetReps(parseInt(e.target.value, 10) || 0)}
-                className="h-6 w-9 text-xs text-center border-border/50 cursor-pointer hover:bg-accent/50 transition-colors"
+                className="h-6 w-10 text-xs text-center border-border/50 cursor-pointer hover:bg-accent/50 transition-colors"
               />
               {/* <span className="text-xs text-muted-foreground">reps</span> */}
             </div>
@@ -602,8 +596,10 @@ export function LogView() {
 
         {/* Weight & Reps Row */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col items-center justify-center gap-1">
-            <Label htmlFor="weight" className='text-sm text-muted-foreground'>Weight (kg)</Label>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="weight" className="text-sm text-muted-foreground">
+              Weight (kg)
+            </Label>
             <Input
               id="weight"
               type="number"
@@ -615,8 +611,10 @@ export function LogView() {
             />
             {errors.weight && <p className="text-sm text-destructive">{errors.weight.message}</p>}
           </div>
-          <div className="flex flex-col items-center justify-center gap-1">
-            <Label htmlFor="reps" className='text-sm text-muted-foreground'>{selectedExerciseData?.repType === 'time' ? 'Temps (s)' : 'Reps'}</Label>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="reps" className="text-sm text-muted-foreground">
+              {selectedExerciseData?.repType === 'time' ? 'Temps (s)' : 'Reps'}
+            </Label>
             <Input
               id="reps"
               type="number"

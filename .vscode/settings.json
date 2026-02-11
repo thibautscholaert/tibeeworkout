@@ -23,7 +23,7 @@
   "typescript.preferences.importModuleSpecifierEnding": "auto",
 
   // --- FORMAT & DX ---
-  "editor.formatOnSave": true,
+"editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit"
@@ -43,5 +43,6 @@
   "terminal.integrated.inheritEnv": false,
 
   // --- TYPESCRIPT RELIABILITY ---
+  "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true
 }

@@ -36,8 +36,6 @@ interface CurrentDayClientProps {
 }
 
 export default function CurrentDayClient({ programs }: CurrentDayClientProps) {
-
-  console.log('programs', programs);
   const [currentDay, setCurrentDay] = useState<string>('');
 
   useEffect(() => {
@@ -64,8 +62,8 @@ export default function CurrentDayClient({ programs }: CurrentDayClientProps) {
 
       <div className="space-y-6">
         {programs.map((program) => {
-          // Trier les jours pour mettre le jour actuel en premier
-          const sortedDays = [...program.days].sort((a, b) => {
+          // Trier les sessions pour mettre le jour actuel en premier
+          const sortedSessions = [...program.sessions].sort((a, b) => {
             const normalizedA = normalizeDayName(a.day);
             const normalizedB = normalizeDayName(b.day);
 
@@ -80,20 +78,21 @@ export default function CurrentDayClient({ programs }: CurrentDayClientProps) {
                 <div className="flex flex-col space-y-1.5 p-6">
                   <h3 className="text-2xl font-semibold leading-none tracking-tight">{program.title}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {program.days.length} jour{program.days.length > 1 ? 's' : ''} d'entraînement
+                    {program.sessions.length} session{program.sessions.length > 1 ? 's' : ''} d'entraînement
                   </p>
                 </div>
                 <div className="p-6 pt-0">
                   <div className="space-y-6">
-                    {sortedDays.map((day: any, dayIndex: number) => {
-                      const normalizedDay = normalizeDayName(day.day);
+                    {sortedSessions.map((session: any, sessionIndex: number) => {
+                      const normalizedDay = normalizeDayName(session.day);
                       const isToday = normalizedDay === currentDay;
 
                       return (
                         <div
-                          key={dayIndex}
-                          className={`rounded-lg p-2 pr-0 border-l-4 transition-all ${isToday ? 'border-l-primary bg-primary/5 shadow-md' : 'border-l-muted bg-muted/20'
-                            }`}
+                          key={sessionIndex}
+                          className={`rounded-lg p-2 pr-0 border-l-4 transition-all ${
+                            isToday ? 'border-l-primary bg-primary/5 shadow-md' : 'border-l-muted bg-muted/20'
+                          }`}
                         >
                           <div className="flex items-center justify-between mb-3">
                             <h3 className={`font-semibold text-lg flex items-center gap-2 ${isToday ? 'text-primary' : ''}`}>
@@ -116,13 +115,13 @@ export default function CurrentDayClient({ programs }: CurrentDayClientProps) {
                                   />
                                 </svg>
                               )}
-                              {day.day}
+                              {session.session} - {session.day}
                               {isToday && <div className="ml-2 text-xs px-2 py-1 rounded-full bg-primary text-primary-foreground">Aujourd'hui</div>}
                             </h3>
                           </div>
 
                           <div className="space-y-4">
-                            {day.blocs.map((bloc: any, blocIndex: number) => (
+                            {session.blocs.map((bloc: any, blocIndex: number) => (
                               <div key={blocIndex} className={`rounded-lg p-4 ${isToday ? 'bg-background border' : 'bg-muted/30'}`}>
                                 <h4 className="font-medium text-md mb-3 flex items-center gap-2">
                                   <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -140,8 +139,9 @@ export default function CurrentDayClient({ programs }: CurrentDayClientProps) {
                                   {bloc.exercises.map((exercise: any, exerciseIndex: number) => (
                                     <div
                                       key={exerciseIndex}
-                                      className={`rounded-lg p-3 border transition-all ${isToday ? 'bg-primary/5 border-primary/20 hover:bg-primary/10' : 'bg-background hover:bg-muted/50'
-                                        }`}
+                                      className={`rounded-lg p-3 border transition-all ${
+                                        isToday ? 'bg-primary/5 border-primary/20 hover:bg-primary/10' : 'bg-background hover:bg-muted/50'
+                                      }`}
                                     >
                                       <div className="flex items-start justify-between">
                                         <div className="flex-1">
@@ -200,8 +200,9 @@ export default function CurrentDayClient({ programs }: CurrentDayClientProps) {
 
                                           {exercise.notes && (
                                             <div
-                                              className={`mt-2 p-2 rounded text-xs ${isToday ? 'bg-primary/10 border border-primary/20' : 'bg-muted/50'
-                                                }`}
+                                              className={`mt-2 p-2 rounded text-xs ${
+                                                isToday ? 'bg-primary/10 border border-primary/20' : 'bg-muted/50'
+                                              }`}
                                             >
                                               <span className="flex items-center gap-1">
                                                 <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
