@@ -6,7 +6,10 @@ export interface Exercise {
   bodyweight: boolean;
   repType: 'reps' | 'time';
   warmupProtocol?: { exo?: string; weight: string; reps: number; weightUnit: 'kg' | '%' }[];
-  description?: string;
+  description?: {
+    title: string;
+    content: string;
+  };
 }
 
 export const EXERCISE_TAGS = [
@@ -102,6 +105,15 @@ export const EXERCISES: Exercise[] = [
     isPowerlifting: false,
     bodyweight: true,
     repType: 'reps',
+    description: {
+      title: 'Mindset focus : change brain instructions',
+      content: `
+      <ul class="list-disc pl-4 space-y-1">
+        <li>Not pull you up : Push your chest up the ceiling</li>
+        <li>Driving your elbows down and back</li>
+        <li>Active scapula depress / shoulders down</li>
+      </ul>  `,
+    },
   },
   {
     name: 'Chin up',
@@ -573,15 +585,14 @@ export const EXERCISES: Exercise[] = [
     isPowerlifting: false,
     bodyweight: false,
     repType: 'reps',
-    description: `<div class="space-y-2">
-      <p class="font-medium text-primary">Focus : Stabilité scapulaire & Force de poussée verticale.</p>
-      <ul class="list-disc pl-4 text-sm space-y-1">
+    description: {
+      title: 'Focus : Stabilité scapulaire & Force de poussée verticale.',
+      content: ` <ul class="list-disc pl-4 space-y-1">
         <li><strong>Placement :</strong> Haltères aux épaules, coudes orientés à 45° vers l'avant (pas sur les côtés).</li>
         <li><strong>Exécution :</strong> Presse verticalement en gardant les abdos contractés pour ne pas cambrer.</li>
         <li><strong>Skill Transfer :</strong> Travaille la phase de verrouillage utile pour tes <strong>HSPU</strong>.</li>
-      </ul>
-    </div>
-  `,
+      </ul>`,
+    },
   },
   {
     name: 'Overhead press dumbell - standing',
@@ -590,15 +601,14 @@ export const EXERCISES: Exercise[] = [
     isPowerlifting: false,
     bodyweight: false,
     repType: 'reps',
-    description: `<div class="space-y-2">
-      <p class="font-medium text-primary">Focus : Stabilité scapulaire & Force de poussée verticale.</p>
-      <ul class="list-disc pl-4 text-sm space-y-1">
+    description: {
+      title: 'Focus : Stabilité scapulaire & Force de poussée verticale.',
+      content: ` <ul class="list-disc pl-4 space-y-1">
         <li><strong>Placement :</strong> Haltères aux épaules, coudes orientés à 45° vers l'avant (pas sur les côtés).</li>
         <li><strong>Exécution :</strong> Presse verticalement en gardant les abdos contractés pour ne pas cambrer.</li>
         <li><strong>Skill Transfer :</strong> Travaille la phase de verrouillage utile pour tes <strong>HSPU</strong>.</li>
-      </ul>
-    </div>
-  `,
+      </ul>`,
+    },
   },
   {
     name: 'Dumbbell shoulder press',
@@ -667,16 +677,17 @@ export const EXERCISES: Exercise[] = [
     isPowerlifting: false,
     bodyweight: false,
     repType: 'reps',
-    description: `
-    <div class="space-y-2">
-      <p class="font-medium text-primary">Focus : Épaisseur du dos & Transfert Muscle-up.</p>
-      <ul class="list-disc pl-4 text-sm space-y-1">
+    description: {
+      title: 'Focus : Épaisseur du dos & Transfert Muscle-up.',
+      content: `
+      <ul class="list-disc pl-4 space-y-1">
         <li><strong>Placement :</strong> Buste à 45°, dos plat, genoux déverrouillés.</li>
         <li><strong>Exécution :</strong> Tire la barre vers le nombril en resserrant volontairement les omoplates.</li>
         <li><strong>Astuce :</strong> Imagine que tu veux couder quelqu'un derrière toi pour engager les dorsaux.</li>
       </ul>
-    </div>
+  
   `,
+    },
   },
   {
     name: 'T-bar row',

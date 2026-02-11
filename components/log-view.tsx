@@ -26,6 +26,7 @@ import {
   DumbbellIcon,
   Flame,
   Lightbulb,
+  LightbulbIcon,
   Plus,
   Search,
   SkipForward,
@@ -565,7 +566,7 @@ export function LogView() {
         <div className="space-y-2">
           {/* Exercise Favorites - Subtle suggestions */}
           {mostPracticedExercises.length > 0 && (
-            <div className="flex gap-0.5 flex-wrap items-center justify-between overflow-y-auto h-16 pr-2">
+            <div className="flex gap-1 flex-wrap items-center justify-between overflow-y-auto h-16 pr-2">
               {mostPracticedExercises.map((exerciseName) => (
                 <button
                   key={exerciseName}
@@ -782,7 +783,11 @@ export function LogView() {
       </form>
 
       {selectedExerciseData?.description && (
-        <div className="mt-4 p-3 bg-muted rounded-lg border border-border" dangerouslySetInnerHTML={{ __html: selectedExerciseData.description }} />
+        <div className="relative mt-4 p-3 bg-muted rounded-lg border border-border space-y-2">
+          <LightbulbIcon className="absolute top-2 right-2 h-6 w-6 text-primary animate-pulse" />
+          <p className="font-medium text-primary text-base pr-8">{selectedExerciseData.description.title}</p>
+          <div className="text-sm" dangerouslySetInnerHTML={{ __html: selectedExerciseData.description.content }} />
+        </div>
       )}
 
       <Separator className="my-4" />
