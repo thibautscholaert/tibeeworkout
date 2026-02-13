@@ -341,13 +341,13 @@ export function HistoryView() {
                               </div>
                               <h4 className="font-medium text-sm">{exerciseName}</h4>
                               {isPowerlifting && (
-                                <Badge variant="outline" className="text-xs px-1 py-0 h-4 bg-blue-500/10 text-blue-600 border-blue-300/50">
-                                  <Dumbbell className="h-2.5 w-2.5" />
+                                <Badge variant="outline" className="text-xs p-1 bg-blue-500/10 text-blue-600 border-blue-300/50">
+                                  <Dumbbell className="h-3.5 w-3.5" />
                                 </Badge>
                               )}
                               {isBodyweight && !isPowerlifting && (
-                                <Badge variant="outline" className="text-xs px-1 py-0 h-4 bg-green-500/10 text-green-600 border-green-300/50">
-                                  <PersonStandingIcon className="h-2.5 w-2.5" />
+                                <Badge variant="outline" className="text-xs p-1 bg-green-500/10 text-green-600 border-green-300/50">
+                                  <PersonStandingIcon className="h-3.5 w-3.5" />
                                 </Badge>
                               )}
                             </div>
