@@ -27,6 +27,7 @@ import {
   Flame,
   Lightbulb,
   LightbulbIcon,
+  PersonStandingIcon,
   Plus,
   Search,
   SkipForward,
@@ -34,7 +35,6 @@ import {
   Target,
   TargetIcon,
   Trophy,
-  WeightIcon,
   Zap,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -146,6 +146,7 @@ export function LogView() {
 
   // Obtenir la suggestion actuelle en fonction de l'index
   const suggestions = useMemo(() => {
+    console.log('allSuggestions', allSuggestions);
     if (allSuggestions.length === 0) {
       return {
         nextExercise: null,
@@ -282,12 +283,23 @@ export function LogView() {
   // Calculate best set for each exercise (today vs all time)
   const getBestSetComparison = useMemo(() => {
     return (exerciseName: string, todaySets: any[]) => {
+      const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === exerciseName.toLowerCase());
+      const isBodyweight = exerciseData?.bodyweight || false;
+
+      const compareSetScore = (set: any) => {
+        // For bodyweight exercises without added weight, compare by reps only
+        if (isBodyweight && set.weight === 0) {
+          return set.reps;
+        }
+        // For weighted exercises (or bodyweight exercises with added weight), prefer estimated1RM, fallback to weight * reps
+        return set.estimated1RM || set.weight * set.reps;
+      };
+
       // Best set from today's session
       const todayBest = todaySets.reduce<any>((best, set) => {
         if (!best) return set;
-        // Compare by estimated 1RM if available, otherwise by weight * reps
-        const bestScore = best.estimated1RM || best.weight * best.reps;
-        const setScore = set.estimated1RM || set.weight * set.reps;
+        const bestScore = compareSetScore(best);
+        const setScore = compareSetScore(set);
         return setScore > bestScore ? set : best;
       }, null);
 
@@ -295,8 +307,8 @@ export function LogView() {
       const allTimeSets = history.filter((set) => set.exerciseName === exerciseName);
       const allTimeBest = allTimeSets.reduce<any>((best, set) => {
         if (!best) return set;
-        const bestScore = best.estimated1RM || best.weight * best.reps;
-        const setScore = set.estimated1RM || set.weight * set.reps;
+        const bestScore = compareSetScore(best);
+        const setScore = compareSetScore(set);
         return setScore > bestScore ? set : best;
       }, null);
 
@@ -359,10 +371,10 @@ export function LogView() {
   };
 
   return (
-    <div className="flex flex-col gap-3 pb-6">
+    <div className="flex flex-col gap-1 pb-6">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background pb-2 -mx-4 px-4">
-        <div className="flex items-center justify-between">
+      <div className="sticky top-0 z-10 bg-background">
+        <div className="flex items-center justify-between my-2">
           <div className="space-y-1">
             <h1 className="text-2xl font-bold tracking-tight">Log Workout</h1>
             <p className="text-sm text-muted-foreground">
@@ -377,7 +389,7 @@ export function LogView() {
           <ChronoIndicator />
         </div>
 
-        <Separator className="" />
+        <Separator className="my-3" />
       </div>
 
       {/* Program and Day Selection */}
@@ -512,7 +524,7 @@ export function LogView() {
                       </>
                     ) : (
                       <>
-                        <WeightIcon className="inline h-4 w-4 mr-1" /> Poids du corps
+                        <PersonStandingIcon className="inline h-4 w-4 mr-1" /> Poids du corps
                       </>
                     )}
                   </p>
@@ -563,7 +575,7 @@ export function LogView() {
         )}
 
         {/* Exercise Select */}
-        <div className="space-y-2">
+        <div className="space-y-1">
           {/* Exercise Favorites - Subtle suggestions */}
           {mostPracticedExercises.length > 0 && (
             <div className="flex gap-1 flex-wrap items-center justify-between overflow-y-auto h-16 pr-2">
@@ -644,7 +656,7 @@ export function LogView() {
         {/* Warmup Protocol + Target + Best perf */}
         <div className="bg-muted/30 rounded-lg p-2 border border-border/50 flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-1 flex-wrap">
+            <div className="flex items-center gap-0.5 flex-wrap">
               <button
                 type="button"
                 onClick={() => {
@@ -660,7 +672,7 @@ export function LogView() {
                 step={0.5}
                 value={targetWeight}
                 onChange={(e) => setTargetWeight(parseFloat(e.target.value) || 0)}
-                className="h-6 w-10 text-xs text-center border-border/50 cursor-pointer hover:bg-accent/50 transition-colors"
+                className="h-6 w-12 text-xs text-center border-border/50 cursor-pointer hover:bg-accent/50 transition-colors"
               />
               <span className="text-xs font-bold text-muted-foreground">kg</span>
               <span className="text-xs text-muted-foreground">×</span>
@@ -670,7 +682,7 @@ export function LogView() {
                 min={1}
                 value={targetReps || ''}
                 onChange={(e) => setTargetReps(parseInt(e.target.value, 10) || 0)}
-                className="h-6 w-8 text-xs text-center border-border/50 cursor-pointer hover:bg-accent/50 transition-colors"
+                className="h-6 w-10 text-xs text-center border-border/50 cursor-pointer hover:bg-accent/50 transition-colors"
               />
               {/* <span className="text-xs text-muted-foreground">reps</span> */}
             </div>
@@ -790,7 +802,7 @@ export function LogView() {
         </div>
       )}
 
-      <Separator className="my-4" />
+      <Separator className="my-3" />
 
       {/* Today's Session */}
       {todaySession.length > 0 && (
@@ -854,7 +866,7 @@ export function LogView() {
                       <div
                         key={set.id}
                         className={cn(
-                          'group relative overflow-hidden rounded-lg border p-3 transition-all hover:shadow-sm',
+                          'group relative overflow-hidden rounded-lg border py-1 px-2 transition-all hover:shadow-sm',
                           isWarmup
                             ? 'bg-gradient-to-r from-orange-50/10 to-card/80 hover:border-orange-300/50'
                             : 'border-border/50 bg-gradient-to-r from-card to-card/50 hover:border-primary/30'
@@ -936,6 +948,7 @@ export function LogView() {
                           {isNewRecord && todayScore > 0 && ' 🔥'}
                         </span>
                       </div>
+
                       {allTimeBest && (
                         <div className={`flex items-center gap-1 ${!isNewRecord ? 'text-amber-600 font-medium' : ''}`}>
                           <Star className={`h-3 w-3 ${!isNewRecord ? 'text-amber-600' : ''}`} />

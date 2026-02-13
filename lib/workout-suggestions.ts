@@ -1,3 +1,4 @@
+import { EXERCISES } from './exercises';
 import { Program, ProgramExercise, WorkoutSet } from './types';
 
 // Fonction pour obtenir le jour de la semaine en français
@@ -8,18 +9,47 @@ function getCurrentDayInFrench(): string {
 }
 
 // Fonction pour déterminer si une série est un échauffement
-// Une série est considérée comme échauffement si sa charge est < 70% de la meilleure charge
-export function isWarmupSet(set: WorkoutSet, bestPerformance: WorkoutSet | null): boolean {
-  if (!bestPerformance) {
+// Une série est considérée comme échauffement si sa charge est < 80% de la meilleure charge
+// Si une session est fournie, la meilleure charge est calculée depuis cette session
+export function isWarmupSet(set: WorkoutSet, bestPerformance: WorkoutSet | null, session?: WorkoutSet[]): boolean {
+  const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === set.exerciseName.toLowerCase());
+  const isBodyweight = exerciseData?.bodyweight || false;
+  if (isBodyweight) {
+    return false;
+  }
+  // Si une session est fournie, calculer la meilleure performance de cette session
+  let bestRef = bestPerformance;
+  if (session && session.length > 0) {
+    const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === set.exerciseName.toLowerCase());
+    const isBodyweight = exerciseData?.bodyweight || false;
+
+    bestRef = session.reduce<WorkoutSet | null>((best, s) => {
+      if (!best) return s;
+
+      // Pour les exercices au poids de corps sans lest (weight = 0), comparer par reps
+      if (isBodyweight && s.weight === 0 && best.weight === 0) {
+        return s.reps > best.reps ? s : best;
+      }
+
+      // Pour les exercices avec charge (ou poids de corps lesté)
+      const bestScore = best.estimated1RM || best.weight * best.reps;
+      const setScore = s.estimated1RM || s.weight * s.reps;
+      return setScore > bestScore ? s : best;
+    }, null);
+  }
+
+  if (!bestRef) {
     return false; // Pas de référence, on compte la série
   }
 
-  const bestWeight = bestPerformance.estimated1RM || bestPerformance.weight;
-  const setWeight = set.estimated1RM || set.weight;
+  const warmupThreshold = 0.90;
 
-  // Une série est un échauffement si sa charge est < 70% de la meilleure charge
-  const warmupThreshold = 0.7;
-  return setWeight < (bestWeight * warmupThreshold);
+  // Pour les exercices avec charge (ou poids de corps lesté)
+  const bestPerf = bestRef.estimated1RM || bestRef.weight * bestRef.reps;
+  const setPerf = set.estimated1RM || set.weight * set.reps;
+
+  // Une série est un échauffement si sa charge est < 80% de la meilleure charge
+  return setPerf < bestPerf * warmupThreshold;
 }
 
 // Fonction pour normaliser les noms de jours
@@ -123,9 +153,7 @@ export function getWorkoutSuggestions(
   const todayStats = getTodayExerciseStats(history);
 
   // Filtrer les programmes selon la sélection
-  const programsToCheck = selectedProgramId
-    ? programs.filter(program => program.id === selectedProgramId)
-    : programs;
+  const programsToCheck = selectedProgramId ? programs.filter((program) => program.id === selectedProgramId) : programs;
 
   const suggestions: ExerciseSuggestion[] = [];
 
@@ -143,13 +171,20 @@ export function getWorkoutSuggestions(
       // Collecter tous les exercices incomplets dans l'ordre
       for (const bloc of selectedProgram.blocs) {
         for (const exercise of bloc.exercises) {
-          const completedSets = todayStats.get(exercise.exerciseName) || [];
+          const allTimeSets = history.filter((set) => set.exerciseName === exercise.exerciseName);
+          const allTimeBest = allTimeSets.reduce<any>((best, set) => {
+            if (!best) return set;
+            const bestScore = best.estimated1RM || best.weight * best.reps;
+            const setScore = set.estimated1RM || set.weight * set.reps;
+            return setScore > bestScore ? set : best;
+          }, null);
+
+          const todaySets = todayStats.get(exercise.exerciseName) || [];
+          const completedSets = todaySets.filter((set) => !isWarmupSet(set, allTimeBest));
 
           if (!isExerciseCompleted(exercise, completedSets)) {
             const completedExerciseNames = Array.from(todayStats.keys()).filter((exerciseName) => {
-              const exerciseInProgram = selectedProgram.blocs
-                .flatMap(b => b.exercises)
-                .find((ex) => ex.exerciseName === exerciseName);
+              const exerciseInProgram = selectedProgram.blocs.flatMap((b) => b.exercises).find((ex) => ex.exerciseName === exerciseName);
               return exerciseInProgram && isExerciseCompleted(exerciseInProgram, todayStats.get(exerciseName) || []);
             });
 
@@ -157,24 +192,15 @@ export function getWorkoutSuggestions(
               .filter((ex) => !isExerciseCompleted(ex, todayStats.get(ex.exerciseName) || []))
               .map((ex) => ex.exerciseName);
 
-            const allTimeSets = history.filter((set) => set.exerciseName === exercise.exerciseName);
-            const allTimeBest = allTimeSets.reduce<any>((best, set) => {
-              if (!best) return set;
-              const bestScore = best.estimated1RM || best.weight * best.reps;
-              const setScore = set.estimated1RM || set.weight * set.reps;
-              return setScore > bestScore ? set : best;
-            }, null);
-
             const suggestedCharge = allTimeBest ? parseFloat(allTimeBest.estimated1RM ?? allTimeBest.weight) : 0;
 
             // Filtrer les séries d'échauffement pour le compteur
-            const workingSets = completedSets.filter(set => !isWarmupSet(set, allTimeBest));
 
             suggestions.push({
               nextExercise: exercise.exerciseName,
               programName: program.title,
               blocName: bloc.name,
-              completedSeries: workingSets.length, // Utilise workingSets au lieu de completedSets
+              completedSeries: completedSets.length, // Utilise workingSets au lieu de completedSets
               totalSeries: exercise.sets,
               suggestedReps: parseInt(exercise.reps),
               suggestedCharge,
@@ -211,17 +237,19 @@ export function getWorkoutSuggestions(
   }
 
   // Aucun programme trouvé pour aujourd'hui
-  return [{
-    nextExercise: null,
-    programName: null,
-    blocName: null,
-    completedSeries: 0,
-    totalSeries: 0,
-    suggestedReps: null,
-    suggestedCharge: null,
-    exerciseDetails: null,
-    completedExercises: [],
-    remainingExercises: [],
-    isCompletingCurrentExercise: false,
-  }];
+  return [
+    {
+      nextExercise: null,
+      programName: null,
+      blocName: null,
+      completedSeries: 0,
+      totalSeries: 0,
+      suggestedReps: null,
+      suggestedCharge: null,
+      exerciseDetails: null,
+      completedExercises: [],
+      remainingExercises: [],
+      isCompletingCurrentExercise: false,
+    },
+  ];
 }

@@ -674,7 +674,7 @@ export const EXERCISES: Exercise[] = [
     name: 'Barbell row',
     tags: ['Back', 'Lats', 'Biceps', 'Compound', 'Pulling'],
     favorite: true,
-    isPowerlifting: false,
+    isPowerlifting: true,
     bodyweight: false,
     repType: 'reps',
     description: {
