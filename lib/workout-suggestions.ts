@@ -14,9 +14,7 @@ function getCurrentDayInFrench(): string {
 export function isWarmupSet(set: WorkoutSet, bestPerformance: WorkoutSet | null, session?: WorkoutSet[]): boolean {
   const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === set.exerciseName.toLowerCase());
   const isBodyweight = exerciseData?.bodyweight || false;
-  if (isBodyweight) {
-    return false;
-  }
+
   // Si une session est fournie, calculer la meilleure performance de cette session
   let bestRef = bestPerformance;
   if (session && session.length > 0) {
@@ -40,6 +38,36 @@ export function isWarmupSet(set: WorkoutSet, bestPerformance: WorkoutSet | null,
 
   if (!bestRef) {
     return false; // Pas de référence, on compte la série
+  }
+
+  if (session && session.length > 0) {
+    const bestIndexById = bestRef.id ? session.findIndex((s) => s.id === bestRef!.id) : -1;
+    const setIndexById = set.id ? session.findIndex((s) => s.id === set.id) : -1;
+
+    if (bestIndexById !== -1 && setIndexById !== -1 && setIndexById > bestIndexById) {
+      return false;
+    }
+
+    if (bestIndexById === -1 || setIndexById === -1) {
+      const bestTs = new Date(bestRef.timestamp).getTime();
+      const setTs = new Date(set.timestamp).getTime();
+      if (Number.isFinite(bestTs) && Number.isFinite(setTs) && setTs > bestTs) {
+        return false;
+      }
+    }
+
+    // Bodyweight-specific rule: if any set in session has weight > 0, then all 0kg sets are warmup
+    if (isBodyweight && set.weight === 0) {
+      const hasWeightedSet = session.some((s) => s.weight > 0);
+      if (hasWeightedSet) {
+        return true;
+      }
+    }
+  }
+
+  // Pour les exercices bodyweight sans session ou sans règle spécifique, on ne considère pas d'échauffement
+  if (isBodyweight) {
+    return false;
   }
 
   const warmupThreshold = 0.90;

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
+import { copySessionToClipboard } from '@/lib/clipboard-utils';
 import { EXERCISES } from '@/lib/exercises';
 import { cn, formatDate, formatReps, formatWeight, groupSetsByDate, groupSetsByExercise } from '@/lib/utils';
 import { useWorkout } from '@/lib/workout-context';
@@ -15,6 +16,7 @@ import {
   BicepsFlexedIcon,
   Calendar,
   Check,
+  Copy,
   Dumbbell,
   Filter,
   Flame,
@@ -22,7 +24,7 @@ import {
   Target,
   TrendingUp,
   Trophy,
-  X,
+  X
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -269,15 +271,28 @@ export function HistoryView() {
                     <span className="text-xl font-bold text-primary">{dateIndex + 1}</span>
                   </div> */}
                     <div className="flex-1 text-left min-w-0">
-                      <h3 className={`font-semibold text-lg flex items-center flex-wrap gap-2 ${isToday ? 'text-primary' : ''}`}>
-                        {isToday ? <Flame className="h-5 w-5 text-orange-500" /> : <Calendar className="h-5 w-5 text-muted-foreground" />}
-                        {formatDate(date)}
-                        {isToday && (
-                          <Badge variant="default" className="text-sm">
-                            Aujourd'hui
-                          </Badge>
-                        )}
-                      </h3>
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <h3 className={`font-semibold text-lg flex items-center flex-wrap gap-2 ${isToday ? 'text-primary' : ''}`}>
+                          {isToday ? <Flame className="h-5 w-5 text-orange-500" /> : <Calendar className="h-5 w-5 text-muted-foreground" />}
+                          {formatDate(date)}
+                          {isToday && (
+                            <Badge variant="default" className="text-sm">
+                              Aujourd'hui
+                            </Badge>
+                          )}
+                        </h3>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            copySessionToClipboard(sets);
+                          }}
+                          className="h-8 w-8 p-0 hover:bg-primary/10"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
                         <p className="text-sm text-muted-foreground whitespace-nowrap">
                           {exerciseEntries.length} exercice{exerciseEntries.length > 1 ? 's' : ''} • {sets.length} série{sets.length > 1 ? 's' : ''}

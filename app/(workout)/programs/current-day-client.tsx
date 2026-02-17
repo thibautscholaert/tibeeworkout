@@ -1,5 +1,9 @@
 'use client';
 
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
+import { EXERCISES } from '@/lib/exercises';
+import { Calendar, Dumbbell, Flame, PersonStandingIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 // Fonction pour obtenir le jour de la semaine en français
@@ -37,10 +41,17 @@ interface CurrentDayClientProps {
 
 export default function CurrentDayClient({ programs }: CurrentDayClientProps) {
   const [currentDay, setCurrentDay] = useState<string>('');
+  const [selectedProgram, setSelectedProgram] = useState<any>(programs[0] || null);
 
   useEffect(() => {
     setCurrentDay(getCurrentDayInFrench());
   }, []);
+
+  useEffect(() => {
+    if (programs.length > 0 && !selectedProgram) {
+      setSelectedProgram(programs[0]);
+    }
+  }, [programs, selectedProgram]);
 
   if (!currentDay) {
     return (
@@ -54,187 +65,237 @@ export default function CurrentDayClient({ programs }: CurrentDayClientProps) {
   }
 
   return (
-    <div className="flex flex-col gap-4 pb-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2">Programmes d'entraînement</h1>
-        <p className="text-muted-foreground">Aujourd'hui: {currentDay}</p>
+    <div className="flex flex-col gap-6 pb-6">
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <Calendar className="h-5 w-5 text-primary" />
+        <h1 className="text-2xl font-bold tracking-tight">Programmes d'entraînement</h1>
       </div>
 
-      <div className="space-y-6">
-        {programs.map((program) => {
-          // Trier les sessions pour mettre le jour actuel en premier
-          const sortedSessions = [...program.sessions].sort((a, b) => {
-            const normalizedA = normalizeDayName(a.day);
-            const normalizedB = normalizeDayName(b.day);
+      {/* Sélecteur de programmes - scroll horizontal */}
+      <div className="relative">
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 px-1">
+          {programs.map((program) => {
+            const todaySession = program.sessions.find((s: any) => normalizeDayName(s.day) === currentDay);
+            const totalExercises = program.sessions.reduce((acc: number, session: any) =>
+              acc + session.blocs.reduce((blocAcc: number, bloc: any) => blocAcc + bloc.exercises.length, 0), 0
+            );
+            const isSelected = selectedProgram?.id === program.id;
 
-            if (normalizedA === currentDay) return -1;
-            if (normalizedB === currentDay) return 1;
-            return 0;
-          });
-
-          return (
-            <div key={program.id} className="w-full">
-              <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
-                <div className="flex flex-col space-y-1.5 p-6">
-                  <h3 className="text-2xl font-semibold leading-none tracking-tight">{program.title}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {program.sessions.length} session{program.sessions.length > 1 ? 's' : ''} d'entraînement
-                  </p>
+            return (
+              <button
+                key={program.id}
+                onClick={() => setSelectedProgram(program)}
+                className={`flex-shrink-0 p-2 m-0.5 rounded-xl border transition-all ${isSelected
+                  ? 'border-primary bg-primary/5 shadow-lg scale-105'
+                  : 'border-muted bg-card hover:border-primary/50 hover:shadow-md hover:scale-102'
+                  }`}
+              >
+                <div className="text-left">
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className={`font-semibold text-sm ${isSelected ? 'text-primary' : ''}`}>
+                      {program.title}
+                    </h3>
+                    {todaySession && (
+                      <Badge variant="default" className="text-xs px-1.5 py-0.5">
+                        <Flame className="h-3 w-3 mr-1" />
+                        Aujourd'hui
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="space-y-1 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <span>{program.sessions.length} session{program.sessions.length > 1 ? 's' : ''}</span>
+                      <span>•</span>
+                      <span>{totalExercises} exercice{totalExercises > 1 ? 's' : ''}</span>
+                    </div>
+                    {todaySession && (
+                      <div className="flex items-center gap-1 text-primary">
+                        <Calendar className="h-3 w-3" />
+                        <span>{todaySession.session} aujourd'hui</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="p-6 pt-0">
-                  <div className="space-y-6">
-                    {sortedSessions.map((session: any, sessionIndex: number) => {
-                      const normalizedDay = normalizeDayName(session.day);
-                      const isToday = normalizedDay === currentDay;
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-                      return (
-                        <div
-                          key={sessionIndex}
-                          className={`rounded-lg p-2 pr-0 border-l-4 transition-all ${
-                            isToday ? 'border-l-primary bg-primary/5 shadow-md' : 'border-l-muted bg-muted/20'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-3">
-                            <h3 className={`font-semibold text-lg flex items-center gap-2 ${isToday ? 'text-primary' : ''}`}>
-                              {isToday ? (
-                                <svg className="h-4 w-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"
-                                  />
-                                </svg>
-                              ) : (
-                                <svg className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                  />
-                                </svg>
-                              )}
-                              {session.session} - {session.day}
-                              {isToday && <div className="ml-2 text-xs px-2 py-1 rounded-full bg-primary text-primary-foreground">Aujourd'hui</div>}
-                            </h3>
+      {/* Sessions du programme sélectionné */}
+      {selectedProgram && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold">{selectedProgram.title}</h2>
+            <Badge variant="outline" className="text-xs">
+              {selectedProgram.sessions.length} session{selectedProgram.sessions.length > 1 ? 's' : ''}
+            </Badge>
+          </div>
+
+          <Accordion type="multiple" className="space-y-3">
+            {selectedProgram.sessions
+              .sort((a: any, b: any) => {
+                const normalizedA = normalizeDayName(a.day);
+                const normalizedB = normalizeDayName(b.day);
+                if (normalizedA === currentDay) return -1;
+                if (normalizedB === currentDay) return 1;
+                return 0;
+              })
+              .map((session: any, sessionIndex: number) => {
+                const normalizedDay = normalizeDayName(session.day);
+                const isToday = normalizedDay === currentDay;
+                const sessionExercises = session.blocs.flatMap((bloc: any) => bloc.exercises);
+                const sessionExerciseCount = sessionExercises.length;
+                const sessionSetsCount = sessionExercises.reduce((acc: number, ex: any) => acc + (ex.sets || 1), 0);
+
+                // Compter les types d'exercices pour cette session
+                const uniqueExerciseNames = Array.from(new Set(sessionExercises.map((ex: any) => ex.exerciseName))) as string[];
+                const exerciseTypes = uniqueExerciseNames.map((name: string) => {
+                  const exerciseData = EXERCISES.find((ex: any) => ex.name.toLowerCase() === name.toLowerCase());
+                  return {
+                    name,
+                    isBodyweight: exerciseData?.bodyweight || false,
+                  };
+                });
+                const bodyweightCount = exerciseTypes.filter(e => e.isBodyweight).length;
+                const otherCount = exerciseTypes.length - bodyweightCount;
+
+                return (
+                  <AccordionItem key={sessionIndex} value={sessionIndex.toString()} className="border-none">
+                    <AccordionTrigger
+                      className={`rounded-lg p-4 border-l-4 hover:no-underline ${isToday
+                        ? 'border-l-primary bg-primary/5 shadow-sm'
+                        : 'border-l-muted bg-muted/20'
+                        }`}
+                    >
+                      <div className="flex items-start gap-4 w-full pr-2">
+                        <div className="flex-1 text-left min-w-0">
+                          <h3 className={`font-semibold text-lg flex items-center gap-2 ${isToday ? 'text-primary' : ''}`}>
+                            {isToday ? <Flame className="h-5 w-5 text-orange-500" /> : <Calendar className="h-5 w-5 text-muted-foreground" />}
+                            {session.session} - {session.day}
+                            {isToday && (
+                              <Badge variant="default" className="text-sm">
+                                Aujourd'hui
+                              </Badge>
+                            )}
+                          </h3>
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
+                            <p className="text-sm text-muted-foreground whitespace-nowrap">
+                              {sessionExerciseCount} exercice{sessionExerciseCount > 1 ? 's' : ''} • {sessionSetsCount} série{sessionSetsCount > 1 ? 's' : ''}
+                            </p>
+                            {/* Exercise type badges */}
+                            {otherCount > 0 && (
+                              <Badge variant="outline" className="text-sm px-2 h-6 bg-blue-500/10 text-blue-600 border-blue-300/50">
+                                <Dumbbell className="h-4 w-4 mr-1" />
+                                {otherCount}
+                              </Badge>
+                            )}
+                            {bodyweightCount > 0 && (
+                              <Badge variant="outline" className="text-sm px-2 h-6 bg-green-500/10 text-green-600 border-green-300/50">
+                                <PersonStandingIcon className="h-4 w-4 mr-1" />
+                                {bodyweightCount}
+                              </Badge>
+                            )}
                           </div>
+                          {/* Exercise names preview */}
+                          <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                            {uniqueExerciseNames.slice(0, 5).map((name: string, idx: number) => (
+                              <span key={name} className="text-sm text-muted-foreground/70">
+                                {name}
+                                {idx < Math.min(4, uniqueExerciseNames.length - 1) && ' •'}
+                              </span>
+                            ))}
+                            {uniqueExerciseNames.length > 5 && (
+                              <span className="text-sm text-muted-foreground/70">• +{uniqueExerciseNames.length - 5} autres</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </AccordionTrigger>
 
-                          <div className="space-y-4">
-                            {session.blocs.map((bloc: any, blocIndex: number) => (
-                              <div key={blocIndex} className={`rounded-lg p-4 ${isToday ? 'bg-background border' : 'bg-muted/30'}`}>
-                                <h4 className="font-medium text-md mb-3 flex items-center gap-2">
-                                  <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                                    />
-                                  </svg>
-                                  {bloc.name}
-                                </h4>
+                    <AccordionContent>
+                      {/* Blocs de la session */}
+                      <div className="space-y-3 ml-2 mt-2">
+                        {session.blocs.map((bloc: any, blocIndex: number) => (
+                          <div key={blocIndex} className="rounded-lg bg-background/50 border p-3">
+                            <div className="flex items-center gap-2 mb-3">
+                              <div className="flex h-6 w-6 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">
+                                {blocIndex + 1}
+                              </div>
+                              <h5 className="font-medium text-sm">{bloc.name}</h5>
+                            </div>
 
-                                <div className="space-y-2">
-                                  {bloc.exercises.map((exercise: any, exerciseIndex: number) => (
-                                    <div
-                                      key={exerciseIndex}
-                                      className={`rounded-lg p-3 border transition-all ${
-                                        isToday ? 'bg-primary/5 border-primary/20 hover:bg-primary/10' : 'bg-background hover:bg-muted/50'
+                            {/* Exercices du bloc */}
+                            <div className="space-y-2">
+                              {bloc.exercises.map((exercise: any, exerciseIndex: number) => {
+                                const exerciseData = EXERCISES.find((ex: any) => ex.name.toLowerCase() === exercise.exerciseName.toLowerCase());
+                                const isBodyweight = exerciseData?.bodyweight || false;
+
+                                return (
+                                  <div
+                                    key={exerciseIndex}
+                                    className={`rounded-lg border p-3 transition-all ${isToday ? 'border-primary/20 bg-primary/5' : 'border-muted bg-background'
                                       }`}
-                                    >
-                                      <div className="flex items-start justify-between">
-                                        <div className="flex-1">
-                                          <h5 className="font-medium text-sm mb-2">{exercise.exerciseName}</h5>
-
-                                          <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mb-2">
-                                            <div className="flex items-center gap-1">
-                                              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path
-                                                  strokeLinecap="round"
-                                                  strokeLinejoin="round"
-                                                  strokeWidth={2}
-                                                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                                                />
-                                              </svg>
-                                              <span>{exercise.sets} séries</span>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path
-                                                  strokeLinecap="round"
-                                                  strokeLinejoin="round"
-                                                  strokeWidth={2}
-                                                  d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"
-                                                />
-                                              </svg>
-                                              <span>{exercise.reps} reps</span>
-                                            </div>
-                                            {exercise.charge && (
-                                              <div className="flex items-center gap-1">
-                                                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                  <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"
-                                                  />
-                                                </svg>
-                                                <span>{exercise.charge}</span>
-                                              </div>
-                                            )}
-                                            {exercise.recovery && (
-                                              <div className="flex items-center gap-1">
-                                                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                  <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                  />
-                                                </svg>
-                                                <span>{exercise.recovery}</span>
-                                              </div>
-                                            )}
+                                  >
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <div className={`flex h-5 w-5 items-center justify-center rounded text-xs font-bold ${isToday ? 'bg-primary/20 text-primary' : 'bg-muted/50 text-muted-foreground'}`}>
+                                            {exerciseIndex + 1}
                                           </div>
+                                          <h6 className="font-medium text-sm">{exercise.exerciseName}</h6>
+                                          {isBodyweight && (
+                                            <Badge variant="outline" className="text-xs p-1 bg-green-500/10 text-green-600 border-green-300/50">
+                                              <PersonStandingIcon className="h-3 w-3" />
+                                            </Badge>
+                                          )}
+                                        </div>
 
-                                          {exercise.notes && (
-                                            <div
-                                              className={`mt-2 p-2 rounded text-xs ${
-                                                isToday ? 'bg-primary/10 border border-primary/20' : 'bg-muted/50'
-                                              }`}
-                                            >
-                                              <span className="flex items-center gap-1">
-                                                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                  <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                                                  />
-                                                </svg>
-                                                <span className="font-medium ">Focus:</span> {exercise.notes}
-                                              </span>
+                                        <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mb-2">
+                                          <div className="flex items-center gap-1">
+                                            <span className="font-medium">{exercise.sets || 1}</span>
+                                            <span>séries</span>
+                                          </div>
+                                          <div className="flex items-center gap-1">
+                                            <span className="font-medium">{exercise.reps}</span>
+                                            <span>reps</span>
+                                          </div>
+                                          {exercise.charge && (
+                                            <div className="flex items-center gap-1">
+                                              <span className="font-medium">{exercise.charge}</span>
+                                              <span>charge</span>
+                                            </div>
+                                          )}
+                                          {exercise.recovery && (
+                                            <div className="flex items-center gap-1">
+                                              <span className="font-medium">{exercise.recovery}</span>
+                                              <span>repos</span>
                                             </div>
                                           )}
                                         </div>
+
+                                        {exercise.notes && (
+                                          <div className={`mt-2 p-2 rounded text-xs ${isToday ? 'bg-primary/10 border border-primary/20' : 'bg-muted/50'}`}>
+                                            <span className="font-medium">Focus:</span> {exercise.notes}
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+          </Accordion>
+        </div>
+      )}
     </div>
   );
 }

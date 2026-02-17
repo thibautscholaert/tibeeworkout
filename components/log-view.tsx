@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
+import { copySessionToClipboard } from '@/lib/clipboard-utils';
 import { EXERCISES } from '@/lib/exercises';
 import { setFormSchema, type SetFormData } from '@/lib/schemas';
 import { getWithTTL, setWithTTL } from '@/lib/storage';
@@ -22,6 +23,7 @@ import {
   BicepsFlexedIcon,
   Check,
   ChevronDown,
+  Copy,
   Dumbbell,
   DumbbellIcon,
   Flame,
@@ -35,7 +37,7 @@ import {
   Target,
   TargetIcon,
   Trophy,
-  Zap,
+  Zap
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -370,6 +372,11 @@ export function LogView() {
     }
   };
 
+  // Fonction pour copier la session dans le presse-papier
+  const handleCopySession = async () => {
+    await copySessionToClipboard(todaySession);
+  };
+
   return (
     <div className="flex flex-col gap-1 pb-6">
       {/* Header */}
@@ -483,7 +490,7 @@ export function LogView() {
         </div>
       </div>
 
-      <Separator className="" />
+      <Separator className="my-2" />
 
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -813,6 +820,15 @@ export function LogView() {
               <h2 className="text-lg font-semibold">Session d'aujourd'hui</h2>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopySession}
+                className="h-8 px-3 text-xs"
+              >
+                <Copy className="mr-1 h-3 w-3" />
+                Copier
+              </Button>
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary">
                 {todaySession.length}
               </div>
@@ -860,7 +876,7 @@ export function LogView() {
                 <div className="grid grid-cols-1 gap-2 ml-13">
                   {exerciseGroup.sets.map((set, index) => {
                     const { allTimeBest } = getBestSetComparison(exerciseGroup.exerciseName, exerciseGroup.sets);
-                    const isWarmup = isWarmupSet(set, allTimeBest);
+                    const isWarmup = isWarmupSet(set, allTimeBest, exerciseGroup.sets);
 
                     return (
                       <div
