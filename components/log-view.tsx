@@ -37,7 +37,7 @@ import {
   Target,
   TargetIcon,
   Trophy,
-  Zap
+  Zap,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -662,7 +662,7 @@ export function LogView() {
 
         {/* Warmup Protocol + Target + Best perf */}
         <div className="bg-muted/30 rounded-lg p-2 border border-border/50 flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center justify-between gap-0.5 flex-wrap">
             <div className="flex items-center gap-0.5 flex-wrap">
               <button
                 type="button"
@@ -679,7 +679,7 @@ export function LogView() {
                 step={0.5}
                 value={targetWeight}
                 onChange={(e) => setTargetWeight(parseFloat(e.target.value) || 0)}
-                className="h-6 w-12 text-xs text-center border-border/50 cursor-pointer hover:bg-accent/50 transition-colors"
+                className="h-6 w-10 text-xs text-center border-border/50 cursor-pointer hover:bg-accent/50 transition-colors"
               />
               <span className="text-xs font-bold text-muted-foreground">kg</span>
               <span className="text-xs text-muted-foreground">×</span>
@@ -689,11 +689,11 @@ export function LogView() {
                 min={1}
                 value={targetReps || ''}
                 onChange={(e) => setTargetReps(parseInt(e.target.value, 10) || 0)}
-                className="h-6 w-10 text-xs text-center border-border/50 cursor-pointer hover:bg-accent/50 transition-colors"
+                className="h-6 w-9 text-xs text-center border-border/50 cursor-pointer hover:bg-accent/50 transition-colors"
               />
               {/* <span className="text-xs text-muted-foreground">reps</span> */}
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-0.5 flex-wrap">
               {bestPerfRepsWeight != null && (
                 <button
                   type="button"
@@ -703,7 +703,7 @@ export function LogView() {
                     setValue('reps', bestPerfRepsWeight.reps);
                     setTargetReps(bestPerfRepsWeight.reps);
                   }}
-                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 hover:border-primary/40 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 hover:border-primary/40 transition-colors cursor-pointer"
                 >
                   <Trophy className="h-4 w-4" />
                   {formatReps(bestPerfRepsWeight.reps, selectedExercise)} × {formatWeight(bestPerfRepsWeight.weight, selectedExercise)}
@@ -718,7 +718,7 @@ export function LogView() {
                     setValue('reps', 1);
                     setTargetReps(1);
                   }}
-                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20 hover:bg-amber-500/20 hover:border-amber-500/40 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20 hover:bg-amber-500/20 hover:border-amber-500/40 transition-colors cursor-pointer"
                 >
                   <Star className="h-4 w-4" />
                   1RM: {best1RM}kg
@@ -820,12 +820,7 @@ export function LogView() {
               <h2 className="text-lg font-semibold">Session d'aujourd'hui</h2>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopySession}
-                className="h-8 px-3 text-xs"
-              >
+              <Button variant="outline" size="sm" onClick={handleCopySession} className="h-8 px-3 text-xs">
                 <Copy className="mr-1 h-3 w-3" />
                 Copier
               </Button>

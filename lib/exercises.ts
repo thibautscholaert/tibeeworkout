@@ -81,6 +81,20 @@ export const EXERCISES: Exercise[] = [
     ],
   },
   {
+    name: 'Trap bar Deadlift',
+    tags: ['Back', 'Legs', 'Quads', 'Glutes', 'Compound', 'Powerlifting'],
+    favorite: true,
+    isPowerlifting: true,
+    bodyweight: false,
+    repType: 'reps',
+    warmupProtocol: [
+      { weight: '20', reps: 10, weightUnit: 'kg' },
+      { weight: '40', reps: 8, weightUnit: '%' },
+      { weight: '70', reps: 4, weightUnit: '%' },
+      { weight: '90', reps: 1, weightUnit: '%' },
+    ],
+  },
+  {
     name: 'Bench Press',
     tags: ['Chest', 'Triceps', 'Shoulders', 'Compound', 'Powerlifting'],
     favorite: true,
