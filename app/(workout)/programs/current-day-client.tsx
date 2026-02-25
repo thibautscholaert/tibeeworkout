@@ -74,11 +74,12 @@ export default function CurrentDayClient({ programs }: CurrentDayClientProps) {
 
       {/* Sélecteur de programmes - scroll horizontal */}
       <div className="relative">
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 px-1">
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide p-2">
           {programs.map((program) => {
             const todaySession = program.sessions.find((s: any) => normalizeDayName(s.day) === currentDay);
-            const totalExercises = program.sessions.reduce((acc: number, session: any) =>
-              acc + session.blocs.reduce((blocAcc: number, bloc: any) => blocAcc + bloc.exercises.length, 0), 0
+            const totalExercises = program.sessions.reduce(
+              (acc: number, session: any) => acc + session.blocs.reduce((blocAcc: number, bloc: any) => blocAcc + bloc.exercises.length, 0),
+              0
             );
             const isSelected = selectedProgram?.id === program.id;
 
@@ -86,16 +87,15 @@ export default function CurrentDayClient({ programs }: CurrentDayClientProps) {
               <button
                 key={program.id}
                 onClick={() => setSelectedProgram(program)}
-                className={`flex-shrink-0 p-2 m-0.5 rounded-xl border transition-all ${isSelected
-                  ? 'border-primary bg-primary/5 shadow-lg scale-105'
-                  : 'border-muted bg-card hover:border-primary/50 hover:shadow-md hover:scale-102'
-                  }`}
+                className={`flex-shrink-0 p-2 m-0.5 rounded-xl border transition-all ${
+                  isSelected
+                    ? 'border-primary bg-primary/5 shadow-lg scale-105'
+                    : 'border-muted bg-card hover:border-primary/50 hover:shadow-md hover:scale-102'
+                }`}
               >
                 <div className="text-left">
                   <div className="flex items-start justify-between mb-2">
-                    <h3 className={`font-semibold text-sm ${isSelected ? 'text-primary' : ''}`}>
-                      {program.title}
-                    </h3>
+                    <h3 className={`font-semibold text-sm ${isSelected ? 'text-primary' : ''}`}>{program.title}</h3>
                     {todaySession && (
                       <Badge variant="default" className="text-xs px-1.5 py-0.5">
                         <Flame className="h-3 w-3 mr-1" />
@@ -105,9 +105,13 @@ export default function CurrentDayClient({ programs }: CurrentDayClientProps) {
                   </div>
                   <div className="space-y-1 text-xs text-muted-foreground">
                     <div className="flex items-center gap-2">
-                      <span>{program.sessions.length} session{program.sessions.length > 1 ? 's' : ''}</span>
+                      <span>
+                        {program.sessions.length} session{program.sessions.length > 1 ? 's' : ''}
+                      </span>
                       <span>•</span>
-                      <span>{totalExercises} exercice{totalExercises > 1 ? 's' : ''}</span>
+                      <span>
+                        {totalExercises} exercice{totalExercises > 1 ? 's' : ''}
+                      </span>
                     </div>
                     {todaySession && (
                       <div className="flex items-center gap-1 text-primary">
@@ -158,16 +162,15 @@ export default function CurrentDayClient({ programs }: CurrentDayClientProps) {
                     isBodyweight: exerciseData?.bodyweight || false,
                   };
                 });
-                const bodyweightCount = exerciseTypes.filter(e => e.isBodyweight).length;
+                const bodyweightCount = exerciseTypes.filter((e) => e.isBodyweight).length;
                 const otherCount = exerciseTypes.length - bodyweightCount;
 
                 return (
                   <AccordionItem key={sessionIndex} value={sessionIndex.toString()} className="border-none">
                     <AccordionTrigger
-                      className={`rounded-lg p-4 border-l-4 hover:no-underline ${isToday
-                        ? 'border-l-primary bg-primary/5 shadow-sm'
-                        : 'border-l-muted bg-muted/20'
-                        }`}
+                      className={`rounded-lg p-4 border-l-4 hover:no-underline ${
+                        isToday ? 'border-l-primary bg-primary/5 shadow-sm' : 'border-l-muted bg-muted/20'
+                      }`}
                     >
                       <div className="flex items-start gap-4 w-full pr-2">
                         <div className="flex-1 text-left min-w-0">
@@ -182,7 +185,8 @@ export default function CurrentDayClient({ programs }: CurrentDayClientProps) {
                           </h3>
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
                             <p className="text-sm text-muted-foreground whitespace-nowrap">
-                              {sessionExerciseCount} exercice{sessionExerciseCount > 1 ? 's' : ''} • {sessionSetsCount} série{sessionSetsCount > 1 ? 's' : ''}
+                              {sessionExerciseCount} exercice{sessionExerciseCount > 1 ? 's' : ''} • {sessionSetsCount} série
+                              {sessionSetsCount > 1 ? 's' : ''}
                             </p>
                             {/* Exercise type badges */}
                             {otherCount > 0 && (
@@ -235,13 +239,16 @@ export default function CurrentDayClient({ programs }: CurrentDayClientProps) {
                                 return (
                                   <div
                                     key={exerciseIndex}
-                                    className={`rounded-lg border p-3 transition-all ${isToday ? 'border-primary/20 bg-primary/5' : 'border-muted bg-background'
-                                      }`}
+                                    className={`rounded-lg border p-3 transition-all ${
+                                      isToday ? 'border-primary/20 bg-primary/5' : 'border-muted bg-background'
+                                    }`}
                                   >
                                     <div className="flex items-start justify-between">
                                       <div className="flex-1">
                                         <div className="flex items-center gap-2 mb-2">
-                                          <div className={`flex h-5 w-5 items-center justify-center rounded text-xs font-bold ${isToday ? 'bg-primary/20 text-primary' : 'bg-muted/50 text-muted-foreground'}`}>
+                                          <div
+                                            className={`flex h-5 w-5 items-center justify-center rounded text-xs font-bold ${isToday ? 'bg-primary/20 text-primary' : 'bg-muted/50 text-muted-foreground'}`}
+                                          >
                                             {exerciseIndex + 1}
                                           </div>
                                           <h6 className="font-medium text-sm">{exercise.exerciseName}</h6>
@@ -276,7 +283,9 @@ export default function CurrentDayClient({ programs }: CurrentDayClientProps) {
                                         </div>
 
                                         {exercise.notes && (
-                                          <div className={`mt-2 p-2 rounded text-xs ${isToday ? 'bg-primary/10 border border-primary/20' : 'bg-muted/50'}`}>
+                                          <div
+                                            className={`mt-2 p-2 rounded text-xs ${isToday ? 'bg-primary/10 border border-primary/20' : 'bg-muted/50'}`}
+                                          >
                                             <span className="font-medium">Focus:</span> {exercise.notes}
                                           </div>
                                         )}

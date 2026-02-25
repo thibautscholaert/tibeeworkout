@@ -538,7 +538,7 @@ export function LogView() {
 
                   {suggestions.exerciseDetails?.notes && (
                     <p className="text-xs text-primary/80 italic mt-1 flex gap-1 items-center">
-                      <Lightbulb className="inline h-4 w-4 mr-1" /> {suggestions.exerciseDetails.notes}
+                      <Lightbulb className="inline h-4 w-4 mr-1 shrink-0" /> {suggestions.exerciseDetails.notes}
                     </p>
                   )}
                 </div>
