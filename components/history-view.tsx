@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Separator } from '@/components/ui/separator';
 import { copySessionToClipboard } from '@/lib/clipboard-utils';
 import { EXERCISES } from '@/lib/exercises';
+import { useReactFormPersistence } from '@/lib/form-persistence';
 import { cn, formatDate, formatReps, formatWeight, groupSetsByDate, groupSetsByExercise } from '@/lib/utils';
 import { useWorkout } from '@/lib/workout-context';
 import { isWarmupSet } from '@/lib/workout-suggestions';
@@ -26,13 +27,31 @@ import {
   Trophy,
   X
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 export function HistoryView() {
   const { history } = useWorkout();
-  const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
+
+  // Initialize form persistence for filters
+  const { loadSavedValues, saveFormValues } = useReactFormPersistence('history-filters-form', {
+    selectedExercises: [],
+    searchQuery: '',
+  });
+
+  const [selectedExercises, setSelectedExercises] = useState<string[]>(() => {
+    const saved = loadSavedValues();
+    return saved?.selectedExercises || [];
+  });
   const [filterOpen, setFilterOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(() => {
+    const saved = loadSavedValues();
+    return saved?.searchQuery || '';
+  });
+
+  // Save filter state whenever it changes
+  useEffect(() => {
+    saveFormValues({ selectedExercises, searchQuery });
+  }, [selectedExercises, searchQuery, saveFormValues]);
 
   // Get all unique exercise names from history
   const allExerciseNames = useMemo(() => {

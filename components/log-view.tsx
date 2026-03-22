@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Separator } from '@/components/ui/separator';
 import { copySessionToClipboard } from '@/lib/clipboard-utils';
 import { EXERCISES } from '@/lib/exercises';
+import { useReactFormPersistence } from '@/lib/form-persistence';
 import { setFormSchema, type SetFormData } from '@/lib/schemas';
 import { getWithTTL, setWithTTL } from '@/lib/storage';
 import { getTodaySession, groupTodaySessionByExercise } from '@/lib/today-session';
@@ -41,6 +42,36 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
+
+// Fonction pour obtenir le jour de la semaine en français
+function getCurrentDayInFrench(): string {
+  const days = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+  const today = new Date();
+  // return 'Lundi' // for testing 
+  return days[today.getDay()];
+}
+
+// Fonction pour normaliser les noms de jours (gérer les variations)
+function normalizeDayName(day: string): string {
+  const dayMap: { [key: string]: string } = {
+    lundi: 'Lundi',
+    mardi: 'Mardi',
+    mercredi: 'Mercredi',
+    jeudi: 'Jeudi',
+    vendredi: 'Vendredi',
+    samedi: 'Samedi',
+    dimanche: 'Dimanche',
+    monday: 'Lundi',
+    tuesday: 'Mardi',
+    wednesday: 'Mercredi',
+    thursday: 'Jeudi',
+    friday: 'Vendredi',
+    saturday: 'Samedi',
+    sunday: 'Dimanche',
+  };
+
+  return dayMap[day.toLowerCase()] || day;
+}
 
 export function LogView() {
   const { history, fetchHistory, workoutPrograms } = useWorkout();
@@ -98,6 +129,28 @@ export function LogView() {
               const matchPercentage = matchCount / todayExercises.length;
 
               if (matchPercentage >= 0.5) {
+                console.log('Match found:', program.title, session.session);
+                setSelectedProgram(program.id);
+                const isAnyDay = session.day.toLowerCase() === 'any';
+                setSelectedSession(isAnyDay ? session.session : session.day);
+                // Save to localStorage
+                setWithTTL('selectedProgram', program.title, 2 * 60 * 60 * 1000);
+                setWithTTL('selectedSession', isAnyDay ? session.session : session.day, 2 * 60 * 60 * 1000);
+                return; // Exit early once match is found
+              }
+            }
+          }
+        } else {
+          // No session recorded today - try to match by day of week
+          const currentDay = getCurrentDayInFrench();
+
+          for (const program of workoutPrograms) {
+            for (const session of program.sessions) {
+              const normalizedSessionDay = normalizeDayName(session.day);
+
+              // Check if this session matches today's day
+              if (normalizedSessionDay === currentDay) {
+                console.log('Day match found:', program.title, session.session);
                 setSelectedProgram(program.id);
                 const isAnyDay = session.day.toLowerCase() === 'any';
                 setSelectedSession(isAnyDay ? session.session : session.day);
@@ -118,7 +171,12 @@ export function LogView() {
     const program = workoutPrograms.find((p) => p.id === programId);
     if (program) {
       setSelectedProgram(programId);
-      setSelectedSession(''); // Reset day when program changes
+      const sessions = workoutPrograms.find((p) => p.id === programId)?.sessions;
+      if (sessions && sessions.length > 0) {
+        handleSessionSelect(sessions[0].day);
+      } else {
+        handleSessionSelect('');
+      }
       setProgramOpen(false);
       setWithTTL('selectedProgram', program.title, 2 * 60 * 60 * 1000); // Store title, not ID
     }
@@ -203,6 +261,7 @@ export function LogView() {
 
   // Get selected program details
   const selectedProgramData = useMemo(() => {
+    console.log("selectedProgram", selectedProgram)
     return workoutPrograms.find((program) => program.id === selectedProgram);
   }, [workoutPrograms, selectedProgram]);
 
@@ -215,6 +274,13 @@ export function LogView() {
     return availableDays.every((session) => session.day.toLowerCase() === 'any');
   }, [availableDays]);
 
+  // Initialize form persistence
+  const { loadSavedValues, saveFormValues } = useReactFormPersistence('workout-log-form', {
+    exerciseName: defaultExercise,
+    weight: 0,
+    reps: 0,
+  });
+
   const {
     register,
     handleSubmit,
@@ -224,12 +290,18 @@ export function LogView() {
     formState: { errors },
   } = useForm<SetFormData>({
     resolver: zodResolver(setFormSchema),
-    defaultValues: {
+    defaultValues: loadSavedValues() || {
       exerciseName: defaultExercise,
       weight: 0,
       reps: 0,
     },
   });
+
+  // Save form values whenever they change
+  const watchedValues = watch();
+  useEffect(() => {
+    saveFormValues(watchedValues);
+  }, [watchedValues, saveFormValues]);
 
   // Load saved exercise from localStorage and set default (client-side only)
   const [hasSetDefault, setHasSetDefault] = useState(false);

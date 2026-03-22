@@ -220,7 +220,7 @@ export function getWorkoutSuggestions(
               .filter((ex) => !isExerciseCompleted(ex, todayStats.get(ex.exerciseName) || []))
               .map((ex) => ex.exerciseName);
 
-            const suggestedCharge = allTimeBest ? parseFloat(allTimeBest.estimated1RM ?? allTimeBest.weight) : 0;
+            const suggestedCharge = allTimeBest ? parseFloat(allTimeBest.weight) : 0;
 
             // Filtrer les séries d'échauffement pour le compteur
 

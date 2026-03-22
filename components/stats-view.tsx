@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { EXERCISES } from '@/lib/exercises';
+import { useReactFormPersistence } from '@/lib/form-persistence';
 import type { WorkoutSet } from '@/lib/types';
 import { calculateEstimated1RM, cn, formatDate, formatReps, formatWeight } from '@/lib/utils';
 import { useWorkout } from '@/lib/workout-context';
@@ -99,9 +100,27 @@ function groupSetsBySession(sets: WorkoutSet[]): Map<string, WorkoutSet[]> {
 
 export function StatsView() {
   const { history, isLoading } = useWorkout();
-  const [selectedExercise, setSelectedExercise] = useState<string>('');
+
+  // Initialize form persistence for stats filters
+  const { loadSavedValues, saveFormValues } = useReactFormPersistence('stats-filters-form', {
+    selectedExercise: '',
+    searchQuery: '',
+  });
+
+  const [selectedExercise, setSelectedExercise] = useState<string>(() => {
+    const saved = loadSavedValues();
+    return saved?.selectedExercise || '';
+  });
   const [exerciseOpen, setExerciseOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState<string>(() => {
+    const saved = loadSavedValues();
+    return saved?.searchQuery || '';
+  });
+
+  // Save filter state whenever it changes
+  useEffect(() => {
+    saveFormValues({ selectedExercise, searchQuery });
+  }, [selectedExercise, searchQuery, saveFormValues]);
 
   // Get unique exercises from history (same logic as history-view)
   const exercises = useMemo(() => {

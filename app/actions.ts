@@ -1,6 +1,7 @@
 'use server';
 
 import type { SetFormData } from '@/lib/schemas';
+import { Profile, Program } from '@/lib/types';
 import { calculateEstimated1RM } from '@/lib/utils';
 import { JWT } from 'google-auth-library';
 import { GoogleSpreadsheet } from 'google-spreadsheet';
@@ -85,7 +86,7 @@ export async function getPrograms() {
     const rows = await sheet.getRows();
 
     // Grouper par Titre -> Session -> Bloc -> Exercices
-    const programsMap = new Map();
+    const programsMap = new Map<string, Program>();
 
     rows.forEach((row: any) => {
       const title = row.get('Titre') || '';
@@ -110,7 +111,7 @@ export async function getPrograms() {
         });
       }
 
-      const program = programsMap.get(title);
+      const program: Program = programsMap.get(title) as Program;
 
       // Trouver ou créer la session
       let sessionObj = program.sessions.find((s: any) => s.session === session);
@@ -144,3 +145,38 @@ export async function getPrograms() {
     return { success: false, data: [], error: 'Failed to fetch programs' };
   }
 }
+
+export async function getProfile() {
+  try {
+    await doc.loadInfo();
+    const sheet = doc.sheetsByTitle['Profile'];
+
+    if (!sheet) {
+      console.error('Profile sheet not found');
+      return { success: false, data: null, error: 'Profile sheet not found' };
+    }
+
+    const rows = await sheet.getRows();
+
+    if (rows.length === 0) {
+      console.error('No data found in Profile sheet');
+      return { success: false, data: null, error: 'No data found in Profile sheet' };
+    }
+
+    // Get first row data
+    const firstRow = rows[0];
+    const profile: Profile = {
+      name: firstRow.get('Name') || '',
+      dob: firstRow.get('DOB') || '',
+      weight: parseFloat(firstRow.get('Weight') || '0'),
+      size: firstRow.get('Size') || '',
+    };
+
+    return { success: true, data: profile };
+  } catch (error) {
+    console.error('Error fetching profile from Google Sheets:', error);
+    return { success: false, data: null, error: 'Failed to fetch profile data' };
+  }
+}
+
+

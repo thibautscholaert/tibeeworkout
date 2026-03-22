@@ -3,6 +3,7 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { EXERCISES } from '@/lib/exercises';
+import { useWorkoutPrograms } from '@/lib/use-workout-programs';
 import { Calendar, Dumbbell, Flame, PersonStandingIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -35,11 +36,12 @@ function normalizeDayName(day: string): string {
   return dayMap[day.toLowerCase()] || day;
 }
 
-interface CurrentDayClientProps {
-  programs: any[];
-}
 
-export default function CurrentDayClient({ programs }: CurrentDayClientProps) {
+export default function CurrentDayClient() {
+
+  const { workoutPrograms: programs } = useWorkoutPrograms();
+
+
   const [currentDay, setCurrentDay] = useState<string>('');
   const [selectedProgram, setSelectedProgram] = useState<any>(programs[0] || null);
 
@@ -64,7 +66,7 @@ export default function CurrentDayClient({ programs }: CurrentDayClientProps) {
     );
   }
 
-  return (
+  return programs && (
     <div className="flex flex-col gap-6 pb-6">
       {/* Header */}
       <div className="flex items-center gap-2">
@@ -87,11 +89,10 @@ export default function CurrentDayClient({ programs }: CurrentDayClientProps) {
               <button
                 key={program.id}
                 onClick={() => setSelectedProgram(program)}
-                className={`flex-shrink-0 p-2 m-0.5 rounded-xl border transition-all ${
-                  isSelected
-                    ? 'border-primary bg-primary/5 shadow-lg scale-105'
-                    : 'border-muted bg-card hover:border-primary/50 hover:shadow-md hover:scale-102'
-                }`}
+                className={`flex-shrink-0 p-2 m-0.5 rounded-xl border transition-all ${isSelected
+                  ? 'border-primary bg-primary/5 shadow-lg scale-105'
+                  : 'border-muted bg-card hover:border-primary/50 hover:shadow-md hover:scale-102'
+                  }`}
               >
                 <div className="text-left">
                   <div className="flex items-start justify-between mb-2">
@@ -168,9 +169,8 @@ export default function CurrentDayClient({ programs }: CurrentDayClientProps) {
                 return (
                   <AccordionItem key={sessionIndex} value={sessionIndex.toString()} className="border-none">
                     <AccordionTrigger
-                      className={`rounded-lg p-4 border-l-4 hover:no-underline ${
-                        isToday ? 'border-l-primary bg-primary/5 shadow-sm' : 'border-l-muted bg-muted/20'
-                      }`}
+                      className={`rounded-lg p-4 border-l-4 hover:no-underline ${isToday ? 'border-l-primary bg-primary/5 shadow-sm' : 'border-l-muted bg-muted/20'
+                        }`}
                     >
                       <div className="flex items-start gap-4 w-full pr-2">
                         <div className="flex-1 text-left min-w-0">
@@ -239,9 +239,8 @@ export default function CurrentDayClient({ programs }: CurrentDayClientProps) {
                                 return (
                                   <div
                                     key={exerciseIndex}
-                                    className={`rounded-lg border p-3 transition-all ${
-                                      isToday ? 'border-primary/20 bg-primary/5' : 'border-muted bg-background'
-                                    }`}
+                                    className={`rounded-lg border p-3 transition-all ${isToday ? 'border-primary/20 bg-primary/5' : 'border-muted bg-background'
+                                      }`}
                                   >
                                     <div className="flex items-start justify-between">
                                       <div className="flex-1">

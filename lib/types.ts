@@ -45,3 +45,10 @@ export interface ProgramExercise {
   recovery?: string;
   notes?: string;
 }
+
+export interface Profile {
+  name: string;
+  dob: string;
+  weight: number;
+  size: string;
+}

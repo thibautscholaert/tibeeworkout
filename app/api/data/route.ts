@@ -1,4 +1,4 @@
-import { getPrograms, getWorkoutHistory } from '@/app/actions';
+import { getProfile, getPrograms, getWorkoutHistory } from '@/app/actions';
 import { NextResponse } from 'next/server';
 
 // Helper function to group sets by session (day or 2h time range)
@@ -54,7 +54,7 @@ function groupSetsBySession(sets: any[]): { sessionKey: string; sets: any[] }[] 
 
 export async function GET() {
   try {
-    const [historyResult, programsResult] = await Promise.all([getWorkoutHistory(), getPrograms()]);
+    const [historyResult, programsResult, profileResult] = await Promise.all([getWorkoutHistory(), getPrograms(), getProfile()]);
 
     const response: any = {
       success: true,
@@ -77,14 +77,22 @@ export async function GET() {
       response.programsError = programsResult.error;
     }
 
+    if (profileResult.success) {
+      response.data.profile = profileResult.data;
+    } else {
+      response.data.profile = null;
+      response.profileError = profileResult.error;
+    }
+
     // Si les deux ont échoué, retourner une erreur
-    if (!historyResult.success && !programsResult.success) {
+    if (!historyResult.success && !programsResult.success && !profileResult.success) {
       return NextResponse.json(
         {
           success: false,
           error: 'Failed to fetch both history and programs',
           historyError: historyResult.error,
           programsError: programsResult.error,
+          profileError: profileResult.error,
         },
         { status: 500 }
       );
