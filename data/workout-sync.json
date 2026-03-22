@@ -1,0 +1,2453 @@
+{
+  "lastSync": "2026-03-22T17:32:54.089Z",
+  "success": true,
+  "data": {
+    "history": [
+      {
+        "sessionKey": "Fri Mar 20 2026",
+        "sets": [
+          {
+            "timestamp": "2026-03-20T11:32:31.850Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-03-20T11:32:37.931Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-03-20T11:39:01.683Z",
+            "exerciseName": "Ring muscle up",
+            "weight": 0,
+            "reps": 1
+          },
+          {
+            "timestamp": "2026-03-20T11:44:43.276Z",
+            "exerciseName": "Pull up",
+            "weight": 20,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-03-20T11:50:26.059Z",
+            "exerciseName": "Pull up",
+            "weight": 20,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-03-20T12:04:44.181Z",
+            "exerciseName": "Pull up",
+            "weight": 20,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-03-20T12:04:59.755Z",
+            "exerciseName": "Ring dips",
+            "weight": 10,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-03-20T12:10:57.343Z",
+            "exerciseName": "Ring dips",
+            "weight": 10,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-03-20T12:18:09.377Z",
+            "exerciseName": "Ring dips",
+            "weight": 0,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-03-20T12:22:55.173Z",
+            "exerciseName": "Ring rows",
+            "weight": 20,
+            "reps": 8
+          },
+          {
+            "timestamp": "2026-03-20T12:31:22.466Z",
+            "exerciseName": "Ring rows",
+            "weight": 20,
+            "reps": 8
+          },
+          {
+            "timestamp": "2026-03-20T12:36:53.198Z",
+            "exerciseName": "Ring rows",
+            "weight": 0,
+            "reps": 10
+          }
+        ]
+      },
+      {
+        "sessionKey": "Wed Mar 18 2026",
+        "sets": [
+          {
+            "timestamp": "2026-03-18T11:22:14.469Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-03-18T11:27:10.889Z",
+            "exerciseName": "Ring muscle up",
+            "weight": 0,
+            "reps": 2
+          },
+          {
+            "timestamp": "2026-03-18T11:32:13.713Z",
+            "exerciseName": "Ring muscle up",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-03-18T11:36:59.795Z",
+            "exerciseName": "Ring muscle up",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-03-18T11:40:34.564Z",
+            "exerciseName": "Trap bar Deadlift",
+            "weight": 20,
+            "reps": 10,
+            "oneRM": 27
+          },
+          {
+            "timestamp": "2026-03-18T11:40:43.620Z",
+            "exerciseName": "Trap bar Deadlift",
+            "weight": 50,
+            "reps": 6,
+            "oneRM": 58
+          },
+          {
+            "timestamp": "2026-03-18T11:48:52.538Z",
+            "exerciseName": "Trap bar Deadlift",
+            "weight": 90,
+            "reps": 1,
+            "oneRM": 90
+          },
+          {
+            "timestamp": "2026-03-18T11:50:58.226Z",
+            "exerciseName": "Trap bar Deadlift",
+            "weight": 100,
+            "reps": 4,
+            "oneRM": 109
+          },
+          {
+            "timestamp": "2026-03-18T11:55:00.256Z",
+            "exerciseName": "Trap bar Deadlift",
+            "weight": 100,
+            "reps": 5,
+            "oneRM": 113
+          },
+          {
+            "timestamp": "2026-03-18T12:00:14.525Z",
+            "exerciseName": "Trap bar Deadlift",
+            "weight": 100,
+            "reps": 6,
+            "oneRM": 116
+          },
+          {
+            "timestamp": "2026-03-18T12:05:40.420Z",
+            "exerciseName": "Overhead press dumbell",
+            "weight": 22.5,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-03-18T12:10:39.915Z",
+            "exerciseName": "Overhead press dumbell",
+            "weight": 22.5,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-03-18T12:18:16.241Z",
+            "exerciseName": "Overhead press dumbell",
+            "weight": 22.5,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-03-18T12:20:50.317Z",
+            "exerciseName": "Ring rows",
+            "weight": 0,
+            "reps": 12
+          },
+          {
+            "timestamp": "2026-03-18T12:23:35.009Z",
+            "exerciseName": "Ring rows",
+            "weight": 0,
+            "reps": 12
+          },
+          {
+            "timestamp": "2026-03-18T12:30:00.080Z",
+            "exerciseName": "Ring rows",
+            "weight": 0,
+            "reps": 12
+          }
+        ]
+      },
+      {
+        "sessionKey": "Fri Mar 13 2026",
+        "sets": [
+          {
+            "timestamp": "2026-03-13T11:13:22.984Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-03-13T11:15:56.206Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-03-13T11:19:52.481Z",
+            "exerciseName": "Ring muscle up",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-03-13T11:24:15.828Z",
+            "exerciseName": "Ring muscle up",
+            "weight": 0,
+            "reps": 2
+          },
+          {
+            "timestamp": "2026-03-13T11:25:47.869Z",
+            "exerciseName": "Bench Press",
+            "weight": 40,
+            "reps": 5,
+            "oneRM": 45
+          },
+          {
+            "timestamp": "2026-03-13T11:27:43.978Z",
+            "exerciseName": "Bench Press",
+            "weight": 65,
+            "reps": 2,
+            "oneRM": 67
+          },
+          {
+            "timestamp": "2026-03-13T11:30:36.511Z",
+            "exerciseName": "Bench Press",
+            "weight": 65,
+            "reps": 4,
+            "oneRM": 71
+          },
+          {
+            "timestamp": "2026-03-13T11:35:28.568Z",
+            "exerciseName": "Bench Press",
+            "weight": 65,
+            "reps": 5,
+            "oneRM": 73
+          },
+          {
+            "timestamp": "2026-03-13T11:40:50.743Z",
+            "exerciseName": "Bench Press",
+            "weight": 65,
+            "reps": 5,
+            "oneRM": 73
+          },
+          {
+            "timestamp": "2026-03-13T11:42:22.643Z",
+            "exerciseName": "Hammer pull up",
+            "weight": 0,
+            "reps": 10
+          },
+          {
+            "timestamp": "2026-03-13T11:44:49.032Z",
+            "exerciseName": "Hammer pull up",
+            "weight": 0,
+            "reps": 10
+          }
+        ]
+      },
+      {
+        "sessionKey": "Wed Mar 11 2026",
+        "sets": [
+          {
+            "timestamp": "2026-03-11T11:24:29.036Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 2
+          },
+          {
+            "timestamp": "2026-03-11T11:25:33.645Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-03-11T11:29:11.880Z",
+            "exerciseName": "Overhead press dumbell - standing",
+            "weight": 19,
+            "reps": 7
+          },
+          {
+            "timestamp": "2026-03-11T11:34:42.621Z",
+            "exerciseName": "Overhead press dumbell - standing",
+            "weight": 19,
+            "reps": 7
+          },
+          {
+            "timestamp": "2026-03-11T11:39:57.763Z",
+            "exerciseName": "Overhead press dumbell - standing",
+            "weight": 19,
+            "reps": 7
+          },
+          {
+            "timestamp": "2026-03-11T11:43:26.042Z",
+            "exerciseName": "Barbell row",
+            "weight": 20,
+            "reps": 10,
+            "oneRM": 27
+          },
+          {
+            "timestamp": "2026-03-11T11:43:31.456Z",
+            "exerciseName": "Barbell row",
+            "weight": 40,
+            "reps": 6,
+            "oneRM": 46
+          },
+          {
+            "timestamp": "2026-03-11T11:46:08.645Z",
+            "exerciseName": "Barbell row",
+            "weight": 55,
+            "reps": 2,
+            "oneRM": 57
+          },
+          {
+            "timestamp": "2026-03-11T11:49:52.628Z",
+            "exerciseName": "Barbell row",
+            "weight": 65,
+            "reps": 8,
+            "oneRM": 81
+          },
+          {
+            "timestamp": "2026-03-11T11:53:30.406Z",
+            "exerciseName": "Barbell row",
+            "weight": 65,
+            "reps": 8,
+            "oneRM": 81
+          },
+          {
+            "timestamp": "2026-03-11T12:04:36.992Z",
+            "exerciseName": "Barbell row",
+            "weight": 65,
+            "reps": 8,
+            "oneRM": 81
+          },
+          {
+            "timestamp": "2026-03-11T12:04:43.087Z",
+            "exerciseName": "Handstand kicks",
+            "weight": 0,
+            "reps": 15
+          },
+          {
+            "timestamp": "2026-03-11T12:09:37.772Z",
+            "exerciseName": "Pike push up",
+            "weight": 0,
+            "reps": 8
+          },
+          {
+            "timestamp": "2026-03-11T12:13:00.484Z",
+            "exerciseName": "Pike push up",
+            "weight": 0,
+            "reps": 7
+          },
+          {
+            "timestamp": "2026-03-11T12:16:13.183Z",
+            "exerciseName": "Pike push up",
+            "weight": 0,
+            "reps": 7
+          },
+          {
+            "timestamp": "2026-03-11T12:18:16.186Z",
+            "exerciseName": "Face Pull",
+            "weight": 30,
+            "reps": 15
+          },
+          {
+            "timestamp": "2026-03-11T12:20:56.601Z",
+            "exerciseName": "Face Pull",
+            "weight": 30,
+            "reps": 15
+          },
+          {
+            "timestamp": "2026-03-11T12:32:22.081Z",
+            "exerciseName": "Face Pull",
+            "weight": 30,
+            "reps": 15
+          }
+        ]
+      },
+      {
+        "sessionKey": "Mon Mar 09 2026",
+        "sets": [
+          {
+            "timestamp": "2026-03-09T11:36:01.693Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-03-09T11:36:05.343Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 2
+          },
+          {
+            "timestamp": "2026-03-09T11:44:52.737Z",
+            "exerciseName": "Ring muscle up",
+            "weight": 0,
+            "reps": 2
+          },
+          {
+            "timestamp": "2026-03-09T11:53:18.572Z",
+            "exerciseName": "Ring muscle up",
+            "weight": 0,
+            "reps": 2
+          },
+          {
+            "timestamp": "2026-03-09T11:58:37.274Z",
+            "exerciseName": "Ring muscle up",
+            "weight": 0,
+            "reps": 2
+          },
+          {
+            "timestamp": "2026-03-09T12:01:11.400Z",
+            "exerciseName": "Ring muscle up",
+            "weight": 0,
+            "reps": 2
+          },
+          {
+            "timestamp": "2026-03-09T12:08:08.222Z",
+            "exerciseName": "Pull up",
+            "weight": 20,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-03-09T12:15:56.372Z",
+            "exerciseName": "Pull up",
+            "weight": 20,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-03-09T12:18:57.427Z",
+            "exerciseName": "Pull up",
+            "weight": 20,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-03-09T12:23:31.811Z",
+            "exerciseName": "Ring dips",
+            "weight": 0,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-03-09T12:28:27.676Z",
+            "exerciseName": "Ring dips",
+            "weight": 0,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-03-09T12:37:51.125Z",
+            "exerciseName": "Ring dips",
+            "weight": 0,
+            "reps": 5
+          }
+        ]
+      },
+      {
+        "sessionKey": "Fri Mar 06 2026",
+        "sets": [
+          {
+            "timestamp": "2026-03-06T19:58:09.921Z",
+            "exerciseName": "L-sit hold",
+            "weight": 0,
+            "reps": 7
+          },
+          {
+            "timestamp": "2026-03-06T19:58:11.444Z",
+            "exerciseName": "L-sit hold",
+            "weight": 0,
+            "reps": 7
+          },
+          {
+            "timestamp": "2026-03-06T19:58:13.850Z",
+            "exerciseName": "L-sit hold",
+            "weight": 0,
+            "reps": 10
+          }
+        ]
+      },
+      {
+        "sessionKey": "Thu Mar 05 2026",
+        "sets": [
+          {
+            "timestamp": "2026-03-05T11:46:45.221Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-03-05T11:46:57.569Z",
+            "exerciseName": "Ring muscle up",
+            "weight": 0,
+            "reps": 1
+          },
+          {
+            "timestamp": "2026-03-05T11:46:58.934Z",
+            "exerciseName": "Ring muscle up",
+            "weight": 0,
+            "reps": 1
+          },
+          {
+            "timestamp": "2026-03-05T11:52:59.110Z",
+            "exerciseName": "Ring muscle up",
+            "weight": 0,
+            "reps": 1
+          },
+          {
+            "timestamp": "2026-03-05T11:57:38.332Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-03-05T18:02:00.565Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 4
+          },
+          {
+            "timestamp": "2026-03-05T18:02:03.665Z",
+            "exerciseName": "Pull up",
+            "weight": 0,
+            "reps": 10
+          }
+        ]
+      },
+      {
+        "sessionKey": "Wed Mar 04 2026",
+        "sets": [
+          {
+            "timestamp": "2026-03-04T11:37:51.524Z",
+            "exerciseName": "Handstand kicks",
+            "weight": 0,
+            "reps": 10
+          },
+          {
+            "timestamp": "2026-03-04T11:37:52.904Z",
+            "exerciseName": "Handstand kicks",
+            "weight": 0,
+            "reps": 10
+          },
+          {
+            "timestamp": "2026-03-04T11:40:15.578Z",
+            "exerciseName": "Handstand kicks",
+            "weight": 0,
+            "reps": 10
+          },
+          {
+            "timestamp": "2026-03-04T11:43:52.297Z",
+            "exerciseName": "Overhead press dumbell - standing",
+            "weight": 18,
+            "reps": 7
+          },
+          {
+            "timestamp": "2026-03-04T11:47:58.602Z",
+            "exerciseName": "Overhead press dumbell - standing",
+            "weight": 18,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-03-04T11:54:08.581Z",
+            "exerciseName": "Overhead press dumbell - standing",
+            "weight": 18,
+            "reps": 7
+          },
+          {
+            "timestamp": "2026-03-04T11:57:33.150Z",
+            "exerciseName": "Barbell row",
+            "weight": 20,
+            "reps": 10,
+            "oneRM": 27
+          },
+          {
+            "timestamp": "2026-03-04T11:57:39.038Z",
+            "exerciseName": "Barbell row",
+            "weight": 40,
+            "reps": 6,
+            "oneRM": 46
+          },
+          {
+            "timestamp": "2026-03-04T11:58:40.191Z",
+            "exerciseName": "Barbell row",
+            "weight": 50,
+            "reps": 3,
+            "oneRM": 53
+          },
+          {
+            "timestamp": "2026-03-04T12:02:06.332Z",
+            "exerciseName": "Barbell row",
+            "weight": 60,
+            "reps": 8,
+            "oneRM": 74
+          },
+          {
+            "timestamp": "2026-03-04T12:06:33.787Z",
+            "exerciseName": "Barbell row",
+            "weight": 60,
+            "reps": 8,
+            "oneRM": 74
+          },
+          {
+            "timestamp": "2026-03-04T12:11:21.641Z",
+            "exerciseName": "Barbell row",
+            "weight": 60,
+            "reps": 8,
+            "oneRM": 74
+          },
+          {
+            "timestamp": "2026-03-04T12:16:00.796Z",
+            "exerciseName": "Ring dips",
+            "weight": 0,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-03-04T12:23:41.912Z",
+            "exerciseName": "Ring muscle up",
+            "weight": 0,
+            "reps": 1
+          },
+          {
+            "timestamp": "2026-03-04T12:23:43.853Z",
+            "exerciseName": "Ring muscle up",
+            "weight": 0,
+            "reps": 1
+          }
+        ]
+      },
+      {
+        "sessionKey": "Mon Mar 02 2026",
+        "sets": [
+          {
+            "timestamp": "2026-03-02T11:26:07.640Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-03-02T11:30:36.661Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-03-02T11:32:37.706Z",
+            "exerciseName": "Trap bar Deadlift",
+            "weight": 20,
+            "reps": 10,
+            "oneRM": 27
+          },
+          {
+            "timestamp": "2026-03-02T11:33:41.466Z",
+            "exerciseName": "Trap bar Deadlift",
+            "weight": 50,
+            "reps": 6,
+            "oneRM": 58
+          },
+          {
+            "timestamp": "2026-03-02T11:35:00.087Z",
+            "exerciseName": "Trap bar Deadlift",
+            "weight": 70,
+            "reps": 5,
+            "oneRM": 79
+          },
+          {
+            "timestamp": "2026-03-02T11:39:17.081Z",
+            "exerciseName": "Trap bar Deadlift",
+            "weight": 80,
+            "reps": 1,
+            "oneRM": 80
+          },
+          {
+            "timestamp": "2026-03-02T11:41:17.198Z",
+            "exerciseName": "Trap bar Deadlift",
+            "weight": 90,
+            "reps": 5,
+            "oneRM": 101
+          },
+          {
+            "timestamp": "2026-03-02T11:45:57.112Z",
+            "exerciseName": "Trap bar Deadlift",
+            "weight": 90,
+            "reps": 5,
+            "oneRM": 101
+          },
+          {
+            "timestamp": "2026-03-02T11:54:02.616Z",
+            "exerciseName": "Trap bar Deadlift",
+            "weight": 90,
+            "reps": 5,
+            "oneRM": 101
+          },
+          {
+            "timestamp": "2026-03-02T11:55:38.525Z",
+            "exerciseName": "Pull up",
+            "weight": 20,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-03-02T12:00:28.876Z",
+            "exerciseName": "Pull up",
+            "weight": 20,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-03-02T12:07:16.787Z",
+            "exerciseName": "Pull up",
+            "weight": 20,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-03-02T12:12:11.049Z",
+            "exerciseName": "Ring rows",
+            "weight": 0,
+            "reps": 12
+          },
+          {
+            "timestamp": "2026-03-02T12:15:04.898Z",
+            "exerciseName": "Ring rows",
+            "weight": 0,
+            "reps": 10
+          },
+          {
+            "timestamp": "2026-03-02T12:22:46.586Z",
+            "exerciseName": "Ring rows",
+            "weight": 0,
+            "reps": 10
+          },
+          {
+            "timestamp": "2026-03-02T12:22:52.959Z",
+            "exerciseName": "L-Sit Hold",
+            "weight": 0,
+            "reps": 8
+          },
+          {
+            "timestamp": "2026-03-02T12:25:58.901Z",
+            "exerciseName": "L-Sit Hold",
+            "weight": 0,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-03-02T12:29:09.522Z",
+            "exerciseName": "L-Sit Hold",
+            "weight": 0,
+            "reps": 7
+          }
+        ]
+      },
+      {
+        "sessionKey": "Wed Feb 25 2026",
+        "sets": [
+          {
+            "timestamp": "2026-02-25T11:27:30.106Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-02-25T11:35:08.207Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 7
+          },
+          {
+            "timestamp": "2026-02-25T11:47:44.394Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 4
+          },
+          {
+            "timestamp": "2026-02-25T11:57:10.255Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-02-25T12:13:09.689Z",
+            "exerciseName": "Ring dips",
+            "weight": 0,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-02-25T12:13:12.938Z",
+            "exerciseName": "Ring dips",
+            "weight": 0,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-02-25T12:13:15.397Z",
+            "exerciseName": "Ring dips",
+            "weight": 0,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-02-25T12:21:59.462Z",
+            "exerciseName": "Ring dips",
+            "weight": 0,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-02-25T12:29:33.411Z",
+            "exerciseName": "Toes to bar",
+            "weight": 0,
+            "reps": 8
+          },
+          {
+            "timestamp": "2026-02-25T12:35:30.681Z",
+            "exerciseName": "Toes to bar",
+            "weight": 0,
+            "reps": 7
+          }
+        ]
+      },
+      {
+        "sessionKey": "Mon Feb 23 2026",
+        "sets": [
+          {
+            "timestamp": "2026-02-23T11:11:01.614Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-02-23T11:21:29.645Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 4
+          },
+          {
+            "timestamp": "2026-02-23T11:23:10.170Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 4
+          },
+          {
+            "timestamp": "2026-02-23T11:32:06.713Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-02-23T11:33:40.820Z",
+            "exerciseName": "Ring dips",
+            "weight": 0,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-02-23T11:39:17.989Z",
+            "exerciseName": "Ring dips",
+            "weight": 0,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-02-23T11:46:05.363Z",
+            "exerciseName": "Ring dips",
+            "weight": 0,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-02-23T11:53:35.034Z",
+            "exerciseName": "Ring rows",
+            "weight": 0,
+            "reps": 12
+          },
+          {
+            "timestamp": "2026-02-23T11:57:34.041Z",
+            "exerciseName": "Ring rows",
+            "weight": 0,
+            "reps": 12
+          }
+        ]
+      },
+      {
+        "sessionKey": "Sat Feb 21 2026",
+        "sets": [
+          {
+            "timestamp": "2026-02-21T12:34:49.116Z",
+            "exerciseName": "Pull up",
+            "weight": 0,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-02-21T12:34:51.605Z",
+            "exerciseName": "Pull up",
+            "weight": 0,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-02-21T12:34:52.611Z",
+            "exerciseName": "Pull up",
+            "weight": 0,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-02-21T19:53:54.501Z",
+            "exerciseName": "L-sit hold",
+            "weight": 0,
+            "reps": 8
+          },
+          {
+            "timestamp": "2026-02-21T20:06:29.730Z",
+            "exerciseName": "L-sit hold",
+            "weight": 0,
+            "reps": 7
+          }
+        ]
+      },
+      {
+        "sessionKey": "Wed Feb 18 2026",
+        "sets": [
+          {
+            "timestamp": "2026-02-18T11:33:39.001Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-02-18T11:33:43.360Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 4
+          },
+          {
+            "timestamp": "2026-02-18T11:37:41.404Z",
+            "exerciseName": "Pull up",
+            "weight": 20,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-02-18T11:41:54.561Z",
+            "exerciseName": "Pull up",
+            "weight": 20,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-02-18T11:48:24.540Z",
+            "exerciseName": "Pull up",
+            "weight": 20,
+            "reps": 4
+          },
+          {
+            "timestamp": "2026-02-18T11:50:22.118Z",
+            "exerciseName": "Trap bar Deadlift",
+            "weight": 50,
+            "reps": 6,
+            "oneRM": 58
+          },
+          {
+            "timestamp": "2026-02-18T11:54:26.743Z",
+            "exerciseName": "Trap bar Deadlift",
+            "weight": 70,
+            "reps": 6,
+            "oneRM": 81
+          },
+          {
+            "timestamp": "2026-02-18T11:58:51.904Z",
+            "exerciseName": "Trap bar Deadlift",
+            "weight": 90,
+            "reps": 5,
+            "oneRM": 101
+          },
+          {
+            "timestamp": "2026-02-18T12:03:30.454Z",
+            "exerciseName": "Trap bar Deadlift",
+            "weight": 90,
+            "reps": 5,
+            "oneRM": 101
+          },
+          {
+            "timestamp": "2026-02-18T12:13:00.192Z",
+            "exerciseName": "Trap bar Deadlift",
+            "weight": 90,
+            "reps": 5,
+            "oneRM": 101
+          },
+          {
+            "timestamp": "2026-02-18T12:13:02.985Z",
+            "exerciseName": "Ring rows",
+            "weight": 0,
+            "reps": 10
+          },
+          {
+            "timestamp": "2026-02-18T12:16:14.076Z",
+            "exerciseName": "Ring rows",
+            "weight": 0,
+            "reps": 10
+          },
+          {
+            "timestamp": "2026-02-18T12:21:56.159Z",
+            "exerciseName": "Ring rows",
+            "weight": 0,
+            "reps": 12
+          },
+          {
+            "timestamp": "2026-02-18T12:24:40.427Z",
+            "exerciseName": "L-sit hold",
+            "weight": 0,
+            "reps": 7
+          },
+          {
+            "timestamp": "2026-02-18T12:26:35.240Z",
+            "exerciseName": "L-sit hold",
+            "weight": 0,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-02-18T12:29:54.165Z",
+            "exerciseName": "L-sit hold",
+            "weight": 0,
+            "reps": 6
+          }
+        ]
+      },
+      {
+        "sessionKey": "Sun Feb 15 2026",
+        "sets": [
+          {
+            "timestamp": "2026-02-15T09:18:55.857Z",
+            "exerciseName": "Pull up",
+            "weight": 0,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-02-15T09:19:09.498Z",
+            "exerciseName": "Bench Press",
+            "weight": 20,
+            "reps": 8,
+            "oneRM": 25
+          },
+          {
+            "timestamp": "2026-02-15T09:19:15.856Z",
+            "exerciseName": "Bench Press",
+            "weight": 50,
+            "reps": 6,
+            "oneRM": 58
+          },
+          {
+            "timestamp": "2026-02-15T09:31:05.665Z",
+            "exerciseName": "Bench Press",
+            "weight": 60,
+            "reps": 5,
+            "oneRM": 68
+          },
+          {
+            "timestamp": "2026-02-15T09:31:09.363Z",
+            "exerciseName": "Bench Press",
+            "weight": 65,
+            "reps": 5,
+            "oneRM": 73
+          },
+          {
+            "timestamp": "2026-02-15T09:32:20.863Z",
+            "exerciseName": "Bench Press",
+            "weight": 70,
+            "reps": 4,
+            "oneRM": 76
+          },
+          {
+            "timestamp": "2026-02-15T09:45:02.211Z",
+            "exerciseName": "Pull up",
+            "weight": 0,
+            "reps": 8
+          },
+          {
+            "timestamp": "2026-02-15T09:45:09.442Z",
+            "exerciseName": "Pull up",
+            "weight": 8,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-02-15T09:45:15.998Z",
+            "exerciseName": "Pull up",
+            "weight": 15,
+            "reps": 4
+          },
+          {
+            "timestamp": "2026-02-15T09:45:15.998Z",
+            "exerciseName": "Pull up",
+            "weight": 15,
+            "reps": 4
+          },
+          {
+            "timestamp": "2026-02-15T09:57:10.055Z",
+            "exerciseName": "Overhead press",
+            "weight": 20,
+            "reps": 8
+          },
+          {
+            "timestamp": "2026-02-15T09:57:32.154Z",
+            "exerciseName": "Overhead press",
+            "weight": 30,
+            "reps": 8
+          },
+          {
+            "timestamp": "2026-02-15T10:12:54.172Z",
+            "exerciseName": "Overhead press",
+            "weight": 30,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-02-15T10:13:01.490Z",
+            "exerciseName": "Overhead press",
+            "weight": 30,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-02-15T10:14:12.540Z",
+            "exerciseName": "Hammer pull up",
+            "weight": 0,
+            "reps": 8
+          },
+          {
+            "timestamp": "2026-02-15T10:14:14.144Z",
+            "exerciseName": "Hammer pull up",
+            "weight": 0,
+            "reps": 8
+          },
+          {
+            "timestamp": "2026-02-15T10:20:22.963Z",
+            "exerciseName": "Hammer pull up",
+            "weight": 0,
+            "reps": 8
+          },
+          {
+            "timestamp": "2026-02-15T10:20:47.620Z",
+            "exerciseName": "Bicep curls",
+            "weight": 12,
+            "reps": 7
+          },
+          {
+            "timestamp": "2026-02-15T10:30:41.125Z",
+            "exerciseName": "Bicep curls",
+            "weight": 10,
+            "reps": 7
+          }
+        ]
+      },
+      {
+        "sessionKey": "Fri Feb 13 2026",
+        "sets": [
+          {
+            "timestamp": "2026-02-13T11:19:40.352Z",
+            "exerciseName": "Squat",
+            "weight": 20,
+            "reps": 10,
+            "oneRM": 27
+          },
+          {
+            "timestamp": "2026-02-13T11:23:53.800Z",
+            "exerciseName": "Squat",
+            "weight": 50,
+            "reps": 5,
+            "oneRM": 56
+          },
+          {
+            "timestamp": "2026-02-13T11:24:22.428Z",
+            "exerciseName": "Squat",
+            "weight": 70,
+            "reps": 2,
+            "oneRM": 72
+          },
+          {
+            "timestamp": "2026-02-13T11:28:48.826Z",
+            "exerciseName": "Squat",
+            "weight": 80,
+            "reps": 5,
+            "oneRM": 90
+          },
+          {
+            "timestamp": "2026-02-13T11:33:36.009Z",
+            "exerciseName": "Squat",
+            "weight": 80,
+            "reps": 5,
+            "oneRM": 90
+          },
+          {
+            "timestamp": "2026-02-13T11:37:36.009Z",
+            "exerciseName": "Squat",
+            "weight": 80,
+            "reps": 5,
+            "oneRM": 90
+          },
+          {
+            "timestamp": "2026-02-13T11:44:21.838Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-02-13T11:48:42.658Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 4
+          },
+          {
+            "timestamp": "2026-02-13T11:53:07.335Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 4
+          },
+          {
+            "timestamp": "2026-02-13T11:57:35.651Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-02-13T12:02:34.346Z",
+            "exerciseName": "Hammer pull up",
+            "weight": 0,
+            "reps": 8
+          },
+          {
+            "timestamp": "2026-02-13T12:05:26.621Z",
+            "exerciseName": "Hammer pull up",
+            "weight": 0,
+            "reps": 8
+          },
+          {
+            "timestamp": "2026-02-13T12:09:34.522Z",
+            "exerciseName": "Hammer pull up",
+            "weight": 0,
+            "reps": 8
+          },
+          {
+            "timestamp": "2026-02-13T12:13:02.749Z",
+            "exerciseName": "Pistol Squat",
+            "weight": 0,
+            "reps": 7
+          },
+          {
+            "timestamp": "2026-02-13T12:16:38.007Z",
+            "exerciseName": "Pistol Squat",
+            "weight": 0,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-02-13T12:18:37.524Z",
+            "exerciseName": "Face Pull",
+            "weight": 30,
+            "reps": 15
+          },
+          {
+            "timestamp": "2026-02-13T12:20:44.816Z",
+            "exerciseName": "Face Pull",
+            "weight": 30,
+            "reps": 15
+          },
+          {
+            "timestamp": "2026-02-13T12:25:28.904Z",
+            "exerciseName": "Face Pull",
+            "weight": 30,
+            "reps": 15
+          }
+        ]
+      },
+      {
+        "sessionKey": "Wed Feb 11 2026",
+        "sets": [
+          {
+            "timestamp": "2026-02-11T11:38:02.797Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-02-11T11:41:25.036Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-02-11T11:44:15.630Z",
+            "exerciseName": "Overhead press dumbell",
+            "weight": 18,
+            "reps": 7
+          },
+          {
+            "timestamp": "2026-02-11T11:49:36.225Z",
+            "exerciseName": "Overhead press dumbell",
+            "weight": 22.5,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-02-11T11:55:09.124Z",
+            "exerciseName": "Overhead press dumbell",
+            "weight": 22.5,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-02-11T12:03:54.887Z",
+            "exerciseName": "Overhead press dumbell",
+            "weight": 20,
+            "reps": 7
+          },
+          {
+            "timestamp": "2026-02-11T12:05:16.066Z",
+            "exerciseName": "Barbell row",
+            "weight": 20,
+            "reps": 10,
+            "oneRM": 27
+          },
+          {
+            "timestamp": "2026-02-11T12:05:21.922Z",
+            "exerciseName": "Barbell row",
+            "weight": 40,
+            "reps": 8,
+            "oneRM": 50
+          },
+          {
+            "timestamp": "2026-02-11T12:08:17.154Z",
+            "exerciseName": "Barbell row",
+            "weight": 50,
+            "reps": 8,
+            "oneRM": 62
+          },
+          {
+            "timestamp": "2026-02-11T12:12:18.638Z",
+            "exerciseName": "Barbell row",
+            "weight": 60,
+            "reps": 8,
+            "oneRM": 74
+          },
+          {
+            "timestamp": "2026-02-11T12:16:44.238Z",
+            "exerciseName": "Barbell row",
+            "weight": 60,
+            "reps": 8,
+            "oneRM": 74
+          },
+          {
+            "timestamp": "2026-02-11T12:22:41.836Z",
+            "exerciseName": "Ring dips",
+            "weight": 0,
+            "reps": 7
+          },
+          {
+            "timestamp": "2026-02-11T12:26:40.642Z",
+            "exerciseName": "Ring dips",
+            "weight": 0,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-02-11T12:30:19.590Z",
+            "exerciseName": "Ring dips",
+            "weight": 0,
+            "reps": 6
+          }
+        ]
+      },
+      {
+        "sessionKey": "Mon Feb 09 2026",
+        "sets": [
+          {
+            "timestamp": "2026-02-09T11:26:43.896Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-02-09T11:32:17.257Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-02-09T11:35:25.826Z",
+            "exerciseName": "Deadlift",
+            "weight": 40,
+            "reps": 8,
+            "oneRM": 50
+          },
+          {
+            "timestamp": "2026-02-09T11:38:02.936Z",
+            "exerciseName": "Deadlift",
+            "weight": 70,
+            "reps": 4,
+            "oneRM": 76
+          },
+          {
+            "timestamp": "2026-02-09T11:41:03.203Z",
+            "exerciseName": "Deadlift",
+            "weight": 90,
+            "reps": 2,
+            "oneRM": 93
+          },
+          {
+            "timestamp": "2026-02-09T11:44:18.136Z",
+            "exerciseName": "Deadlift",
+            "weight": 100,
+            "reps": 4,
+            "oneRM": 109
+          },
+          {
+            "timestamp": "2026-02-09T11:49:27.021Z",
+            "exerciseName": "Deadlift",
+            "weight": 100,
+            "reps": 4,
+            "oneRM": 109
+          },
+          {
+            "timestamp": "2026-02-09T11:54:24.461Z",
+            "exerciseName": "Deadlift",
+            "weight": 100,
+            "reps": 4,
+            "oneRM": 109
+          },
+          {
+            "timestamp": "2026-02-09T12:01:34.447Z",
+            "exerciseName": "Pull up",
+            "weight": 20,
+            "reps": 4
+          },
+          {
+            "timestamp": "2026-02-09T12:05:53.562Z",
+            "exerciseName": "Pull up",
+            "weight": 20,
+            "reps": 4
+          },
+          {
+            "timestamp": "2026-02-09T12:10:52.107Z",
+            "exerciseName": "Pull up",
+            "weight": 20,
+            "reps": 4
+          },
+          {
+            "timestamp": "2026-02-09T12:15:08.909Z",
+            "exerciseName": "Ring rows",
+            "weight": 0,
+            "reps": 10
+          },
+          {
+            "timestamp": "2026-02-09T12:18:17.294Z",
+            "exerciseName": "Ring rows",
+            "weight": 0,
+            "reps": 10
+          },
+          {
+            "timestamp": "2026-02-09T12:22:09.223Z",
+            "exerciseName": "Ring rows",
+            "weight": 0,
+            "reps": 10
+          },
+          {
+            "timestamp": "2026-02-09T12:26:09.900Z",
+            "exerciseName": "L-sit hold",
+            "weight": 0,
+            "reps": 7
+          },
+          {
+            "timestamp": "2026-02-09T12:28:09.232Z",
+            "exerciseName": "L-sit hold",
+            "weight": 0,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-02-09T12:30:09.290Z",
+            "exerciseName": "L-sit hold",
+            "weight": 0,
+            "reps": 6
+          }
+        ]
+      },
+      {
+        "sessionKey": "Wed Feb 04 2026",
+        "sets": [
+          {
+            "timestamp": "2026-02-04T11:23:12.152Z",
+            "exerciseName": "Handstand kicks",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-02-04T11:29:02.937Z",
+            "exerciseName": "Overhead press dumbell - standing",
+            "weight": 17.5,
+            "reps": 7
+          },
+          {
+            "timestamp": "2026-02-04T11:32:58.117Z",
+            "exerciseName": "Overhead press dumbell - standing",
+            "weight": 17.5,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-02-04T11:37:57.743Z",
+            "exerciseName": "Overhead press dumbell - standing",
+            "weight": 17.5,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-02-04T11:41:07.520Z",
+            "exerciseName": "Barbell row",
+            "weight": 20,
+            "reps": 10,
+            "oneRM": 27
+          },
+          {
+            "timestamp": "2026-02-04T11:43:21.344Z",
+            "exerciseName": "Barbell row",
+            "weight": 40,
+            "reps": 6,
+            "oneRM": 46
+          },
+          {
+            "timestamp": "2026-02-04T11:53:08.942Z",
+            "exerciseName": "Barbell row",
+            "weight": 55,
+            "reps": 8,
+            "oneRM": 68
+          },
+          {
+            "timestamp": "2026-02-04T11:56:30.081Z",
+            "exerciseName": "Barbell row",
+            "weight": 55,
+            "reps": 8,
+            "oneRM": 68
+          },
+          {
+            "timestamp": "2026-02-04T11:56:37.826Z",
+            "exerciseName": "Barbell row",
+            "weight": 55,
+            "reps": 8,
+            "oneRM": 68
+          },
+          {
+            "timestamp": "2026-02-04T12:01:56.882Z",
+            "exerciseName": "Toes to bar",
+            "weight": 0,
+            "reps": 8
+          },
+          {
+            "timestamp": "2026-02-04T12:05:04.205Z",
+            "exerciseName": "Toes to bar",
+            "weight": 0,
+            "reps": 6
+          },
+          {
+            "timestamp": "2026-02-04T12:09:04.515Z",
+            "exerciseName": "Toes to bar",
+            "weight": 0,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-02-04T12:10:34.169Z",
+            "exerciseName": "Face Pull",
+            "weight": 30,
+            "reps": 15
+          },
+          {
+            "timestamp": "2026-02-04T12:13:25.810Z",
+            "exerciseName": "Face Pull",
+            "weight": 30,
+            "reps": 15
+          },
+          {
+            "timestamp": "2026-02-04T12:43:57.207Z",
+            "exerciseName": "Face Pull",
+            "weight": 30,
+            "reps": 15
+          }
+        ]
+      },
+      {
+        "sessionKey": "Mon Feb 02 2026",
+        "sets": [
+          {
+            "timestamp": "2026-02-02T11:43:44.006Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 3
+          },
+          {
+            "timestamp": "2026-02-02T11:47:45.628Z",
+            "exerciseName": "Muscle up",
+            "weight": 0,
+            "reps": 4
+          },
+          {
+            "timestamp": "2026-02-02T11:50:30.070Z",
+            "exerciseName": "Deadlift",
+            "weight": 30,
+            "reps": 10,
+            "oneRM": 40
+          },
+          {
+            "timestamp": "2026-02-02T11:53:09.693Z",
+            "exerciseName": "Deadlift",
+            "weight": 60,
+            "reps": 5,
+            "oneRM": 68
+          },
+          {
+            "timestamp": "2026-02-02T11:56:44.647Z",
+            "exerciseName": "Deadlift",
+            "weight": 80,
+            "reps": 3,
+            "oneRM": 85
+          },
+          {
+            "timestamp": "2026-02-02T11:59:26.794Z",
+            "exerciseName": "Deadlift",
+            "weight": 90,
+            "reps": 2,
+            "oneRM": 93
+          },
+          {
+            "timestamp": "2026-02-02T12:03:18.216Z",
+            "exerciseName": "Deadlift",
+            "weight": 100,
+            "reps": 4,
+            "oneRM": 109
+          },
+          {
+            "timestamp": "2026-02-02T12:08:39.655Z",
+            "exerciseName": "Deadlift",
+            "weight": 100,
+            "reps": 4,
+            "oneRM": 109
+          },
+          {
+            "timestamp": "2026-02-02T12:13:50.607Z",
+            "exerciseName": "Pull up",
+            "weight": 0,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-02-02T12:15:54.263Z",
+            "exerciseName": "Pull up",
+            "weight": 0,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-02-02T12:19:01.206Z",
+            "exerciseName": "Pull up",
+            "weight": 0,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-02-02T12:22:40.467Z",
+            "exerciseName": "Ring rows",
+            "weight": 0,
+            "reps": 10
+          },
+          {
+            "timestamp": "2026-02-02T12:25:48.425Z",
+            "exerciseName": "Ring rows",
+            "weight": 0,
+            "reps": 10
+          },
+          {
+            "timestamp": "2026-02-02T12:28:42.279Z",
+            "exerciseName": "Ring rows",
+            "weight": 0,
+            "reps": 10
+          }
+        ]
+      },
+      {
+        "sessionKey": "Sun Feb 01 2026",
+        "sets": [
+          {
+            "timestamp": "2026-02-01T12:12:44.656Z",
+            "exerciseName": "Pull up",
+            "weight": 0,
+            "reps": 4
+          },
+          {
+            "timestamp": "2026-02-01T12:28:25.746Z",
+            "exerciseName": "Pull up",
+            "weight": 0,
+            "reps": 5
+          },
+          {
+            "timestamp": "2026-02-01T12:34:00.781Z",
+            "exerciseName": "Pull up",
+            "weight": 0,
+            "reps": 5
+          }
+        ]
+      }
+    ],
+    "programs": [
+      {
+        "id": "bd1a40ad-7e78-4ec8-a549-6ea353dc409f",
+        "title": "Force & Callisthénie v1",
+        "sessions": [
+          {
+            "session": "Salle pull",
+            "day": "LUNDI",
+            "blocs": [
+              {
+                "name": "Skill",
+                "exercises": [
+                  {
+                    "exerciseName": "Muscle up",
+                    "sets": 2,
+                    "reps": "3",
+                    "charge": "Qualité / Transition",
+                    "recovery": "3'",
+                    "notes": "Focus False Grip & Transition rapide"
+                  }
+                ]
+              },
+              {
+                "name": "Lourd 1",
+                "exercises": [
+                  {
+                    "exerciseName": "Deadlift",
+                    "sets": 3,
+                    "reps": "5",
+                    "charge": "",
+                    "recovery": "3'30",
+                    "notes": "Dos neutre, extension hanche explosive"
+                  }
+                ]
+              },
+              {
+                "name": "Lourd 2",
+                "exercises": [
+                  {
+                    "exerciseName": "Pull up",
+                    "sets": 3,
+                    "reps": "5",
+                    "charge": "",
+                    "recovery": "3'",
+                    "notes": "Menton au-dessus de la barre"
+                  }
+                ]
+              },
+              {
+                "name": "Volume",
+                "exercises": [
+                  {
+                    "exerciseName": "Ring rows",
+                    "sets": 3,
+                    "reps": "10-12",
+                    "charge": "PDC (Tempo 2022)",
+                    "recovery": "1'30",
+                    "notes": "Rétraction scapulaire maximale"
+                  }
+                ]
+              },
+              {
+                "name": "Core",
+                "exercises": [
+                  {
+                    "exerciseName": "L-Sit Hold",
+                    "sets": 3,
+                    "reps": "Max",
+                    "charge": "Sol ou Barres",
+                    "recovery": "1'30",
+                    "notes": "Jambes tendues, compression abdos"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "session": "Salle 2",
+            "day": "MERCREDI",
+            "blocs": [
+              {
+                "name": "Skill",
+                "exercises": [
+                  {
+                    "exerciseName": "Handstand kicks",
+                    "sets": 1,
+                    "reps": "15 min",
+                    "charge": "Accumulation temps",
+                    "recovery": "1'",
+                    "notes": "Ventre au mur / Sorties libres"
+                  }
+                ]
+              },
+              {
+                "name": "Lourd 1",
+                "exercises": [
+                  {
+                    "exerciseName": "Overhead press dumbell - standing",
+                    "sets": 3,
+                    "reps": "8",
+                    "charge": "",
+                    "recovery": "2'30",
+                    "notes": "Debout, Gainage fessiers, pas d'élan"
+                  }
+                ]
+              },
+              {
+                "name": "Lourd 2",
+                "exercises": [
+                  {
+                    "exerciseName": "Barbell row",
+                    "sets": 3,
+                    "reps": "8",
+                    "charge": "",
+                    "recovery": "2'30",
+                    "notes": "Tirage vers le nombril"
+                  }
+                ]
+              },
+              {
+                "name": "Core",
+                "exercises": [
+                  {
+                    "exerciseName": "Toes to bar",
+                    "sets": 3,
+                    "reps": "10",
+                    "charge": "",
+                    "recovery": "1'30",
+                    "notes": "Compression active, pas de balancier"
+                  }
+                ]
+              },
+              {
+                "name": "Santé",
+                "exercises": [
+                  {
+                    "exerciseName": "Face Pull",
+                    "sets": 3,
+                    "reps": "15-20",
+                    "charge": "Léger",
+                    "recovery": "1'",
+                    "notes": "Focus deltoïde postérieur"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "session": "Salle push",
+            "day": "VENDREDI",
+            "blocs": [
+              {
+                "name": "Lourd 1",
+                "exercises": [
+                  {
+                    "exerciseName": "Squat",
+                    "sets": 3,
+                    "reps": "5-8",
+                    "charge": "",
+                    "recovery": "3'30",
+                    "notes": "Cassage de parallèle, contrôle descente"
+                  }
+                ]
+              },
+              {
+                "name": "Lourd 2",
+                "exercises": [
+                  {
+                    "exerciseName": "Muscle up",
+                    "sets": 4,
+                    "reps": "4-5",
+                    "charge": "PDC",
+                    "recovery": "3'",
+                    "notes": "Explosif"
+                  }
+                ]
+              },
+              {
+                "name": "Volume",
+                "exercises": [
+                  {
+                    "exerciseName": "Hammer pull up",
+                    "sets": 3,
+                    "reps": "8-10",
+                    "charge": "PDC / Lest léger",
+                    "recovery": "2'",
+                    "notes": "Focus Brachial / Épaisseur"
+                  }
+                ]
+              },
+              {
+                "name": "Stabilité",
+                "exercises": [
+                  {
+                    "exerciseName": "Ring dips",
+                    "sets": 3,
+                    "reps": "8-10",
+                    "charge": "PDC",
+                    "recovery": "2'",
+                    "notes": "Anneaux tournés vers l'extérieur (RTO)"
+                  }
+                ]
+              },
+              {
+                "name": "Unilat.",
+                "exercises": [
+                  {
+                    "exerciseName": "Pistol Squat",
+                    "sets": 2,
+                    "reps": "6-8",
+                    "charge": "Par jambe",
+                    "recovery": "1'30",
+                    "notes": "Contrôle de l'équilibre"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "ed82028d-71dd-4c24-8233-b9d62d903ded",
+        "title": "Force & Callisthénie v2",
+        "sessions": [
+          {
+            "session": "Salle pull",
+            "day": "LUNDI",
+            "blocs": [
+              {
+                "name": "Skill",
+                "exercises": [
+                  {
+                    "exerciseName": "Ring muscle up",
+                    "sets": 3,
+                    "reps": "1-2",
+                    "charge": "",
+                    "recovery": "3'",
+                    "notes": ""
+                  }
+                ]
+              },
+              {
+                "name": "Lourd 1",
+                "exercises": [
+                  {
+                    "exerciseName": "Trap bar Deadlift",
+                    "sets": 3,
+                    "reps": "5",
+                    "charge": "",
+                    "recovery": "3'30",
+                    "notes": ""
+                  }
+                ]
+              },
+              {
+                "name": "Lourd 2",
+                "exercises": [
+                  {
+                    "exerciseName": "Pull up",
+                    "sets": 3,
+                    "reps": "5",
+                    "charge": "",
+                    "recovery": "3'",
+                    "notes": "Menton au-dessus de la barre"
+                  }
+                ]
+              },
+              {
+                "name": "Volume",
+                "exercises": [
+                  {
+                    "exerciseName": "Ring dips",
+                    "sets": 3,
+                    "reps": "8",
+                    "charge": "",
+                    "recovery": "1'30",
+                    "notes": "Placé ici pour finir la séance sans surcharge pondérale, focus sur le contrôle et la stabilité."
+                  }
+                ]
+              },
+              {
+                "name": "Core",
+                "exercises": [
+                  {
+                    "exerciseName": "L-Sit Hold",
+                    "sets": 3,
+                    "reps": "Max",
+                    "charge": "Sol ou Barres",
+                    "recovery": "1'30",
+                    "notes": "Jambes tendues, compression abdos"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "session": "Salle 2",
+            "day": "MERCREDI",
+            "blocs": [
+              {
+                "name": "Skill",
+                "exercises": [
+                  {
+                    "exerciseName": "Handstand kicks",
+                    "sets": 1,
+                    "reps": "15 min",
+                    "charge": "Accumulation temps",
+                    "recovery": "1'",
+                    "notes": "Ventre au mur / Sorties libres"
+                  }
+                ]
+              },
+              {
+                "name": "Lourd 1",
+                "exercises": [
+                  {
+                    "exerciseName": "Overhead press dumbell - standing",
+                    "sets": 3,
+                    "reps": "8",
+                    "charge": "20",
+                    "recovery": "2'30",
+                    "notes": "Debout, Gainage fessiers, pas d'élan"
+                  }
+                ]
+              },
+              {
+                "name": "Lourd 2",
+                "exercises": [
+                  {
+                    "exerciseName": "Barbell row",
+                    "sets": 3,
+                    "reps": "6-8",
+                    "charge": "65",
+                    "recovery": "2'30",
+                    "notes": "Tirage vers le nombril"
+                  }
+                ]
+              },
+              {
+                "name": "Volume",
+                "exercises": [
+                  {
+                    "exerciseName": "Pike push up",
+                    "sets": 3,
+                    "reps": "8-12",
+                    "charge": "",
+                    "recovery": "1'30",
+                    "notes": "Compression active, pas de balancier"
+                  }
+                ]
+              },
+              {
+                "name": "Santé",
+                "exercises": [
+                  {
+                    "exerciseName": "Face Pull",
+                    "sets": 3,
+                    "reps": "15-20",
+                    "charge": "Léger",
+                    "recovery": "1'",
+                    "notes": "Focus deltoïde postérieur"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "session": "Salle push",
+            "day": "VENDREDI",
+            "blocs": [
+              {
+                "name": "Lourd 1",
+                "exercises": [
+                  {
+                    "exerciseName": "Muscle up",
+                    "sets": 4,
+                    "reps": "4-5",
+                    "charge": "PDC",
+                    "recovery": "3'",
+                    "notes": "Explosif"
+                  }
+                ]
+              },
+              {
+                "name": "Lourd 2",
+                "exercises": [
+                  {
+                    "exerciseName": "Dips",
+                    "sets": 3,
+                    "reps": "5-8",
+                    "charge": "",
+                    "recovery": "3'30",
+                    "notes": "C'est ici qu'on met la charge maximale en poussée"
+                  }
+                ]
+              },
+              {
+                "name": "Volume",
+                "exercises": [
+                  {
+                    "exerciseName": "Pseudo planche push up",
+                    "sets": 3,
+                    "reps": "10-12",
+                    "charge": "PDC",
+                    "recovery": "2'",
+                    "notes": "Travail spécifique pour la force \"bras tendus\" et l'avant de l'épaule."
+                  }
+                ]
+              },
+              {
+                "name": "Stabilité",
+                "exercises": [
+                  {
+                    "exerciseName": "Ring dips",
+                    "sets": 3,
+                    "reps": "8-10",
+                    "charge": "PDC",
+                    "recovery": "2'",
+                    "notes": "Deuxième séance de Ring Dips de la semaine pour la stabilité."
+                  }
+                ]
+              },
+              {
+                "name": "Core",
+                "exercises": [
+                  {
+                    "exerciseName": "Toes to bar",
+                    "sets": 3,
+                    "reps": "10-12",
+                    "charge": "",
+                    "recovery": "1'30",
+                    "notes": ""
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "f6d8ed0f-ef0c-4386-b124-794314440d05",
+        "title": "Full Street Force & Skills",
+        "sessions": [
+          {
+            "session": "Explosivité & Stabilité",
+            "day": "LUNDI",
+            "blocs": [
+              {
+                "name": "Skill",
+                "exercises": [
+                  {
+                    "exerciseName": "Muscle up",
+                    "sets": 4,
+                    "reps": "3",
+                    "charge": "",
+                    "recovery": "",
+                    "notes": "3-4 séries de 2-3 répétitions (ne jamais aller à l'échec). Focus sur une transition rapide et propre."
+                  }
+                ]
+              },
+              {
+                "name": "Lourd",
+                "exercises": [
+                  {
+                    "exerciseName": "Ring dips",
+                    "sets": 4,
+                    "reps": "6-8",
+                    "charge": "",
+                    "recovery": "",
+                    "notes": "Anneaux tournés vers l'extérieur (RTO)"
+                  }
+                ]
+              },
+              {
+                "name": "Volume",
+                "exercises": [
+                  {
+                    "exerciseName": "Ring rows",
+                    "sets": 3,
+                    "reps": "8-12",
+                    "charge": "",
+                    "recovery": "",
+                    "notes": "Rétraction scapulaire maximale"
+                  }
+                ]
+              },
+              {
+                "name": "Core",
+                "exercises": [
+                  {
+                    "exerciseName": "L-sit hold",
+                    "sets": 4,
+                    "reps": "max",
+                    "charge": "",
+                    "recovery": "",
+                    "notes": "Jambes tendues, compression abdos"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "session": "Push & Skill",
+            "day": "MERCREDI",
+            "blocs": [
+              {
+                "name": "Skill",
+                "exercises": [
+                  {
+                    "exerciseName": "Handstand kicks",
+                    "sets": 3,
+                    "reps": "",
+                    "charge": "Accumulation temps",
+                    "recovery": "",
+                    "notes": "Ventre au mur / Sorties libres"
+                  }
+                ]
+              },
+              {
+                "name": "Lourd",
+                "exercises": [
+                  {
+                    "exerciseName": "Pike push up",
+                    "sets": 4,
+                    "reps": "6-10",
+                    "charge": "",
+                    "recovery": "",
+                    "notes": "Utilise des parallettes pour augmenter l'amplitude."
+                  },
+                  {
+                    "exerciseName": "Pseudo planche push up",
+                    "sets": 4,
+                    "reps": "6-10",
+                    "charge": "",
+                    "recovery": "",
+                    "notes": "Lean maximal vers l'avant (mains au niveau de la taille)."
+                  }
+                ]
+              },
+              {
+                "name": "Volume",
+                "exercises": [
+                  {
+                    "exerciseName": "Pistol squat",
+                    "sets": 3,
+                    "reps": "6-8",
+                    "charge": "",
+                    "recovery": "",
+                    "notes": "Contrôle de l'équilibre"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "session": "Full body",
+            "day": "VENDREDI",
+            "blocs": [
+              {
+                "name": "Skill",
+                "exercises": [
+                  {
+                    "exerciseName": "Muscle up",
+                    "sets": 5,
+                    "reps": "3",
+                    "charge": "",
+                    "recovery": "",
+                    "notes": "Explosif"
+                  }
+                ]
+              },
+              {
+                "name": "Lourd",
+                "exercises": [
+                  {
+                    "exerciseName": "Ring dips",
+                    "sets": 3,
+                    "reps": "max-1",
+                    "charge": "",
+                    "recovery": "",
+                    "notes": "ne pas aller à l'échec total"
+                  }
+                ]
+              },
+              {
+                "name": "Volume",
+                "exercises": [
+                  {
+                    "exerciseName": "Ring rows",
+                    "sets": 3,
+                    "reps": "10-12",
+                    "charge": "",
+                    "recovery": "",
+                    "notes": "Focus sur la brûlure musculaire et la rétraction scapulaire."
+                  }
+                ]
+              },
+              {
+                "name": "Core",
+                "exercises": [
+                  {
+                    "exerciseName": "Toes to bar",
+                    "sets": 3,
+                    "reps": "10-12",
+                    "charge": "",
+                    "recovery": "",
+                    "notes": "Compression active, pas de balancier"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "54dd1de8-8038-41f3-a8b4-92b19ae6e104",
+        "title": "Full street v1",
+        "sessions": [
+          {
+            "session": "Full street",
+            "day": "ANY",
+            "blocs": [
+              {
+                "name": "SNC",
+                "exercises": [
+                  {
+                    "exerciseName": "Muscle up",
+                    "sets": 2,
+                    "reps": "2",
+                    "charge": "",
+                    "recovery": "",
+                    "notes": "Explosif"
+                  }
+                ]
+              },
+              {
+                "name": "Skill",
+                "exercises": [
+                  {
+                    "exerciseName": "Ring muscle up",
+                    "sets": 4,
+                    "reps": "1",
+                    "charge": "",
+                    "recovery": "",
+                    "notes": "C'est là que tu mets toute ton énergie"
+                  }
+                ]
+              },
+              {
+                "name": "Lourd",
+                "exercises": [
+                  {
+                    "exerciseName": "Pull up",
+                    "sets": 3,
+                    "reps": "5",
+                    "charge": "20kg",
+                    "recovery": "",
+                    "notes": "Force pure de tirage"
+                  },
+                  {
+                    "exerciseName": "Ring dips",
+                    "sets": 3,
+                    "reps": "6-8",
+                    "charge": "",
+                    "recovery": "",
+                    "notes": "Arbitrage : Si après les RMU et les Tractions tu es vidé, passe-les en PDC avec un focus stabilité (RTO). Si tu as encore du jus, mets la veste. Les retirer complètement serait dommage car c'est le meilleur transfert pour la fin du RMU."
+                  }
+                ]
+              },
+              {
+                "name": "Volume",
+                "exercises": [
+                  {
+                    "exerciseName": "Ring rows",
+                    "sets": 3,
+                    "reps": "10-12",
+                    "charge": "",
+                    "recovery": "",
+                    "notes": "Lestée si encore jus"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "b721a1c0-51d7-47d0-9cd5-2b8782ae5e22",
+        "title": "Full street",
+        "sessions": [
+          {
+            "session": "Full street",
+            "day": "ANY",
+            "blocs": [
+              {
+                "name": "Skill",
+                "exercises": [
+                  {
+                    "exerciseName": "Muscle up",
+                    "sets": 3,
+                    "reps": "3",
+                    "charge": "",
+                    "recovery": "",
+                    "notes": "Explosif"
+                  }
+                ]
+              },
+              {
+                "name": "Lourd 1",
+                "exercises": [
+                  {
+                    "exerciseName": "Ring dips",
+                    "sets": 3,
+                    "reps": "6-8",
+                    "charge": "",
+                    "recovery": "",
+                    "notes": "Anneaux tournés vers l'extérieur (RTO)"
+                  }
+                ]
+              },
+              {
+                "name": "Volume",
+                "exercises": [
+                  {
+                    "exerciseName": "Ring rows",
+                    "sets": 3,
+                    "reps": "10-12",
+                    "charge": "",
+                    "recovery": "",
+                    "notes": "Rétraction scapulaire maximale"
+                  },
+                  {
+                    "exerciseName": "Pike push up",
+                    "sets": 3,
+                    "reps": "8-10",
+                    "charge": "",
+                    "recovery": "",
+                    "notes": "Mains au sol ou sur parallettes pour augmenter l'amplitude."
+                  }
+                ]
+              },
+              {
+                "name": "Core",
+                "exercises": [
+                  {
+                    "exerciseName": "L-sit hold",
+                    "sets": 4,
+                    "reps": "6-8",
+                    "charge": "",
+                    "recovery": "",
+                    "notes": "Jambes tendues, compression abdos"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "profile": {
+      "name": "Thibaut",
+      "dob": "22/12/1993",
+      "weight": 68,
+      "size": "178"
+    }
+  }
+}
