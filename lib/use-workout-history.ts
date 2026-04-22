@@ -1,6 +1,7 @@
 'use client';
 
 import { getWorkoutHistory } from '@/app/actions';
+import { dataCache } from '@/lib/data-cache';
 import { useEffect, useState } from 'react';
 import type { WorkoutSet } from './types';
 
@@ -13,10 +14,20 @@ export function useWorkoutHistory() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchHistory = async () => {
+  const fetchHistory = async (forceRefresh = false) => {
     setIsLoading(true);
     setError(null);
     try {
+      // Try to get from cache first
+      if (!forceRefresh) {
+        const cachedData = dataCache.get<WorkoutSet[]>('workout-history');
+        if (cachedData) {
+          setHistory(cachedData);
+          setIsLoading(false);
+          return;
+        }
+      }
+
       const result = await getWorkoutHistory();
       if (result.success && result.data) {
         const transformedHistory: WorkoutSet[] = result.data.map((item, index) => ({
@@ -28,6 +39,8 @@ export function useWorkoutHistory() {
           estimated1RM: item.oneRM,
         }));
         setHistory(transformedHistory);
+        // Cache for 2 minutes
+        dataCache.set('workout-history', transformedHistory, 2 * 60 * 1000);
       } else {
         setError(result.error || 'Failed to fetch workout history');
       }

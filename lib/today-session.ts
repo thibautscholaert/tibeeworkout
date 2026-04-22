@@ -14,24 +14,33 @@ export function getTodaySession(history: WorkoutSet[]): WorkoutSet[] {
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()); // Trier par ordre chronologique
 }
 
-// Fonction pour grouper les séries par exercice avec comptage
 export function groupTodaySessionByExercise(todaySession: WorkoutSet[]): {
   exerciseName: string;
   sets: WorkoutSet[];
   totalSets: number;
 }[] {
-  const exerciseGroups = new Map<string, WorkoutSet[]>();
+  // const exerciseGroups = new Map<string, WorkoutSet[]>();
+  let key = '';
+  const list: {
+    exerciseName: string;
+    sets: WorkoutSet[];
+    totalSets: number;
+  }[] = [];
 
   todaySession.forEach((set) => {
-    if (!exerciseGroups.has(set.exerciseName)) {
-      exerciseGroups.set(set.exerciseName, []);
+    if (key === set.exerciseName) {
+      list[list.length - 1].sets.push(set);
+      list[list.length - 1].totalSets++;
+    } else {
+      key = set.exerciseName;
+      list.push({
+        exerciseName: set.exerciseName,
+        sets: [set],
+        totalSets: 1,
+      });
     }
-    exerciseGroups.get(set.exerciseName)!.push(set);
   });
 
-  return Array.from(exerciseGroups.entries()).map(([exerciseName, sets]) => ({
-    exerciseName,
-    sets,
-    totalSets: sets.length,
-  }));
+
+  return list;
 }

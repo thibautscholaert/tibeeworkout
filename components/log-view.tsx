@@ -2,6 +2,7 @@
 
 import { saveWorkoutSet } from '@/app/actions';
 import { ChronoIndicator } from '@/components/chrono-indicator';
+import { NotesForm } from '@/components/notes-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,6 +16,7 @@ import { useReactFormPersistence } from '@/lib/form-persistence';
 import { setFormSchema, type SetFormData } from '@/lib/schemas';
 import { getWithTTL, setWithTTL } from '@/lib/storage';
 import { getTodaySession, groupTodaySessionByExercise } from '@/lib/today-session';
+import type { WorkoutSet } from '@/lib/types';
 import { cn, formatReps, formatWeight, roundToNearest5 } from '@/lib/utils';
 import { useWorkout } from '@/lib/workout-context';
 import { getWorkoutSuggestions, isWarmupSet } from '@/lib/workout-suggestions';
@@ -30,6 +32,7 @@ import {
   Flame,
   Lightbulb,
   LightbulbIcon,
+  NotebookIcon,
   PersonStandingIcon,
   Plus,
   Search,
@@ -40,8 +43,9 @@ import {
   Trophy,
   Zap,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 
 // Fonction pour obtenir le jour de la semaine en français
 function getCurrentDayInFrench(): string {
@@ -73,8 +77,93 @@ function normalizeDayName(day: string): string {
   return dayMap[day.toLowerCase()] || day;
 }
 
+// Memoized component for exercise set item to prevent unnecessary re-renders
+const ExerciseSetItem = memo(({
+  set,
+  index,
+  totalSets,
+  exerciseName,
+  getBestSetComparison
+}: {
+  set: WorkoutSet;
+  index: number;
+  totalSets: number;
+  exerciseName: string;
+  getBestSetComparison: (exerciseName: string, todaySets: any[]) => { todayBest: any; allTimeBest: any };
+}) => {
+  const { allTimeBest } = getBestSetComparison(exerciseName, []);
+  const isWarmup = isWarmupSet(set, allTimeBest, []);
+
+  return (
+    <div
+      key={set.id}
+      className={cn(
+        'group relative overflow-hidden rounded-lg border py-1 px-2 transition-all hover:shadow-sm',
+        isWarmup
+          ? 'bg-gradient-to-r from-orange-50/10 to-card/80 hover:border-orange-300/50'
+          : 'border-border/50 bg-gradient-to-r from-card to-card/50 hover:border-primary/30'
+      )}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div
+            className={cn(
+              'flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold',
+              isWarmup ? 'bg-orange-100/20 text-orange-400' : 'bg-primary/10 text-primary'
+            )}
+          >
+            {index + 1}
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1">
+              {isWarmup ? (
+                <Flame className="h-4 w-4 text-orange-500 mr-1" />
+              ) : (
+                <BicepsFlexedIcon className="h-4 w-4 text-primary mr-1" />
+              )}
+              <span className="text-sm font-medium">{formatWeight(set.weight, set.exerciseName)}</span>
+              <span className="text-xs text-muted-foreground">×</span>
+              <span className="text-sm font-medium">{set.reps}</span>
+              <span className="text-sm text-muted-foreground">
+                {EXERCISES.find((ex) => ex.name.toLocaleLowerCase() === set.exerciseName.toLocaleLowerCase())?.repType === 'time'
+                  ? 'seconds'
+                  : 'reps'}
+              </span>
+            </div>
+            {set.estimated1RM && (
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-muted-foreground">1RM:</span>
+                <span className="text-xs font-medium text-primary">~{set.estimated1RM}kg</span>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="text-xs text-muted-foreground">
+          {new Date(set.timestamp).toLocaleTimeString('fr-FR', {
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+        </div>
+      </div>
+
+      {/* Barre de progression visuelle */}
+      <div
+        className={cn(
+          'absolute bottom-0 left-0 h-0.5 transition-all group-hover:h-1',
+          isWarmup ? 'bg-gradient-to-r from-orange-300/30 to-orange-400/50' : 'bg-gradient-to-r from-primary/20 to-primary/40'
+        )}
+        style={{
+          width: `${((index + 1) / totalSets) * 100}%`,
+        }}
+      />
+    </div>
+  );
+});
+
+ExerciseSetItem.displayName = 'ExerciseSetItem';
+
 export function LogView() {
-  const { history, fetchHistory, workoutPrograms } = useWorkout();
+  const { notes, history, fetchHistory, workoutPrograms } = useWorkout();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [exerciseOpen, setExerciseOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -129,7 +218,7 @@ export function LogView() {
               const matchPercentage = matchCount / todayExercises.length;
 
               if (matchPercentage >= 0.5) {
-                console.log('Match found:', program.title, session.session);
+                // console.log('Match found:', program.title, session.session);
                 setSelectedProgram(program.id);
                 const isAnyDay = session.day.toLowerCase() === 'any';
                 setSelectedSession(isAnyDay ? session.session : session.day);
@@ -150,7 +239,7 @@ export function LogView() {
 
               // Check if this session matches today's day
               if (normalizedSessionDay === currentDay) {
-                console.log('Day match found:', program.title, session.session);
+                // console.log('Day match found:', program.title, session.session);
                 setSelectedProgram(program.id);
                 const isAnyDay = session.day.toLowerCase() === 'any';
                 setSelectedSession(isAnyDay ? session.session : session.day);
@@ -165,29 +254,6 @@ export function LogView() {
       }
     }
   }, [workoutPrograms, history]);
-
-  // Save selected program to localStorage with 2-hour TTL (using title)
-  const handleProgramSelect = (programId: string) => {
-    const program = workoutPrograms.find((p) => p.id === programId);
-    if (program) {
-      setSelectedProgram(programId);
-      const sessions = workoutPrograms.find((p) => p.id === programId)?.sessions;
-      if (sessions && sessions.length > 0) {
-        handleSessionSelect(sessions[0].day);
-      } else {
-        handleSessionSelect('');
-      }
-      setProgramOpen(false);
-      setWithTTL('selectedProgram', program.title, 2 * 60 * 60 * 1000); // Store title, not ID
-    }
-  };
-
-  // Save selected day to localStorage with 2-hour TTL
-  const handleSessionSelect = (day: string) => {
-    setSelectedSession(day);
-    setSessionOpen(false);
-    setWithTTL('selectedSession', day, 2 * 60 * 60 * 1000); // 2 hours in milliseconds
-  };
 
   // Obtenir les séries d'aujourd'hui
   const todaySession = useMemo(() => {
@@ -204,9 +270,43 @@ export function LogView() {
     return getWorkoutSuggestions(workoutPrograms, history, selectedProgram, selectedSession);
   }, [workoutPrograms, history, selectedProgram, selectedSession]);
 
+  // Memoized event handlers to prevent unnecessary re-renders
+  const handleProgramSelect = useCallback((programId: string) => {
+    const program = workoutPrograms.find((p) => p.id === programId);
+    if (program) {
+      setSelectedProgram(programId);
+      const sessions = workoutPrograms.find((p) => p.id === programId)?.sessions;
+      if (sessions && sessions.length > 0) {
+        handleSessionSelect(sessions[0].day);
+      } else {
+        handleSessionSelect('');
+      }
+      setProgramOpen(false);
+      setWithTTL('selectedProgram', program.title, 2 * 60 * 60 * 1000); // Store title, not ID
+    }
+  }, [workoutPrograms]);
+
+  const handleSessionSelect = useCallback((day: string) => {
+    setSelectedSession(day);
+    setSessionOpen(false);
+    setWithTTL('selectedSession', day, 2 * 60 * 60 * 1000); // 2 hours in milliseconds
+  }, []);
+
+  const handleSkipSuggestion = useCallback(() => {
+    if (suggestionIndex < allSuggestions.length - 1) {
+      setSuggestionIndex((prev) => prev + 1);
+    } else {
+      // Loop back to the first suggestion
+      setSuggestionIndex(0);
+    }
+  }, [suggestionIndex, allSuggestions.length]);
+
+  const handleCopySession = useCallback(async () => {
+    await copySessionToClipboard(todaySession);
+  }, [todaySession]);
+
   // Obtenir la suggestion actuelle en fonction de l'index
   const suggestions = useMemo(() => {
-    console.log('allSuggestions', allSuggestions);
     if (allSuggestions.length === 0) {
       return {
         nextExercise: null,
@@ -230,15 +330,6 @@ export function LogView() {
     setSuggestionIndex(0);
   }, [allSuggestions.length, selectedProgram, selectedSession]);
 
-  // Handle skip functionality
-  const handleSkipSuggestion = () => {
-    if (suggestionIndex < allSuggestions.length - 1) {
-      setSuggestionIndex((prev) => prev + 1);
-    } else {
-      // Loop back to the first suggestion
-      setSuggestionIndex(0);
-    }
-  };
 
   // Calculate most practiced exercises (top 5 by number of sets)
   const mostPracticedExercises = useMemo(() => {
@@ -251,7 +342,7 @@ export function LogView() {
     return (
       Array.from(exerciseCounts.entries())
         .sort((a, b) => b[1] - a[1]) // Sort by count descending
-        // .slice(0, 19) // Take top x
+        .slice(0, 19) // Take top 19 to prevent excessive renders
         .map(([name]) => name)
     ); // Extract just the names
   }, [history]);
@@ -261,7 +352,7 @@ export function LogView() {
 
   // Get selected program details
   const selectedProgramData = useMemo(() => {
-    console.log("selectedProgram", selectedProgram)
+    // console.log("selectedProgram", selectedProgram)
     return workoutPrograms.find((program) => program.id === selectedProgram);
   }, [workoutPrograms, selectedProgram]);
 
@@ -290,38 +381,53 @@ export function LogView() {
     formState: { errors },
   } = useForm<SetFormData>({
     resolver: zodResolver(setFormSchema),
-    defaultValues: loadSavedValues() || {
-      exerciseName: defaultExercise,
+    defaultValues: {
+      exerciseName: 'Pull up',
       weight: 0,
       reps: 0,
     },
   });
 
-  // Save form values whenever they change
+  // Save form values whenever they change - debounced
   const watchedValues = watch();
   useEffect(() => {
-    saveFormValues(watchedValues);
+    const timeoutId = setTimeout(() => {
+      saveFormValues(watchedValues);
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
   }, [watchedValues, saveFormValues]);
 
-  // Load saved exercise from localStorage and set default (client-side only)
-  const [hasSetDefault, setHasSetDefault] = useState(false);
+  // Load saved values from localStorage (client-side only)
   useEffect(() => {
-    if (!hasSetDefault) {
-      const savedExercise = getWithTTL<string>('selectedExercise');
-      const exerciseToSet = savedExercise || defaultExercise;
-      if (exerciseToSet) {
-        setValue('exerciseName', exerciseToSet);
-        setHasSetDefault(true);
-      }
+    // Load saved form values
+    const savedValues = loadSavedValues();
+    if (savedValues) {
+      reset(savedValues);
     }
-  }, [defaultExercise, setValue, hasSetDefault]);
+
+    // Load selected exercise from localStorage or use default
+    const savedExercise = getWithTTL<string>('selectedExercise');
+    const exerciseToSet = savedExercise || defaultExercise;
+    if (exerciseToSet) {
+      setValue('exerciseName', exerciseToSet);
+    }
+  }, [defaultExercise, setValue, reset]);
 
   const selectedExercise = watch('exerciseName');
 
-  // Save selectedExercise to localStorage whenever it changes
+  const note = useMemo(() => {
+    return notes.find(note => note.exerciseName === selectedExercise);
+  }, [notes, selectedExercise]);
+
+  // Save selectedExercise to localStorage whenever it changes - debounced
   useEffect(() => {
     if (selectedExercise) {
-      setWithTTL('selectedExercise', selectedExercise, 2 * 60 * 60 * 1000); // 2 hours TTL
+      const timeoutId = setTimeout(() => {
+        setWithTTL('selectedExercise', selectedExercise, 2 * 60 * 60 * 1000); // 2 hours TTL
+      }, 300); // 300ms debounce
+
+      return () => clearTimeout(timeoutId);
     }
   }, [selectedExercise]);
 
@@ -339,7 +445,7 @@ export function LogView() {
     const oneRMs = exerciseSets.filter((set) => set.estimated1RM).map((set) => set.estimated1RM!);
     if (oneRMs.length === 0) return null;
     return Math.max(...oneRMs);
-  }, [history, selectedExercise, selectedExerciseData]);
+  }, [history, selectedExercise]);
 
   // Best perf (same as stats page): best set by weight then reps
   const bestPerfRepsWeight = useMemo(() => {
@@ -394,24 +500,8 @@ export function LogView() {
   useEffect(() => {
     const defaultTargetWeight = bestPerfRepsWeight?.weight ?? 0;
     const defaultTargetReps = bestPerfRepsWeight?.reps ?? 0;
-    // if (selectedExerciseData?.warmupProtocol?.some((w) => w.weightUnit === '%')) {
-    //   if (best1RM) {
-    //     setTargetWeight(roundToNearest5(best1RM));
-    //     setTargetReps(1);
-    //   } else {
-    //     const firstFixedWeight = selectedExerciseData.warmupProtocol.find((w) => w.weightUnit !== '%');
-    //     if (firstFixedWeight) {
-    //       setTargetWeight(roundToNearest5(parseFloat(firstFixedWeight.weight)));
-    //       setTargetReps(firstFixedWeight.reps);
-    //     } else {
-    //       setTargetWeight(defaultTargetWeight);
-    //       setTargetReps(defaultTargetReps);
-    //     }
-    //   }
-    // } else {
     setTargetWeight(defaultTargetWeight);
     setTargetReps(defaultTargetReps);
-    // }
   }, [selectedExercise, best1RM, selectedExerciseData, bestPerfRepsWeight]);
 
   const filteredExercises = useMemo(() => {
@@ -432,22 +522,16 @@ export function LogView() {
     try {
       const timestamp = new Date();
       await saveWorkoutSet({ ...data, timestamp });
-      // Rafraîchir l'historique pour mettre à jour la session du jour
-      fetchHistory();
-      // Optionnel : reset weight et reps pour une saisie rapide
-      // setValue("weight", 0)
-      // setValue("reps", 0)
+      fetchHistory(true);
+      toast.success(`${data.exerciseName} set logged successfully!`);
     } catch (error) {
       console.error('Failed to save set:', error);
+      toast.error('Failed to save workout set');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Fonction pour copier la session dans le presse-papier
-  const handleCopySession = async () => {
-    await copySessionToClipboard(todaySession);
-  };
 
   return (
     <div className="flex flex-col gap-1 pb-6">
@@ -472,7 +556,7 @@ export function LogView() {
       </div>
 
       {/* Program and Day Selection */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="flex items-center gap-4">
         <div className="space-y-2">
           <Label htmlFor="program" className="text-sm text-muted-foreground">
             Programme
@@ -727,8 +811,19 @@ export function LogView() {
               </div>
             </PopoverContent>
           </Popover>
+
+
           {errors.exerciseName && <p className="text-sm text-destructive">{errors.exerciseName.message}</p>}
         </div>
+
+        {note && <>
+          {/* <Separator className="" /> */}
+          <div className="flex items-center gap-2 mb-4">
+            <NotebookIcon className="h-5 w-5 text-primary" />
+            <span className='text-sm text-muted-foreground'>{note.note}</span>
+          </div>
+
+        </>}
 
         <Separator className="" />
 
@@ -906,7 +1001,7 @@ export function LogView() {
           {/* Affichage groupé par exercice */}
           <div className="space-y-4">
             {todaySessionGrouped.map((exerciseGroup, groupIndex) => (
-              <div key={exerciseGroup.exerciseName} className="relative">
+              <div key={`${exerciseGroup.exerciseName}_${groupIndex}`} className="relative">
                 {/* Header de l'exercice */}
                 <div className="flex items-center gap-3 mb-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20">
@@ -941,75 +1036,16 @@ export function LogView() {
 
                 {/* Séries en grille */}
                 <div className="grid grid-cols-1 gap-2 ml-13">
-                  {exerciseGroup.sets.map((set, index) => {
-                    const { allTimeBest } = getBestSetComparison(exerciseGroup.exerciseName, exerciseGroup.sets);
-                    const isWarmup = isWarmupSet(set, allTimeBest, exerciseGroup.sets);
-
-                    return (
-                      <div
-                        key={set.id}
-                        className={cn(
-                          'group relative overflow-hidden rounded-lg border py-1 px-2 transition-all hover:shadow-sm',
-                          isWarmup
-                            ? 'bg-gradient-to-r from-orange-50/10 to-card/80 hover:border-orange-300/50'
-                            : 'border-border/50 bg-gradient-to-r from-card to-card/50 hover:border-primary/30'
-                        )}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={cn(
-                                'flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold',
-                                isWarmup ? 'bg-orange-100/20 text-orange-400' : 'bg-primary/10 text-primary'
-                              )}
-                            >
-                              {index + 1}
-                            </div>
-                            <div className="flex items-center gap-4">
-                              <div className="flex items-center gap-1">
-                                {isWarmup ? (
-                                  <Flame className="h-4 w-4 text-orange-500 mr-1" />
-                                ) : (
-                                  <BicepsFlexedIcon className="h-4 w-4 text-primary mr-1" />
-                                )}
-                                <span className="text-sm font-medium">{formatWeight(set.weight, set.exerciseName)}</span>
-                                <span className="text-xs text-muted-foreground">×</span>
-                                <span className="text-sm font-medium">{set.reps}</span>
-                                <span className="text-sm text-muted-foreground">
-                                  {EXERCISES.find((ex) => ex.name.toLocaleLowerCase() === set.exerciseName.toLocaleLowerCase())?.repType === 'time'
-                                    ? 'seconds'
-                                    : 'reps'}
-                                </span>
-                              </div>
-                              {set.estimated1RM && (
-                                <div className="flex items-center gap-1">
-                                  <span className="text-xs text-muted-foreground">1RM:</span>
-                                  <span className="text-xs font-medium text-primary">~{set.estimated1RM}kg</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {new Date(set.timestamp).toLocaleTimeString('fr-FR', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </div>
-                        </div>
-
-                        {/* Barre de progression visuelle */}
-                        <div
-                          className={cn(
-                            'absolute bottom-0 left-0 h-0.5 transition-all group-hover:h-1',
-                            isWarmup ? 'bg-gradient-to-r from-orange-300/30 to-orange-400/50' : 'bg-gradient-to-r from-primary/20 to-primary/40'
-                          )}
-                          style={{
-                            width: `${((index + 1) / exerciseGroup.totalSets) * 100}%`,
-                          }}
-                        />
-                      </div>
-                    );
-                  })}
+                  {exerciseGroup.sets.map((set, index) => (
+                    <ExerciseSetItem
+                      key={set.id}
+                      set={set}
+                      index={index}
+                      totalSets={exerciseGroup.totalSets}
+                      exerciseName={exerciseGroup.exerciseName}
+                      getBestSetComparison={getBestSetComparison}
+                    />
+                  ))}
                 </div>
 
                 {/* Statistiques de l'exercice - Améliorées */}
@@ -1083,6 +1119,11 @@ export function LogView() {
           </div>
         </div>
       )}
+
+      {/* Notes Form */}
+      <div className="mt-6">
+        <NotesForm selectedExercise={selectedExercise} note={note} />
+      </div>
     </div>
   );
 }

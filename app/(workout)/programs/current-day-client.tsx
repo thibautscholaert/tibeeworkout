@@ -2,9 +2,11 @@
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { copyProgramToClipboard } from '@/lib/clipboard-utils';
 import { EXERCISES } from '@/lib/exercises';
 import { useWorkoutPrograms } from '@/lib/use-workout-programs';
-import { Calendar, Dumbbell, Flame, PersonStandingIcon } from 'lucide-react';
+import { Calendar, Copy, Dumbbell, Flame, PersonStandingIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 // Fonction pour obtenir le jour de la semaine en français
@@ -54,6 +56,12 @@ export default function CurrentDayClient() {
       setSelectedProgram(programs[0]);
     }
   }, [programs, selectedProgram]);
+
+  const handleCopyProgram = async () => {
+    if (selectedProgram) {
+      await copyProgramToClipboard(selectedProgram);
+    }
+  };
 
   if (!currentDay) {
     return (
@@ -131,11 +139,22 @@ export default function CurrentDayClient() {
       {/* Sessions du programme sélectionné */}
       {selectedProgram && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold">{selectedProgram.title}</h2>
-            <Badge variant="outline" className="text-xs">
-              {selectedProgram.sessions.length} session{selectedProgram.sessions.length > 1 ? 's' : ''}
-            </Badge>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold">{selectedProgram.title}</h2>
+              <Badge variant="outline" className="text-xs">
+                {selectedProgram.sessions.length} session{selectedProgram.sessions.length > 1 ? 's' : ''}
+              </Badge>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyProgram}
+              className="h-8 px-3"
+            >
+              <Copy className="h-4 w-4" />
+
+            </Button>
           </div>
 
           <Accordion type="multiple" className="space-y-3">
@@ -174,15 +193,17 @@ export default function CurrentDayClient() {
                     >
                       <div className="flex items-start gap-4 w-full pr-2">
                         <div className="flex-1 text-left min-w-0">
-                          <h3 className={`font-semibold text-lg flex items-center gap-2 ${isToday ? 'text-primary' : ''}`}>
-                            {isToday ? <Flame className="h-5 w-5 text-orange-500" /> : <Calendar className="h-5 w-5 text-muted-foreground" />}
-                            {session.session} - {session.day}
-                            {isToday && (
-                              <Badge variant="default" className="text-sm">
-                                Aujourd'hui
-                              </Badge>
-                            )}
-                          </h3>
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <h3 className={`font-semibold text-lg flex items-center gap-2 ${isToday ? 'text-primary' : ''}`}>
+                              {isToday ? <Flame className="h-5 w-5 text-orange-500" /> : <Calendar className="h-5 w-5 text-muted-foreground" />}
+                              {session.session} - {session.day}
+                              {isToday && (
+                                <Badge variant="default" className="text-sm">
+                                  Aujourd'hui
+                                </Badge>
+                              )}
+                            </h3>
+                          </div>
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
                             <p className="text-sm text-muted-foreground whitespace-nowrap">
                               {sessionExerciseCount} exercice{sessionExerciseCount > 1 ? 's' : ''} • {sessionSetsCount} série

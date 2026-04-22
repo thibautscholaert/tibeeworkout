@@ -1,7 +1,7 @@
 'use server';
 
-import type { SetFormData } from '@/lib/schemas';
-import { Profile, Program } from '@/lib/types';
+import type { NoteFormData, SetFormData } from '@/lib/schemas';
+import { ExerciseNote, Profile, Program } from '@/lib/types';
 import { calculateEstimated1RM } from '@/lib/utils';
 import { JWT } from 'google-auth-library';
 import { GoogleSpreadsheet } from 'google-spreadsheet';
@@ -44,6 +44,53 @@ export async function saveWorkoutSet(data: SetFormData & { timestamp: Date }) {
   } catch (error) {
     console.error('Error saving to Google Sheets:', error);
     return { success: false, error: 'Failed to save data' };
+  }
+}
+
+export async function saveNote(data: NoteFormData & { timestamp: Date; exerciseName: string }) {
+  try {
+    await doc.loadInfo();
+    let sheet = doc.sheetsByTitle['Notes'];
+
+    // Create Notes sheet if it doesn't exist
+    if (!sheet) {
+      sheet = await doc.addSheet({
+        title: 'Notes',
+        headerValues: ['Exercise', 'Note', 'Timestamp'],
+      });
+    }
+
+    // Check if sheet has headers and set them if needed
+    if (sheet.rowCount <= 1 && sheet.columnCount <= 1) {
+      await sheet.setHeaderRow(['Exercise', 'Note', 'Timestamp']);
+    }
+
+    // Get all rows to find existing entry for this exercise
+    const rows = await sheet.getRows();
+    const existingRow = rows.find(row => row.get('Exercise') === data.exerciseName);
+
+    if (existingRow) {
+      // Update existing row
+      existingRow.set('Note', data.note);
+      existingRow.set('Timestamp', data.timestamp.toISOString());
+      await existingRow.save();
+    } else {
+      // Create new row if no existing entry found
+      const newRow = {
+        Timestamp: data.timestamp.toISOString(),
+        Exercise: data.exerciseName,
+        Note: data.note,
+      };
+      await sheet.addRow(newRow);
+    }
+
+    // Revalidate paths that might use notes
+    revalidatePath('/log');
+
+    return { success: true, id: crypto.randomUUID() };
+  } catch (error) {
+    console.error('Error saving note to Google Sheets:', error);
+    return { success: false, error: 'Failed to save note' };
   }
 }
 
@@ -143,6 +190,32 @@ export async function getPrograms() {
   } catch (error) {
     console.error('Error fetching programs from Google Sheets:', error);
     return { success: false, data: [], error: 'Failed to fetch programs' };
+  }
+}
+
+export async function getNotes() {
+  try {
+    await doc.loadInfo();
+    let sheet = doc.sheetsByTitle['Notes'];
+
+    // Return empty array if Notes sheet doesn't exist yet
+    if (!sheet) {
+      return { success: true, data: [] };
+    }
+
+    const rows = await sheet.getRows();
+
+    const notes: ExerciseNote[] = rows.map((row, index) => ({
+      id: `note-${index}-${row.get('Timestamp')}`,
+      exerciseName: row.get('Exercise') || '',
+      note: row.get('Note') || '',
+      timestamp: new Date(row.get('Timestamp') || Date.now()),
+    }));
+
+    return { success: true, data: notes };
+  } catch (error) {
+    console.error('Error fetching notes from Google Sheets:', error);
+    return { success: false, data: [], error: 'Failed to fetch notes' };
   }
 }
 

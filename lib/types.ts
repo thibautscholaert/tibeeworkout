@@ -46,6 +46,13 @@ export interface ProgramExercise {
   notes?: string;
 }
 
+export interface ExerciseNote {
+  id: string;
+  exerciseName: string;
+  note: string;
+  timestamp: Date;
+}
+
 export interface Profile {
   name: string;
   dob: string;

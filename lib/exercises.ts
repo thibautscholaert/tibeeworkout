@@ -776,7 +776,7 @@ export const EXERCISES: Exercise[] = [
     repType: 'reps',
   },
   {
-    name: 'Face pull',
+    name: 'Face Pull',
     tags: ['Shoulders', 'Back', 'Isolation', 'Pulling'],
     favorite: false,
     isPowerlifting: false,
