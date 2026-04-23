@@ -420,6 +420,8 @@ export function LogView() {
     return notes.find(note => note.exerciseName === selectedExercise);
   }, [notes, selectedExercise]);
 
+  console.log("note", note);
+
   // Save selectedExercise to localStorage whenever it changes - debounced
   useEffect(() => {
     if (selectedExercise) {
@@ -556,7 +558,7 @@ export function LogView() {
       </div>
 
       {/* Program and Day Selection */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between gap-4">
         <div className="space-y-2">
           <Label htmlFor="program" className="text-sm text-muted-foreground">
             Programme
@@ -649,7 +651,7 @@ export function LogView() {
       <Separator className="my-2" />
 
       {/* Form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
         {/* Smart Suggestions */}
         {suggestions.nextExercise && (
           <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
@@ -692,11 +694,14 @@ export function LogView() {
                     )}
                   </p>
 
-                  {suggestions.exerciseDetails?.notes && (
-                    <p className="text-xs text-primary/80 italic mt-1 flex gap-1 items-center">
-                      <Lightbulb className="inline h-4 w-4 mr-1 shrink-0" /> {suggestions.exerciseDetails.notes}
-                    </p>
-                  )}
+                  <p className="text-xs text-primary/80 italic mt-1 flex gap-1 items-center h-4">
+                    {suggestions.exerciseDetails?.notes && (
+                      <>
+                        <Lightbulb className="inline h-4 w-4 mr-1 shrink-0" />
+                        {suggestions.exerciseDetails?.notes}
+                      </>
+                    )}
+                  </p>
                 </div>
                 <div className="flex flex-col gap-2 ml-3">
                   <Button
@@ -738,7 +743,7 @@ export function LogView() {
         )}
 
         {/* Exercise Select */}
-        <div className="space-y-1">
+        <div className="space-y-2">
           {/* Exercise Favorites - Subtle suggestions */}
           {mostPracticedExercises.length > 0 && (
             <div className="flex gap-1 flex-wrap items-center justify-between overflow-y-auto h-16 pr-2">
@@ -818,9 +823,9 @@ export function LogView() {
 
         {note && <>
           {/* <Separator className="" /> */}
-          <div className="flex items-center gap-2 mb-4">
-            <NotebookIcon className="h-5 w-5 text-primary" />
-            <span className='text-sm text-muted-foreground'>{note.note}</span>
+          <div className="flex items-center gap-2 mb-2">
+            <NotebookIcon className="h-5 w-5 text-primary shrink-0" />
+            <span className="text-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: note.note.replace(/\n/g, '<br>') }} />
           </div>
 
         </>}
@@ -1121,7 +1126,7 @@ export function LogView() {
       )}
 
       {/* Notes Form */}
-      <div className="mt-6">
+      <div className="">
         <NotesForm selectedExercise={selectedExercise} note={note} />
       </div>
     </div>

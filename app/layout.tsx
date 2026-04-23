@@ -1,4 +1,5 @@
 import { PWARegister } from '@/components/pwa-register';
+import { SessionProviderWrapper } from '@/components/session-provider';
 import { Analytics } from '@vercel/analytics/next';
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
@@ -50,10 +51,12 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`font-sans antialiased`}>
-        {children}
-        <Analytics />
-        <PWARegister />
-        <Toaster />
+        <SessionProviderWrapper>
+          {children}
+          <Analytics />
+          <PWARegister />
+          <Toaster />
+        </SessionProviderWrapper>
       </body>
     </html>
   );
