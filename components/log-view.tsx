@@ -420,8 +420,6 @@ export function LogView() {
     return notes.find(note => note.exerciseName === selectedExercise);
   }, [notes, selectedExercise]);
 
-  console.log("note", note);
-
   // Save selectedExercise to localStorage whenever it changes - debounced
   useEffect(() => {
     if (selectedExercise) {
