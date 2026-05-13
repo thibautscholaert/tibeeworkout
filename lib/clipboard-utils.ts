@@ -86,7 +86,6 @@ export const copyProgramToClipboard = async (program: Program, sessionDay?: stri
             let exerciseLine = `${exercise.day.toLocaleLowerCase() === 'any' ? '' : `[${exercise.day}] `}${exercise.exerciseName} ${setsText}${repsText}${weightText}`;
 
             // Ajouter les notes si présentes
-            console.log(exercise);
             if (exercise.notes) {
               exerciseLine += ` (${exercise.notes})`;
             }
