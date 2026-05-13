@@ -332,6 +332,14 @@ export const EXERCISES: Exercise[] = [
     repType: 'reps',
   },
   {
+    name: 'Planche lean hold',
+    tags: ['Chest', 'Triceps', 'Shoulders', 'Compound', 'Pushing'],
+    favorite: false,
+    isPowerlifting: false,
+    bodyweight: true,
+    repType: 'time',
+  },
+  {
     name: 'Planche push up',
     tags: ['Chest', 'Triceps', 'Shoulders', 'Core', 'Compound', 'Pushing'],
     favorite: false,
