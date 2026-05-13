@@ -152,13 +152,13 @@ export default function Programs() {
 
             <Accordion type="multiple" className="space-y-3">
               {selectedProgram.sessions
-                .sort((a: any, b: any) => {
-                  const normalizedA = normalizeDayName(a.day);
-                  const normalizedB = normalizeDayName(b.day);
-                  if (normalizedA === currentDay) return -1;
-                  if (normalizedB === currentDay) return 1;
-                  return 0;
-                })
+                // .sort((a: any, b: any) => {
+                //   const normalizedA = normalizeDayName(a.day);
+                //   const normalizedB = normalizeDayName(b.day);
+                //   if (normalizedA === currentDay) return -1;
+                //   if (normalizedB === currentDay) return 1;
+                //   return 0;
+                // })
                 .map((session: any, sessionIndex: number) => {
                   const normalizedDay = normalizeDayName(session.day);
                   const isToday = normalizedDay === currentDay;
