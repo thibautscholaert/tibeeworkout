@@ -1,3 +1,4 @@
+import { Program, ProgramBloc, ProgramExercise, ProgramSession } from '@/lib/types';
 import { toast } from 'sonner';
 import { EXERCISES } from './exercises';
 import { groupSetsByExercise } from './utils';
@@ -8,14 +9,17 @@ export const copySessionToClipboard = async (sets: any[]) => {
     const sessionText = Array.from(groupedByExercise.entries())
       .map(([exerciseName, exerciseSets]) => {
         // Grouper les séries par poids pour le format compact
-        const setsByWeight = exerciseSets.reduce((acc, set) => {
-          const weightKey = set.weight === 0 ? 'BW' : `${set.weight}kg`;
-          if (!acc[weightKey]) {
-            acc[weightKey] = [];
-          }
-          acc[weightKey].push(set.reps);
-          return acc;
-        }, {} as Record<string, number[]>);
+        const setsByWeight = exerciseSets.reduce(
+          (acc, set) => {
+            const weightKey = set.weight === 0 ? 'BW' : `${set.weight}kg`;
+            if (!acc[weightKey]) {
+              acc[weightKey] = [];
+            }
+            acc[weightKey].push(set.reps);
+            return acc;
+          },
+          {} as Record<string, number[]>
+        );
 
         // Vérifier si c'est un exercice de type time
         const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === exerciseName.toLowerCase());
@@ -23,7 +27,7 @@ export const copySessionToClipboard = async (sets: any[]) => {
 
         // Formater chaque groupe de poids
         const weightLines = Object.entries(setsByWeight).map(([weight, reps]) => {
-          const repsStr = reps.map(rep => isTimeType ? `${rep}''` : rep).join('/');
+          const repsStr = reps.map((rep) => (isTimeType ? `${rep}''` : rep)).join('/');
           return `${exerciseName} ${weight} ${repsStr}`;
         });
 
@@ -39,24 +43,23 @@ export const copySessionToClipboard = async (sets: any[]) => {
   }
 };
 
-export const copyProgramToClipboard = async (program: any, sessionDay?: string) => {
+export const copyProgramToClipboard = async (program: Program, sessionDay?: string) => {
   try {
     let sessionsToCopy = program.sessions;
 
     // Si un jour spécifique est fourni, ne copier que cette session
     if (sessionDay) {
-      sessionsToCopy = program.sessions.filter((session: any) =>
-        session.day.toLowerCase() === sessionDay.toLowerCase() ||
-        session.session.toLowerCase() === sessionDay.toLowerCase()
+      sessionsToCopy = program.sessions.filter(
+        (session: ProgramSession) =>
+          session.day.toLowerCase() === sessionDay.toLowerCase() || session.session.toLowerCase() === sessionDay.toLowerCase()
       );
     }
 
     const programText = sessionsToCopy
-      .map((session: any) => {
-
+      .map((session: ProgramSession) => {
         const exercisesText = session.blocs
-          .flatMap((bloc: any) => bloc.exercises)
-          .map((exercise: any) => {
+          .flatMap((bloc: ProgramBloc) => bloc.exercises.map((e) => ({ ...e, day: session.day })))
+          .map((exercise: ProgramExercise & { day: string }) => {
             const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === exercise.exerciseName.toLowerCase());
             const isTimeType = exerciseData?.repType === 'time';
             const isBodyweight = exerciseData?.bodyweight || false;
@@ -80,7 +83,7 @@ export const copyProgramToClipboard = async (program: any, sessionDay?: string) 
             // Formater les séries
             const setsText = exercise.sets ? `${exercise.sets}x` : '';
 
-            let exerciseLine = `${exercise.exerciseName} ${setsText}${repsText}${weightText}`;
+            let exerciseLine = `${exercise.day.toLocaleLowerCase() === 'any' ? '' : `[${exercise.day}] `}${exercise.exerciseName} ${setsText}${repsText}${weightText}`;
 
             // Ajouter les notes si présentes
             if (exercise.notes) {
@@ -93,20 +96,16 @@ export const copyProgramToClipboard = async (program: any, sessionDay?: string) 
             }
 
             return exerciseLine;
-          })
-          .join('\n');
+          });
 
-        return exercisesText;
+        return exercisesText.join('\n');
       })
       .join('\n');
 
-
     await navigator.clipboard.writeText(programText.trim());
     toast.success('Copied to clipboard!');
-
   } catch (error) {
     console.error('Failed to copy program:', error);
     toast.error('Failed to copy to clipboard!');
-
   }
 };

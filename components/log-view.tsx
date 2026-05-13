@@ -51,7 +51,7 @@ import { toast } from 'sonner';
 function getCurrentDayInFrench(): string {
   const days = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
   const today = new Date();
-  // return 'Lundi' // for testing 
+  // return 'Lundi' // for testing
   return days[today.getDay()];
 }
 
@@ -78,87 +78,87 @@ function normalizeDayName(day: string): string {
 }
 
 // Memoized component for exercise set item to prevent unnecessary re-renders
-const ExerciseSetItem = memo(({
-  set,
-  index,
-  totalSets,
-  exerciseName,
-  getBestSetComparison
-}: {
-  set: WorkoutSet;
-  index: number;
-  totalSets: number;
-  exerciseName: string;
-  getBestSetComparison: (exerciseName: string, todaySets: any[]) => { todayBest: any; allTimeBest: any };
-}) => {
-  const { allTimeBest } = getBestSetComparison(exerciseName, []);
-  const isWarmup = isWarmupSet(set, allTimeBest, []);
+const ExerciseSetItem = memo(
+  ({
+    set,
+    sets,
+    index,
+    totalSets,
+    exerciseName,
+    getBestSetComparison,
+  }: {
+    set: WorkoutSet;
+    sets: WorkoutSet[];
+    index: number;
+    totalSets: number;
+    exerciseName: string;
+    getBestSetComparison: (exerciseName: string, todaySets: any[]) => { todayBest: any; allTimeBest: any };
+  }) => {
+    const { allTimeBest } = getBestSetComparison(exerciseName, []);
+    const isWarmup = isWarmupSet(set, allTimeBest, sets);
 
-  return (
-    <div
-      key={set.id}
-      className={cn(
-        'group relative overflow-hidden rounded-lg border py-1 px-2 transition-all hover:shadow-sm',
-        isWarmup
-          ? 'bg-gradient-to-r from-orange-50/10 to-card/80 hover:border-orange-300/50'
-          : 'border-border/50 bg-gradient-to-r from-card to-card/50 hover:border-primary/30'
-      )}
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div
-            className={cn(
-              'flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold',
-              isWarmup ? 'bg-orange-100/20 text-orange-400' : 'bg-primary/10 text-primary'
-            )}
-          >
-            {index + 1}
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1">
-              {isWarmup ? (
-                <Flame className="h-4 w-4 text-orange-500 mr-1" />
-              ) : (
-                <BicepsFlexedIcon className="h-4 w-4 text-primary mr-1" />
-              )}
-              <span className="text-sm font-medium">{formatWeight(set.weight, set.exerciseName)}</span>
-              <span className="text-xs text-muted-foreground">×</span>
-              <span className="text-sm font-medium">{set.reps}</span>
-              <span className="text-sm text-muted-foreground">
-                {EXERCISES.find((ex) => ex.name.toLocaleLowerCase() === set.exerciseName.toLocaleLowerCase())?.repType === 'time'
-                  ? 'seconds'
-                  : 'reps'}
-              </span>
-            </div>
-            {set.estimated1RM && (
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-muted-foreground">1RM:</span>
-                <span className="text-xs font-medium text-primary">~{set.estimated1RM}kg</span>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="text-xs text-muted-foreground">
-          {new Date(set.timestamp).toLocaleTimeString('fr-FR', {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </div>
-      </div>
-
-      {/* Barre de progression visuelle */}
+    return (
       <div
+        key={set.id}
         className={cn(
-          'absolute bottom-0 left-0 h-0.5 transition-all group-hover:h-1',
-          isWarmup ? 'bg-gradient-to-r from-orange-300/30 to-orange-400/50' : 'bg-gradient-to-r from-primary/20 to-primary/40'
+          'group relative overflow-hidden rounded-lg border py-1 px-2 transition-all hover:shadow-sm',
+          isWarmup
+            ? 'bg-gradient-to-r from-orange-50/10 to-card/80 hover:border-orange-300/50'
+            : 'border-border/50 bg-gradient-to-r from-card to-card/50 hover:border-primary/30'
         )}
-        style={{
-          width: `${((index + 1) / totalSets) * 100}%`,
-        }}
-      />
-    </div>
-  );
-});
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className={cn(
+                'flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold',
+                isWarmup ? 'bg-orange-100/20 text-orange-400' : 'bg-primary/10 text-primary'
+              )}
+            >
+              {index + 1}
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1">
+                {isWarmup ? <Flame className="h-4 w-4 text-orange-500 mr-1" /> : <BicepsFlexedIcon className="h-4 w-4 text-primary mr-1" />}
+                <span className="text-sm font-medium">{formatWeight(set.weight, set.exerciseName)}</span>
+                <span className="text-xs text-muted-foreground">×</span>
+                <span className="text-sm font-medium">{set.reps}</span>
+                <span className="text-sm text-muted-foreground">
+                  {EXERCISES.find((ex) => ex.name.toLocaleLowerCase() === set.exerciseName.toLocaleLowerCase())?.repType === 'time'
+                    ? 'seconds'
+                    : 'reps'}
+                </span>
+              </div>
+              {set.estimated1RM && (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-muted-foreground">1RM:</span>
+                  <span className="text-xs font-medium text-primary">~{set.estimated1RM}kg</span>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {new Date(set.timestamp).toLocaleTimeString('fr-FR', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </div>
+        </div>
+
+        {/* Barre de progression visuelle */}
+        <div
+          className={cn(
+            'absolute bottom-0 left-0 h-0.5 transition-all group-hover:h-1',
+            isWarmup ? 'bg-gradient-to-r from-orange-300/30 to-orange-400/50' : 'bg-gradient-to-r from-primary/20 to-primary/40'
+          )}
+          style={{
+            width: `${((index + 1) / totalSets) * 100}%`,
+          }}
+        />
+      </div>
+    );
+  }
+);
 
 ExerciseSetItem.displayName = 'ExerciseSetItem';
 
@@ -271,20 +271,23 @@ export function LogView() {
   }, [workoutPrograms, history, selectedProgram, selectedSession]);
 
   // Memoized event handlers to prevent unnecessary re-renders
-  const handleProgramSelect = useCallback((programId: string) => {
-    const program = workoutPrograms.find((p) => p.id === programId);
-    if (program) {
-      setSelectedProgram(programId);
-      const sessions = workoutPrograms.find((p) => p.id === programId)?.sessions;
-      if (sessions && sessions.length > 0) {
-        handleSessionSelect(sessions[0].day);
-      } else {
-        handleSessionSelect('');
+  const handleProgramSelect = useCallback(
+    (programId: string) => {
+      const program = workoutPrograms.find((p) => p.id === programId);
+      if (program) {
+        setSelectedProgram(programId);
+        const sessions = workoutPrograms.find((p) => p.id === programId)?.sessions;
+        if (sessions && sessions.length > 0) {
+          handleSessionSelect(sessions[0].day);
+        } else {
+          handleSessionSelect('');
+        }
+        setProgramOpen(false);
+        setWithTTL('selectedProgram', program.title, 2 * 60 * 60 * 1000); // Store title, not ID
       }
-      setProgramOpen(false);
-      setWithTTL('selectedProgram', program.title, 2 * 60 * 60 * 1000); // Store title, not ID
-    }
-  }, [workoutPrograms]);
+    },
+    [workoutPrograms]
+  );
 
   const handleSessionSelect = useCallback((day: string) => {
     setSelectedSession(day);
@@ -330,7 +333,6 @@ export function LogView() {
     setSuggestionIndex(0);
   }, [allSuggestions.length, selectedProgram, selectedSession]);
 
-
   // Calculate most practiced exercises (top 5 by number of sets)
   const mostPracticedExercises = useMemo(() => {
     const exerciseCounts = new Map<string, number>();
@@ -339,12 +341,10 @@ export function LogView() {
       exerciseCounts.set(set.exerciseName, count + 1);
     });
 
-    return (
-      Array.from(exerciseCounts.entries())
-        .sort((a, b) => b[1] - a[1]) // Sort by count descending
-        .slice(0, 19) // Take top 19 to prevent excessive renders
-        .map(([name]) => name)
-    ); // Extract just the names
+    return Array.from(exerciseCounts.entries())
+      .sort((a, b) => b[1] - a[1]) // Sort by count descending
+      .slice(0, 19) // Take top 19 to prevent excessive renders
+      .map(([name]) => name); // Extract just the names
   }, [history]);
 
   // Get the suggested exercise as default, fallback to most practiced
@@ -417,7 +417,7 @@ export function LogView() {
   const selectedExercise = watch('exerciseName');
 
   const note = useMemo(() => {
-    return notes.find(note => note.exerciseName === selectedExercise);
+    return notes.find((note) => note.exerciseName === selectedExercise);
   }, [notes, selectedExercise]);
 
   // Save selectedExercise to localStorage whenever it changes - debounced
@@ -531,7 +531,6 @@ export function LogView() {
       setIsSubmitting(false);
     }
   };
-
 
   return (
     <div className="flex flex-col gap-1 pb-6">
@@ -692,7 +691,7 @@ export function LogView() {
                     )}
                   </p>
 
-                  <p className="text-xs text-primary/80 italic mt-1 flex gap-1 items-center h-4">
+                  <p className="text-xs text-primary/80 italic mt-1 flex gap-1 items-center min-h-4">
                     {suggestions.exerciseDetails?.notes && (
                       <>
                         <Lightbulb className="inline h-4 w-4 mr-1 shrink-0" />
@@ -815,18 +814,18 @@ export function LogView() {
             </PopoverContent>
           </Popover>
 
-
           {errors.exerciseName && <p className="text-sm text-destructive">{errors.exerciseName.message}</p>}
         </div>
 
-        {note && <>
-          {/* <Separator className="" /> */}
-          <div className="flex items-center gap-2 mb-2">
-            <NotebookIcon className="h-5 w-5 text-primary shrink-0" />
-            <span className="text-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: note.note.replace(/\n/g, '<br>') }} />
-          </div>
-
-        </>}
+        {note && (
+          <>
+            {/* <Separator className="" /> */}
+            <div className="flex items-center gap-2 mb-2">
+              <NotebookIcon className="h-5 w-5 text-primary shrink-0" />
+              <span className="text-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: note.note.replace(/\n/g, '<br>') }} />
+            </div>
+          </>
+        )}
 
         <Separator className="" />
 
@@ -1045,6 +1044,7 @@ export function LogView() {
                       set={set}
                       index={index}
                       totalSets={exerciseGroup.totalSets}
+                      sets={exerciseGroup.sets}
                       exerciseName={exerciseGroup.exerciseName}
                       getBestSetComparison={getBestSetComparison}
                     />

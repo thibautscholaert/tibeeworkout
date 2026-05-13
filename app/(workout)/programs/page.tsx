@@ -1,6 +1,5 @@
-import CurrentDayClient from './current-day-client';
+import Programs from './programs';
 
 export default async function ProgramsPage() {
-
-  return <CurrentDayClient />;
+  return <Programs />;
 }

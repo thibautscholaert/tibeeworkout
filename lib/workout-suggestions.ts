@@ -10,8 +10,7 @@ function getCurrentDayInFrench(): string {
 
 // Fonction pour déterminer si une série est un échauffement
 // Une série est considérée comme échauffement si sa charge est < 80% de la meilleure charge
-// Si une session est fournie, la meilleure charge est calculée depuis cette session
-export function isWarmupSet(set: WorkoutSet, bestPerformance: WorkoutSet | null, session?: WorkoutSet[]): boolean {
+export function isWarmupSet(set: WorkoutSet, bestPerformance: WorkoutSet | null, session: WorkoutSet[]): boolean {
   const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === set.exerciseName.toLowerCase());
   const isBodyweight = exerciseData?.bodyweight || false;
 
@@ -70,7 +69,7 @@ export function isWarmupSet(set: WorkoutSet, bestPerformance: WorkoutSet | null,
     return false;
   }
 
-  const warmupThreshold = 0.90;
+  const warmupThreshold = 0.9;
 
   // Pour les exercices avec charge (ou poids de corps lesté)
   const bestPerf = bestRef.estimated1RM || bestRef.weight * bestRef.reps;
@@ -146,7 +145,6 @@ function getTodayExerciseStats(history: WorkoutSet[]): Map<string, WorkoutSet[]>
       }
       exerciseStats.get(set.exerciseName)!.push(set);
     });
-
   return exerciseStats;
 }
 
@@ -208,17 +206,23 @@ export function getWorkoutSuggestions(
           }, null);
 
           const todaySets = todayStats.get(exercise.exerciseName) || [];
-          const completedSets = todaySets.filter((set) => !isWarmupSet(set, allTimeBest));
+          const completedSets = todaySets.filter((set) => !isWarmupSet(set, allTimeBest, todaySets));
+
+          console.log('todayStats', todayStats);
+          console.log('completedSets', exercise.exerciseName, completedSets.length);
 
           if (!isExerciseCompleted(exercise, completedSets)) {
             const completedExerciseNames = Array.from(todayStats.keys()).filter((exerciseName) => {
               const exerciseInProgram = selectedProgram.blocs.flatMap((b) => b.exercises).find((ex) => ex.exerciseName === exerciseName);
+              console.log(todayStats.get(exerciseName));
               return exerciseInProgram && isExerciseCompleted(exerciseInProgram, todayStats.get(exerciseName) || []);
             });
 
             const remainingInBloc = bloc.exercises
               .filter((ex) => !isExerciseCompleted(ex, todayStats.get(ex.exerciseName) || []))
               .map((ex) => ex.exerciseName);
+
+            console.log('remainingInBloc', remainingInBloc);
 
             const suggestedCharge = allTimeBest ? parseFloat(allTimeBest.weight) : 0;
 
