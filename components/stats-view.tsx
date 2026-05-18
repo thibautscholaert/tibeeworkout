@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { EXERCISES } from '@/lib/exercises';
 import { useReactFormPersistence } from '@/lib/form-persistence';
 import type { WorkoutSet } from '@/lib/types';
-import { calculateEstimated1RM, cn, formatDate, formatReps, formatWeight } from '@/lib/utils';
+import { calculateEstimated1RM, cn, formatDate, formatReps, formatWeight, isBW } from '@/lib/utils';
 import { useWorkout } from '@/lib/workout-context';
 import { BicepsFlexed, Check, ChevronDown, Search, TrendingUp } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -18,7 +18,7 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } fro
 // Custom tooltip for best performance chart
 function BestPerfTooltip({ active, payload, label, exerciseData, selectedExercise }: any) {
   if (active && payload && payload.length) {
-    const data = payload[0].payload;
+    const data = payload[0].payload as { date: Date; value: number; label: string; metricType: string; reps: number; weight: number; oneRM: number };
     return (
       <div className="rounded-lg border bg-background p-3 shadow-md">
         <p className="text-sm font-medium mb-2">{label}</p>
@@ -26,10 +26,10 @@ function BestPerfTooltip({ active, payload, label, exerciseData, selectedExercis
           {exerciseData?.bodyweight ? (
             <>
               <p className="text-sm">
-                <span className="text-muted-foreground">Reps:</span> {data.reps}
+                <span className="text-muted-foreground">Reps:</span> {data.reps} @{data.weight}kg
               </p>
               <p className="text-sm font-medium">
-                <span className="text-muted-foreground">Performance:</span> {data.reps} reps
+                <span className="text-muted-foreground">1RM:</span> {data.oneRM}
               </p>
             </>
           ) : (
@@ -54,7 +54,8 @@ function calculate1RM(weight: number, reps: number): number {
   if (reps === 1) return weight;
   if (reps > 12) return Math.round(weight * (1 + reps / 30));
   // Brzycki formula: weight × (36 / (37 - reps))
-  return Math.round(weight * (36 / (37 - reps)));
+  const res = weight * (36 / (37 - reps));
+  return Math.round(res);
 }
 
 // Helper function to group sets by session (day or 2h time range)
@@ -197,6 +198,70 @@ export function StatsView() {
 
     // Find best set per session and calculate its 1RM
     const sessionBestPerf = Array.from(sessions.entries()).map(([sessionKey, sets]) => {
+      const bestSet = sets
+        // .filter((s) => s.weight)
+        .sort((a, b) => {
+          const oneRMA = calculateEstimated1RM(a.weight, a.reps, selectedExercise) || 0;
+          const oneRMB = calculateEstimated1RM(b.weight, b.reps, selectedExercise) || 0;
+
+          if (isBW(selectedExercise)) {
+            if (oneRMA && oneRMB) {
+              return oneRMB - oneRMA; // Higher volume first
+            } else {
+              const volumeA = a.reps * (a.weight || 1);
+              const volumeB = b.reps * (b.weight || 1);
+              if (volumeB !== volumeA) {
+                return volumeB - volumeA; // Higher volume first
+              }
+              return b.weight - a.weight; // If same volume, higher weight first
+            }
+          } else {
+            return oneRMB - oneRMA; // Higher volume first
+          }
+        })[0];
+
+      // Calculate 1RM for the best set
+      let value: number;
+
+      if (bestSet) {
+        // For weighted exercises, calculate 1RM
+        const oneRM = calculateEstimated1RM(bestSet.weight, bestSet.reps, selectedExercise);
+        value = oneRM || bestSet.weight; // Fallback to weight if 1RM calculation fails
+
+        return {
+          sessionKey,
+          value,
+          date: formatDate(new Date(sessionKey)),
+          reps: bestSet.reps,
+          weight: bestSet.weight,
+          oneRM: value,
+        };
+      } else {
+        return null;
+      }
+    });
+
+    return sessionBestPerf
+      .filter((b) => b !== null)
+      .filter((b) => b.weight > 0)
+      .sort((a, b) => new Date(a.sessionKey).getTime() - new Date(b.sessionKey).getTime())
+      .map((d) => ({
+        date: d.date,
+        value: d.value,
+        label: exerciseData?.bodyweight ? 'Meilleure perf (Reps)' : 'Meilleure perf (1RM)',
+        metricType: exerciseData?.bodyweight ? ('reps' as const) : ('1rm' as const),
+        reps: d.reps,
+        weight: d.weight,
+        oneRM: d.oneRM,
+      }));
+  }, [history, selectedExercise, exerciseData]);
+
+  const volumeChartData = useMemo(() => {
+    const exerciseSets = history.filter((s) => s.exerciseName === selectedExercise);
+    const sessions = groupSetsBySession(exerciseSets);
+
+    // Find best set per session and calculate its 1RM
+    const sessionBestPerf = Array.from(sessions.entries()).map(([sessionKey, sets]) => {
       const bestSet = sets.sort((a, b) => {
         // For bodyweight exercises, compare reps directly
         if (exerciseData?.bodyweight) {
@@ -293,17 +358,17 @@ export function StatsView() {
 
     return bestSet
       ? {
-        reps: bestSet.reps,
-        weight: bestSet.weight,
-        volume: bestSet.reps * bestSet.weight,
-        date: new Date(bestSet.timestamp),
-      }
+          reps: bestSet.reps,
+          weight: bestSet.weight,
+          volume: bestSet.reps * bestSet.weight,
+          date: new Date(bestSet.timestamp),
+        }
       : null;
   }, [history, selectedExercise]);
 
   // Calculate best 1RM (only for non-bodyweight exercises)
   const best1RM = useMemo(() => {
-    if (!exerciseData || exerciseData.bodyweight) return null;
+    if (!exerciseData) return null;
 
     const exerciseSets = history.filter((s) => s.exerciseName === selectedExercise);
     if (exerciseSets.length === 0) return null;
@@ -527,10 +592,8 @@ export function StatsView() {
 
         <Card className="bg-gradient-to-br from-card to-card/50 border-border/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Meilleure perf Progress</CardTitle>
-            <CardDescription>
-              {exerciseData?.bodyweight ? 'Meilleure performance (reps) par session' : 'Meilleure performance (1RM estimé) par session'}
-            </CardDescription>
+            <CardTitle className="text-base">Best 1RM Progress</CardTitle>
+            <CardDescription>{'Meilleure performance (1RM estimé) par session'}</CardDescription>
           </CardHeader>
           <CardContent>
             {bestPerfChartData.length > 0 ? (
@@ -545,6 +608,49 @@ export function StatsView() {
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={bestPerfChartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} className="fill-muted-foreground" />
+                    <YAxis
+                      tick={{ fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={false}
+                      className="fill-muted-foreground"
+                      domain={['dataMin - 5', 'dataMax + 5']}
+                    />
+                    <ChartTooltip
+                      content={<BestPerfTooltip exerciseData={exerciseData} selectedExercise={selectedExercise} />}
+                      cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1 }}
+                    />
+                    <Line type="monotone" dataKey="value" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            ) : (
+              <div className="flex h-[250px] items-center justify-center text-sm text-muted-foreground">
+                No performance data for this exercise yet
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-card to-card/50 border-border/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Volume Progress</CardTitle>
+            <CardDescription>{'Meilleure volume par session'}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {volumeChartData.length > 0 ? (
+              <ChartContainer
+                config={{
+                  value: {
+                    label: exerciseData?.bodyweight ? 'Reps' : '1RM (kg)',
+                    color: 'hsl(var(--chart-1))',
+                  },
+                }}
+                className="h-[250px] w-full"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={volumeChartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                     <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} className="fill-muted-foreground" />
                     <YAxis

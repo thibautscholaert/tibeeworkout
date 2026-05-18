@@ -7,11 +7,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function isBW(exerciseName: string) {
+  const exercise = EXERCISES.find((ex) => ex.name === exerciseName);
+  return exercise ? exercise.bodyweight : false;
+}
+
 export function calculateEstimated1RM(weight: number, reps: number, exerciseName?: string): number | undefined {
-  // Ne calculer le 1RM que pour les exercices de powerlifting/bodybuilding
+  let exercise = null;
   if (exerciseName) {
-    const exercise = EXERCISES.find((ex) => ex.name === exerciseName);
-    if (!exercise || !exercise.isPowerlifting) {
+    exercise = EXERCISES.find((ex) => ex.name === exerciseName);
+    if (!exercise) {
       return undefined;
     }
   }
