@@ -14,20 +14,22 @@ export const metadata: Metadata = {
   title: 'TibeeWorkout',
   description: 'Track your workouts with quick data entry between sets',
   generator: 'v0.app',
-  manifest: '/manifest.json',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'black-translucent',
-    title: 'LiftLog',
-  },
-  formatDetection: {
-    telephone: false,
-  },
-  openGraph: {
-    type: 'website',
-    siteName: 'LiftLog',
-    title: 'TibeeWorkout',
-    description: 'Track your workouts with quick data entry between sets',
+  icons: {
+    icon: [
+      {
+        url: '/icon1.png',
+        media: '(prefers-color-scheme: light)',
+      },
+      {
+        url: '/icon1.png',
+        media: '(prefers-color-scheme: dark)',
+      },
+      {
+        url: '/icon0.svg',
+        type: 'image/svg+xml',
+      },
+    ],
+    apple: '/apple-icon.png',
   },
 };
 
