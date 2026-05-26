@@ -5,7 +5,18 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'TibeeWorkout - Workout Tracker',
     short_name: 'TibeeWorkout',
     description: 'Track your workouts with quick data entry between sets',
+    start_url: '/',
+    display: 'standalone',
+    orientation: 'portrait-primary',
+    theme_color: '#1a1a2e',
+    background_color: '#1a1a2e',
     icons: [
+      {
+        src: '/web-app-manifest-192x192.png',
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'any',
+      },
       {
         src: '/web-app-manifest-192x192.png',
         sizes: '192x192',
@@ -16,11 +27,14 @@ export default function manifest(): MetadataRoute.Manifest {
         src: '/web-app-manifest-512x512.png',
         sizes: '512x512',
         type: 'image/png',
+        purpose: 'any',
+      },
+      {
+        src: '/web-app-manifest-512x512.png',
+        sizes: '512x512',
+        type: 'image/png',
         purpose: 'maskable',
       },
     ],
-    theme_color: '#000000',
-    background_color: '#000000',
-    display: 'standalone',
   };
 }

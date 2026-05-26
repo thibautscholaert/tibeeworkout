@@ -1,6 +1,6 @@
 // Service Worker pour PWA
-const CACHE_NAME = 'lifflog-v1';
-const urlsToCache = ['/', '/manifest.json'];
+const CACHE_NAME = 'tibeeworkout-v1';
+const urlsToCache = ['/', '/manifest.webmanifest'];
 
 // Installation du service worker
 self.addEventListener('install', (event) => {
