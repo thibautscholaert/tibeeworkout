@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
-import { copySessionToClipboard } from '@/lib/clipboard-utils';
+import { copySessionToClipboard, copyWeekToClipboard } from '@/lib/clipboard-utils';
 import { EXERCISES } from '@/lib/exercises';
 import { useReactFormPersistence } from '@/lib/form-persistence';
-import { cn, formatDate, formatReps, formatWeight, groupSetsByDate, groupSetsByExercise } from '@/lib/utils';
+import { cn, formatDate, formatReps, formatWeight, groupSetsByDate, groupSetsByExercise, groupSetsByWeek } from '@/lib/utils';
 import { useWorkout } from '@/lib/workout-context';
 import { isWarmupSet } from '@/lib/workout-suggestions';
 import {
@@ -65,21 +65,27 @@ export function HistoryView() {
     return allExerciseNames.filter((name) => name.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [allExerciseNames, searchQuery]);
 
-  const groupedByDate = useMemo(() => {
-    const byDate = groupSetsByDate(history);
-    // Sort by date descending
-    return Array.from(byDate.entries()).sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime());
+  const groupedByWeek = useMemo(() => {
+    const byWeek = groupSetsByWeek(history);
+    return Array.from(byWeek.entries()).sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime());
   }, [history]);
 
-  // Filter sessions by selected exercises
-  const filteredGroupedByDate = useMemo(() => {
-    if (selectedExercises.length === 0) return groupedByDate;
+  // Filter sessions by selected exercises, keeping week structure
+  const filteredGroupedByWeek = useMemo(() => {
+    return groupedByWeek
+      .map(([weekStart, sets]) => {
+        const filtered = selectedExercises.length === 0 ? sets : sets.filter((s) => selectedExercises.includes(s.exerciseName));
+        return [weekStart, filtered] as [string, typeof sets];
+      })
+      .filter(([_, sets]) => sets.length > 0);
+  }, [groupedByWeek, selectedExercises]);
 
-    return groupedByDate.filter(([_, sets]) => {
-      const sessionExercises = new Set(sets.map((set) => set.exerciseName));
-      return selectedExercises.some((exercise) => sessionExercises.has(exercise));
-    });
-  }, [groupedByDate, selectedExercises]);
+  // For backward compat with stats (flat filtered list)
+  const filteredGroupedByDate = useMemo(() => {
+    const allSets = filteredGroupedByWeek.flatMap(([_, sets]) => sets);
+    const byDate = groupSetsByDate(allSets);
+    return Array.from(byDate.entries()).sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime());
+  }, [filteredGroupedByWeek]);
 
   // Calculer les statistiques globales
   const totalStats = useMemo(() => {
@@ -239,8 +245,8 @@ export function HistoryView() {
 
       <Separator className="my-0" />
 
-      {/* Sessions par date */}
-      {filteredGroupedByDate.length === 0 ? (
+      {/* Sessions par semaine */}
+      {filteredGroupedByWeek.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-muted border border-muted-foreground/20">
             <Filter className="h-7 w-7 text-muted-foreground" />
@@ -259,229 +265,253 @@ export function HistoryView() {
           </div>
         </div>
       ) : (
-        <Accordion type="multiple" className="space-y-4">
-          {filteredGroupedByDate.map(([dateString, sets], dateIndex) => {
-            const byExercise = groupSetsByExercise(sets);
-            const exerciseEntries = Array.from(byExercise.entries());
-            const date = new Date(dateString);
-            const isToday = dateString === new Date().toISOString().split('T')[0];
-            const sessionVolume = sets.reduce((acc, set) => acc + set.weight * set.reps, 0);
+        <div className="space-y-6">
+          {filteredGroupedByWeek.map(([weekStart, weekSets]) => {
+            const weekStartDate = new Date(weekStart);
+            const weekEndDate = new Date(weekStartDate);
+            weekEndDate.setDate(weekEndDate.getDate() + 6);
 
-            // Get exercise types for the header
-            const exerciseTypes = exerciseEntries.map(([exerciseName]) => {
-              const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === exerciseName.toLowerCase());
-              return {
-                name: exerciseName,
-                isPowerlifting: exerciseData?.isPowerlifting || false,
-                isBodyweight: exerciseData?.bodyweight || false,
-              };
-            });
+            const byDate = groupSetsByDate(weekSets);
+            const sortedDates = Array.from(byDate.entries()).sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime());
 
-            const bodyweightCount = exerciseTypes.filter((e) => e.isBodyweight && !e.isPowerlifting).length;
-            const otherCount = exerciseTypes.length - bodyweightCount;
+            const weekLabel = `${weekStartDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} – ${weekEndDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`;
 
             return (
-              <AccordionItem key={dateString} value={dateString} className="border-none">
-                <AccordionTrigger
-                  className={`rounded-lg p-4 border-l-4 hover:no-underline ${isToday ? 'border-l-primary bg-primary/5 shadow-sm' : 'border-l-muted bg-muted/20'}`}
-                >
-                  <div className="flex items-start gap-4 w-full pr-2">
-                    {/* <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20">
-                    <span className="text-xl font-bold text-primary">{dateIndex + 1}</span>
-                  </div> */}
-                    <div className="flex-1 text-left min-w-0">
-                      <div className="flex items-center justify-between flex-wrap gap-2">
-                        <h3 className={`font-semibold text-lg flex items-center flex-wrap gap-2 ${isToday ? 'text-primary' : ''}`}>
-                          {isToday ? <Flame className="h-5 w-5 text-orange-500" /> : <Calendar className="h-5 w-5 text-muted-foreground" />}
-                          {formatDate(date)}
-                          {isToday && (
-                            <Badge variant="default" className="text-sm">
-                              Aujourd'hui
-                            </Badge>
-                          )}
-                        </h3>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            copySessionToClipboard(sets);
-                          }}
-                          className="h-8 w-8 p-0 hover:bg-primary/10"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
-                        <p className="text-sm text-muted-foreground whitespace-nowrap">
-                          {exerciseEntries.length} exercice{exerciseEntries.length > 1 ? 's' : ''} • {sets.length} série{sets.length > 1 ? 's' : ''}
-                        </p>
-                        {/* Exercise type badges */}
-                        {otherCount > 0 && (
-                          <Badge variant="outline" className="text-sm px-2 h-6 bg-blue-500/10 text-blue-600 border-blue-300/50">
-                            <Dumbbell className="h-4 w-4 mr-1" />
-                            {otherCount}
-                          </Badge>
-                        )}
-                        {bodyweightCount > 0 && (
-                          <Badge variant="outline" className="text-sm px-2 h-6 bg-green-500/10 text-green-600 border-green-300/50">
-                            <PersonStandingIcon className="h-4 w-4 mr-1" />
-                            {bodyweightCount}
-                          </Badge>
-                        )}
-                      </div>
-                      {/* Exercise names preview */}
-                      <div className="flex flex-wrap items-center gap-1 mt-1.5">
-                        {exerciseEntries.map(([name], idx) => (
-                          <span key={name} className="text-sm text-muted-foreground/70">
-                            {name}
-                            {idx < exerciseEntries.length - 1 && ' •'}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+              <div key={weekStart} className="space-y-3">
+                {/* Week header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">{weekLabel}</span>
+                    <Badge variant="outline" className="text-xs h-5 px-1.5">
+                      {sortedDates.length} jour{sortedDates.length > 1 ? 's' : ''}
+                    </Badge>
                   </div>
-                </AccordionTrigger>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyWeekToClipboard(weekSets)}
+                    className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    Copier la semaine
+                  </Button>
+                </div>
 
-                <AccordionContent>
-                  {/* Exercices de la session */}
-                  <div className="space-y-3 ml-2 mt-2">
-                    {exerciseEntries.map(([exerciseName, exerciseSets], exerciseIndex) => {
-                      const totalVolume = exerciseSets.reduce((acc, s) => acc + s.weight * s.reps, 0);
-                      const maxWeight = Math.max(...exerciseSets.map((s) => s.weight));
-                      const avgReps = Math.round(exerciseSets.reduce((acc, s) => acc + s.reps, 0) / exerciseSets.length);
+                <Accordion type="multiple" className="space-y-3">
+                  {sortedDates.map(([dateString, sets], dateIndex) => {
+                    const byExercise = groupSetsByExercise(sets);
+                    const exerciseEntries = Array.from(byExercise.entries());
+                    const date = new Date(dateString);
+                    const isToday = dateString === new Date().toDateString();
+                    const sessionVolume = sets.reduce((acc, set) => acc + set.weight * set.reps, 0);
 
-                      // Get all-time best for this exercise to determine warmup sets
-                      const allTimeSetsForExercise = history.filter((set) => set.exerciseName === exerciseName);
-                      const allTimeBest = allTimeSetsForExercise.reduce<any>((best, set) => {
-                        if (!best) return set;
-                        const bestScore = best.estimated1RM || best.weight * best.reps;
-                        const setScore = set.estimated1RM || set.weight * set.reps;
-                        return setScore > bestScore ? set : best;
-                      }, null);
-
-                      // Get exercise type info
+                    const exerciseTypes = exerciseEntries.map(([exerciseName]) => {
                       const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === exerciseName.toLowerCase());
-                      const isPowerlifting = exerciseData?.isPowerlifting || false;
-                      const isBodyweight = exerciseData?.bodyweight || false;
+                      return {
+                        name: exerciseName,
+                        isPowerlifting: exerciseData?.isPowerlifting || false,
+                        isBodyweight: exerciseData?.bodyweight || false,
+                      };
+                    });
 
-                      return (
-                        <div key={exerciseName} className="space-y-1">
-                          {/* Header de l'exercice */}
-                          <div className="flex items-center justify-between flex-wrap gap-2">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
-                                {exerciseIndex + 1}
+                    const bodyweightCount = exerciseTypes.filter((e) => e.isBodyweight && !e.isPowerlifting).length;
+                    const otherCount = exerciseTypes.length - bodyweightCount;
+
+                    return (
+                      <AccordionItem key={dateString} value={`${weekStart}-${dateString}`} className="border-none">
+                        <AccordionTrigger
+                          className={`rounded-lg p-4 border-l-4 hover:no-underline ${isToday ? 'border-l-primary bg-primary/5 shadow-sm' : 'border-l-muted bg-muted/20'}`}
+                        >
+                          <div className="flex items-start gap-4 w-full pr-2">
+                            <div className="flex-1 text-left min-w-0">
+                              <div className="flex items-center justify-between flex-wrap gap-2">
+                                <h3 className={`font-semibold text-lg flex items-center flex-wrap gap-2 ${isToday ? 'text-primary' : ''}`}>
+                                  {isToday ? <Flame className="h-5 w-5 text-orange-500" /> : <Calendar className="h-5 w-5 text-muted-foreground" />}
+                                  {formatDate(date)}
+                                  {isToday && (
+                                    <Badge variant="default" className="text-sm">
+                                      Aujourd'hui
+                                    </Badge>
+                                  )}
+                                </h3>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    copySessionToClipboard(sets);
+                                  }}
+                                  className="h-8 w-8 p-0 hover:bg-primary/10"
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </Button>
                               </div>
-                              <h4 className="font-medium text-sm">{exerciseName}</h4>
-                              {isPowerlifting && (
-                                <Badge variant="outline" className="text-xs p-1 bg-blue-500/10 text-blue-600 border-blue-300/50">
-                                  <Dumbbell className="h-3.5 w-3.5" />
-                                </Badge>
-                              )}
-                              {isBodyweight && !isPowerlifting && (
-                                <Badge variant="outline" className="text-xs p-1 bg-green-500/10 text-green-600 border-green-300/50">
-                                  <PersonStandingIcon className="h-3.5 w-3.5" />
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                              <span className="whitespace-nowrap">{exerciseSets.length} séries</span>
-                              <span className="text-primary font-medium whitespace-nowrap">Max: {formatWeight(maxWeight, exerciseName)}</span>
+                              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
+                                <p className="text-sm text-muted-foreground whitespace-nowrap">
+                                  {exerciseEntries.length} exercice{exerciseEntries.length > 1 ? 's' : ''} • {sets.length} série{sets.length > 1 ? 's' : ''}
+                                </p>
+                                {otherCount > 0 && (
+                                  <Badge variant="outline" className="text-sm px-2 h-6 bg-blue-500/10 text-blue-600 border-blue-300/50">
+                                    <Dumbbell className="h-4 w-4 mr-1" />
+                                    {otherCount}
+                                  </Badge>
+                                )}
+                                {bodyweightCount > 0 && (
+                                  <Badge variant="outline" className="text-sm px-2 h-6 bg-green-500/10 text-green-600 border-green-300/50">
+                                    <PersonStandingIcon className="h-4 w-4 mr-1" />
+                                    {bodyweightCount}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                                {exerciseEntries.map(([name], idx) => (
+                                  <span key={name} className="text-sm text-muted-foreground/70">
+                                    {name}
+                                    {idx < exerciseEntries.length - 1 && ' •'}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                           </div>
+                        </AccordionTrigger>
 
-                          {/* Séries */}
-                          <div className="grid grid-cols-1 gap-1">
-                            {exerciseSets.map((set, setIndex) => {
-                              const isWarmup = isWarmupSet(set, allTimeBest, exerciseSets);
+                        <AccordionContent>
+                          <div className="space-y-3 ml-2 mt-2">
+                            {exerciseEntries.map(([exerciseName, exerciseSets], exerciseIndex) => {
+                              const totalVolume = exerciseSets.reduce((acc, s) => acc + s.weight * s.reps, 0);
+                              const maxWeight = Math.max(...exerciseSets.map((s) => s.weight));
+                              const avgReps = Math.round(exerciseSets.reduce((acc, s) => acc + s.reps, 0) / exerciseSets.length);
+
+                              const allTimeSetsForExercise = history.filter((set) => set.exerciseName === exerciseName);
+                              const allTimeBest = allTimeSetsForExercise.reduce<any>((best, set) => {
+                                if (!best) return set;
+                                const bestScore = best.estimated1RM || best.weight * best.reps;
+                                const setScore = set.estimated1RM || set.weight * set.reps;
+                                return setScore > bestScore ? set : best;
+                              }, null);
+
+                              const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === exerciseName.toLowerCase());
+                              const isPowerlifting = exerciseData?.isPowerlifting || false;
+                              const isBodyweight = exerciseData?.bodyweight || false;
 
                               return (
-                                <div
-                                  key={set.id}
-                                  className={cn(
-                                    'group relative overflow-hidden rounded-lg border py-1 px-2 transition-all',
-                                    isWarmup
-                                      ? 'border-orange-200/30 bg-orange-50/5 hover:bg-orange-50/10 hover:border-orange-300/50 hover:shadow-md'
-                                      : isToday
-                                        ? 'border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 hover:shadow-md'
-                                        : 'border-primary/30 bg-card hover:bg-muted/50 hover:border-primary/50 hover:shadow-md'
-                                  )}
-                                >
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                      <div
-                                        className={cn(
-                                          'flex h-6 w-6 items-center justify-center rounded-lg text-xs font-bold',
-                                          isWarmup ? 'bg-orange-100/20 text-orange-400' : 'bg-primary/10 text-primary'
-                                        )}
-                                      >
-                                        {setIndex + 1}
+                                <div key={exerciseName} className="space-y-1">
+                                  <div className="flex items-center justify-between flex-wrap gap-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+                                        {exerciseIndex + 1}
                                       </div>
-                                      <div className="flex items-center gap-2">
-                                        {isWarmup ? (
-                                          <Flame className="h-3 w-3 text-orange-500 mr-0.5" />
-                                        ) : (
-                                          <BicepsFlexedIcon className="h-3 w-3 text-primary mr-0.5" />
-                                        )}
-                                        <span className="text-sm font-medium font-mono">{formatWeight(set.weight, set.exerciseName)}</span>
-                                        <span className="text-xs text-muted-foreground">×</span>
-                                        <span className="text-sm font-medium font-mono">{formatReps(set.reps, set.exerciseName)}</span>
-                                      </div>
-                                      {set.estimated1RM && (
-                                        <div className="flex items-center gap-1">
-                                          <span className="text-xs text-muted-foreground">1RM:</span>
-                                          <span className="text-xs font-medium text-primary">~{set.estimated1RM}kg</span>
-                                        </div>
+                                      <h4 className="font-medium text-sm">{exerciseName}</h4>
+                                      {isPowerlifting && (
+                                        <Badge variant="outline" className="text-xs p-1 bg-blue-500/10 text-blue-600 border-blue-300/50">
+                                          <Dumbbell className="h-3.5 w-3.5" />
+                                        </Badge>
+                                      )}
+                                      {isBodyweight && !isPowerlifting && (
+                                        <Badge variant="outline" className="text-xs p-1 bg-green-500/10 text-green-600 border-green-300/50">
+                                          <PersonStandingIcon className="h-3.5 w-3.5" />
+                                        </Badge>
                                       )}
                                     </div>
-                                    <div className="text-xs text-muted-foreground">
-                                      {new Date(set.timestamp).toLocaleTimeString('fr-FR', {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                      })}
+                                    <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                                      <span className="whitespace-nowrap">{exerciseSets.length} séries</span>
+                                      <span className="text-primary font-medium whitespace-nowrap">Max: {formatWeight(maxWeight, exerciseName)}</span>
                                     </div>
                                   </div>
 
-                                  {/* Barre de progression */}
-                                  <div
-                                    className={cn(
-                                      'absolute bottom-0 left-0 h-0.5 transition-all group-hover:h-1',
-                                      isWarmup
-                                        ? 'bg-gradient-to-r from-orange-300/30 to-orange-400/50'
-                                        : 'bg-gradient-to-r from-primary/30 to-primary/60'
-                                    )}
-                                    style={{ width: `${((setIndex + 1) / exerciseSets.length) * 100}%` }}
-                                  />
+                                  <div className="grid grid-cols-1 gap-1">
+                                    {exerciseSets.map((set, setIndex) => {
+                                      const isWarmup = isWarmupSet(set, allTimeBest, exerciseSets);
+
+                                      return (
+                                        <div
+                                          key={set.id}
+                                          className={cn(
+                                            'group relative overflow-hidden rounded-lg border py-1 px-2 transition-all',
+                                            isWarmup
+                                              ? 'border-orange-200/30 bg-orange-50/5 hover:bg-orange-50/10 hover:border-orange-300/50 hover:shadow-md'
+                                              : isToday
+                                                ? 'border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 hover:shadow-md'
+                                                : 'border-primary/30 bg-card hover:bg-muted/50 hover:border-primary/50 hover:shadow-md'
+                                          )}
+                                        >
+                                          <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                              <div
+                                                className={cn(
+                                                  'flex h-6 w-6 items-center justify-center rounded-lg text-xs font-bold',
+                                                  isWarmup ? 'bg-orange-100/20 text-orange-400' : 'bg-primary/10 text-primary'
+                                                )}
+                                              >
+                                                {setIndex + 1}
+                                              </div>
+                                              <div className="flex items-center gap-2">
+                                                {isWarmup ? (
+                                                  <Flame className="h-3 w-3 text-orange-500 mr-0.5" />
+                                                ) : (
+                                                  <BicepsFlexedIcon className="h-3 w-3 text-primary mr-0.5" />
+                                                )}
+                                                <span className="text-sm font-medium font-mono">{formatWeight(set.weight, set.exerciseName)}</span>
+                                                <span className="text-xs text-muted-foreground">×</span>
+                                                <span className="text-sm font-medium font-mono">{formatReps(set.reps, set.exerciseName)}</span>
+                                              </div>
+                                              {set.estimated1RM && (
+                                                <div className="flex items-center gap-1">
+                                                  <span className="text-xs text-muted-foreground">1RM:</span>
+                                                  <span className="text-xs font-medium text-primary">~{set.estimated1RM}kg</span>
+                                                </div>
+                                              )}
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">
+                                              {new Date(set.timestamp).toLocaleTimeString('fr-FR', {
+                                                hour: '2-digit',
+                                                minute: '2-digit',
+                                              })}
+                                            </div>
+                                          </div>
+
+                                          <div
+                                            className={cn(
+                                              'absolute bottom-0 left-0 h-0.5 transition-all group-hover:h-1',
+                                              isWarmup
+                                                ? 'bg-gradient-to-r from-orange-300/30 to-orange-400/50'
+                                                : 'bg-gradient-to-r from-primary/30 to-primary/60'
+                                            )}
+                                            style={{ width: `${((setIndex + 1) / exerciseSets.length) * 100}%` }}
+                                          />
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+
+                                  <div className="flex items-center flex-wrap gap-x-4 gap-y-1 rounded-lg bg-muted/30 p-2 text-xs text-muted-foreground">
+                                    <div className="flex items-center gap-1 whitespace-nowrap">
+                                      <BarChart3 className="h-3 w-3" />
+                                      <span>Volume: {totalVolume.toLocaleString()}kg</span>
+                                    </div>
+                                    <div className="flex items-center gap-1 whitespace-nowrap">
+                                      <TrendingUp className="h-3 w-3" />
+                                      <span>Moy: {avgReps} reps</span>
+                                    </div>
+                                    <div className="flex items-center gap-1 whitespace-nowrap">
+                                      <Trophy className="h-3 w-3" />
+                                      <span>Max: {formatWeight(maxWeight, exerciseName)}</span>
+                                    </div>
+                                  </div>
                                 </div>
                               );
                             })}
                           </div>
-
-                          {/* Statistiques de l'exercice */}
-                          <div className="flex items-center flex-wrap gap-x-4 gap-y-1 rounded-lg bg-muted/30 p-2 text-xs text-muted-foreground">
-                            <div className="flex items-center gap-1 whitespace-nowrap">
-                              <BarChart3 className="h-3 w-3" />
-                              <span>Volume: {totalVolume.toLocaleString()}kg</span>
-                            </div>
-                            <div className="flex items-center gap-1 whitespace-nowrap">
-                              <TrendingUp className="h-3 w-3" />
-                              <span>Moy: {avgReps} reps</span>
-                            </div>
-                            <div className="flex items-center gap-1 whitespace-nowrap">
-                              <Trophy className="h-3 w-3" />
-                              <span>Max: {formatWeight(maxWeight, exerciseName)}</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
+                        </AccordionContent>
+                      </AccordionItem>
+                    );
+                  })}
+                </Accordion>
+              </div>
             );
           })}
-        </Accordion>
+        </div>
       )}
     </div>
   );

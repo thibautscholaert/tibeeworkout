@@ -1,22 +1,22 @@
 'use client';
 
 import { RepartitionPieChart } from '@/components/repartition-pie-chart';
-import { buildTopTagRepartition } from '@/lib/tag-stats';
+import { buildCategoryRepartition } from '@/lib/tag-stats';
 import type { WorkoutSet } from '@/lib/types';
 import { useMemo } from 'react';
 
-type ExerciseTagsRepartitionChartProps = {
+type ExerciseCatsRepartitionChartProps = {
   history: WorkoutSet[];
   className?: string;
 };
 
-export function ExerciseTagsRepartitionChart({ history, className }: ExerciseTagsRepartitionChartProps) {
-  const slices = useMemo(() => buildTopTagRepartition(history), [history]);
+export function ExerciseCatsRepartitionChart({ history, className }: ExerciseCatsRepartitionChartProps) {
+  const slices = useMemo(() => buildCategoryRepartition(history), [history]);
 
   const data = useMemo(
     () =>
       slices.map((slice) => ({
-        name: slice.tag,
+        name: slice.category,
         count: slice.count,
         percent: slice.percent,
         fill: slice.fill,
@@ -31,8 +31,8 @@ export function ExerciseTagsRepartitionChart({ history, className }: ExerciseTag
       className={className}
       data={data}
       hasHistory={history.length > 0}
-      summary={`${totalSets.toLocaleString()} attributions de tags sur le top ${slices.length} (une série peut compter dans plusieurs tags)`}
-      noDataMessage="Aucun exercice reconnu avec des tags dans l'historique"
+      summary={`${totalSets.toLocaleString()} séries réparties par catégorie d'exercice`}
+      noDataMessage="Aucun exercice reconnu avec des catégories dans l'historique"
     />
   );
 }

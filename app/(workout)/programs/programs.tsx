@@ -60,6 +60,13 @@ export default function Programs() {
     }
   };
 
+  const handleCopySession = async (e: React.MouseEvent, sessionDay: string) => {
+    e.stopPropagation();
+    if (selectedProgram) {
+      await copyProgramToClipboard(selectedProgram, sessionDay);
+    }
+  };
+
   if (!currentDay) {
     return (
       <div className="container mx-auto p-4">
@@ -185,7 +192,7 @@ export default function Programs() {
                           isToday ? 'border-l-primary bg-primary/5 shadow-sm' : 'border-l-muted bg-muted/20'
                         }`}
                       >
-                        <div className="flex items-start gap-4 w-full pr-2">
+                        <div className="flex items-center gap-2 w-full pr-2">
                           <div className="flex-1 text-left min-w-0">
                             <div className="flex items-center justify-between flex-wrap gap-2">
                               <h3 className={`font-semibold text-lg flex items-center gap-2 ${isToday ? 'text-primary' : ''}`}>
@@ -230,6 +237,13 @@ export default function Programs() {
                               )}
                             </div>
                           </div>
+                          <button
+                            onClick={(e) => handleCopySession(e, session.day)}
+                            className="flex-shrink-0 p-1.5 rounded hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
+                            title="Copier cette session"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                       </AccordionTrigger>
 

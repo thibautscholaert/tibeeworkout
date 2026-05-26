@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { BarChart3, ClipboardList, Clock, Dumbbell, TrendingUp } from 'lucide-react';
+import { BarChart3, ClipboardList, Clock, Dumbbell, Sparkles, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -14,6 +14,7 @@ export function BottomNav() {
     { id: 'chrono', label: 'Chrono', icon: Clock, href: '/chrono' },
     { id: 'history', label: 'History', icon: BarChart3, href: '/history' },
     { id: 'stats', label: 'Stats', icon: TrendingUp, href: '/stats' },
+    { id: 'ai', label: 'AI', icon: Sparkles, href: '/ai' },
   ];
 
   return (

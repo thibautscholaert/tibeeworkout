@@ -92,3 +92,31 @@ export function groupSetsByExercise(sets: WorkoutSet[]): Map<string, WorkoutSet[
 export function roundToNearest5(weight: number): number {
   return Math.round(weight / 5) * 5;
 }
+
+/** Returns the Monday of the week containing the given date (ISO week) */
+export function getWeekStart(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay(); // 0 = Sunday
+  const diff = day === 0 ? -6 : 1 - day; // shift to Monday
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+/** Groups sets by ISO week, returning a map of weekStart ISO string → sets */
+export function groupSetsByWeek(sets: WorkoutSet[]): Map<string, WorkoutSet[]> {
+  const grouped = new Map<string, WorkoutSet[]>();
+  sets.forEach((set) => {
+    const weekStart = getWeekStart(new Date(set.timestamp));
+    const key = weekStart.toISOString().split('T')[0];
+    const existing = grouped.get(key) || [];
+    grouped.set(key, [...existing, set]);
+  });
+  return grouped;
+}
+
+const FR_DAYS = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
+
+export function getDayLabel(date: Date): string {
+  return FR_DAYS[date.getDay()];
+}

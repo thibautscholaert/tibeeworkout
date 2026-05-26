@@ -1,45 +1,62 @@
 import { Program, ProgramBloc, ProgramExercise, ProgramSession } from '@/lib/types';
 import { toast } from 'sonner';
 import { EXERCISES } from './exercises';
-import { groupSetsByExercise } from './utils';
+import { getDayLabel, groupSetsByDate, groupSetsByExercise } from './utils';
 
 export const copySessionToClipboard = async (sets: any[]) => {
   try {
-    const groupedByExercise = groupSetsByExercise(sets);
-    const sessionText = Array.from(groupedByExercise.entries())
-      .map(([exerciseName, exerciseSets]) => {
-        // Grouper les séries par poids pour le format compact
-        const setsByWeight = exerciseSets.reduce(
-          (acc, set) => {
-            const weightKey = set.weight === 0 ? 'BW' : `${set.weight}kg`;
-            if (!acc[weightKey]) {
-              acc[weightKey] = [];
-            }
-            acc[weightKey].push(set.reps);
-            return acc;
-          },
-          {} as Record<string, number[]>
-        );
-
-        // Vérifier si c'est un exercice de type time
-        const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === exerciseName.toLowerCase());
-        const isTimeType = exerciseData?.repType === 'time';
-
-        // Formater chaque groupe de poids
-        const weightLines = Object.entries(setsByWeight).map(([weight, reps]) => {
-          const repsStr = reps.map((rep) => (isTimeType ? `${rep}''` : rep)).join('/');
-          return `${exerciseName} ${weight} ${repsStr}`;
-        });
-
-        return weightLines.join('\n');
-      })
-      .join('\n');
-
+    const sessionText = formatSessionSets(sets);
     await navigator.clipboard.writeText(sessionText);
     toast.success('Copied to clipboard!');
   } catch (error) {
     console.error('Failed to copy session:', error);
     toast.error('Failed to copy to clipboard!');
+  }
+};
+
+const formatSessionSets = (sets: any[]): string => {
+  const groupedByExercise = groupSetsByExercise(sets);
+  return Array.from(groupedByExercise.entries())
+    .map(([exerciseName, exerciseSets]) => {
+      const setsByWeight = exerciseSets.reduce(
+        (acc, set) => {
+          const weightKey = set.weight === 0 ? 'BW' : `${set.weight}kg`;
+          if (!acc[weightKey]) acc[weightKey] = [];
+          acc[weightKey].push(set.reps);
+          return acc;
+        },
+        {} as Record<string, number[]>
+      );
+      const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === exerciseName.toLowerCase());
+      const isTimeType = exerciseData?.repType === 'time';
+      return Object.entries(setsByWeight)
+        .map(([weight, reps]) => {
+          const repsStr = reps.map((rep) => (isTimeType ? `${rep}''` : rep)).join('/');
+          return `${exerciseName} ${weight} ${repsStr}`;
+        })
+        .join('\n');
+    })
+    .join('\n');
+};
+
+export const copyWeekToClipboard = async (weekSets: any[]) => {
+  try {
+    const byDate = groupSetsByDate(weekSets);
+    const sortedDates = Array.from(byDate.entries()).sort((a, b) => new Date(a[0] as string).getTime() - new Date(b[0] as string).getTime());
+
+    const weekText = sortedDates
+      .map(([dateStr, sets]) => {
+        const dayLabel = getDayLabel(new Date(dateStr as string));
+        const sessionText = formatSessionSets(sets);
+        return `[${dayLabel}]\n${sessionText}`;
+      })
+      .join('\n\n');
+
+    await navigator.clipboard.writeText(weekText);
+    toast.success('Semaine copiée !');
+  } catch (error) {
+    console.error('Failed to copy week:', error);
+    toast.error('Échec de la copie');
   }
 };
 

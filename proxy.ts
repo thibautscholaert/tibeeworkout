@@ -4,6 +4,9 @@ export default withAuth({
   pages: {
     signIn: "/api/auth/signin",
   },
+  callbacks: {
+    authorized: ({ token }) => token?.email === "thibautscholaert@gmail.com",
+  },
 });
 
 export const config = {

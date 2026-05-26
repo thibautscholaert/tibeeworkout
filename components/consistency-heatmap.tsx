@@ -110,12 +110,12 @@ export function ConsistencyHeatmap({ history, className }: ConsistencyHeatmapPro
 
   return (
     <div className={cn('space-y-3', className)}>
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+      <div className="flex flex-col flex-wrap  gap-2 text-xs text-muted-foreground">
         <span>
           {activeDays} jour{activeDays > 1 ? 's' : ''} actif{activeDays > 1 ? 's' : ''} sur {totalWeeks} semaine{totalWeeks > 1 ? 's' : ''} (
           {totalDays} jour{totalDays > 1 ? 's' : ''})
         </span>
-        {tooltipText && <span className="text-foreground font-medium truncate max-w-[14rem] sm:max-w-none">{tooltipText}</span>}
+        <span className="text-foreground font-medium truncate max-w-[14rem] sm:max-w-none h-4">{tooltipText}</span>
       </div>
 
       <div className="flex gap-2">

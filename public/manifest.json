@@ -1,6 +1,6 @@
 {
-  "name": "LiftLog - Workout Tracker",
-  "short_name": "LiftLog",
+  "name": "TibeeWorkout - Workout Tracker",
+  "short_name": "TibeeWorkout",
   "description": "Track your workouts with quick data entry between sets",
   "start_url": "/",
   "display": "standalone",
@@ -9,26 +9,16 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icon-light-32x32.png",
-      "sizes": "32x32",
-      "type": "image/png"
-    },
-    {
-      "src": "/icon-dark-32x32.png",
-      "sizes": "32x32",
-      "type": "image/png"
-    },
-    {
-      "src": "/apple-icon.png",
-      "sizes": "180x180",
+      "src": "/web-app-manifest-192x192.png",
+      "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable"
     },
     {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

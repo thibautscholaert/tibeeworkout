@@ -12,7 +12,7 @@ import { useReactFormPersistence } from '@/lib/form-persistence';
 import { calculate1RM, groupSetsBySession } from '@/lib/stats-utils';
 import type { WorkoutSet } from '@/lib/types';
 import { calculateEstimated1RM, cn, formatDate, formatReps, formatWeight, isBW } from '@/lib/utils';
-import { BicepsFlexed, Check, ChevronDown, Dumbbell, Search, TrendingUp } from 'lucide-react';
+import { BicepsFlexed, Check, ChevronDown, Search, TrendingUp } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useEffect, useMemo, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
@@ -233,10 +233,10 @@ export function StatsExerciseSection({ history }: StatsExerciseSectionProps) {
 
   return (
     <section className="flex flex-col gap-6">
-      <div className="flex items-center gap-2">
+      {/* <div className="flex items-center gap-2">
         <Dumbbell className="h-5 w-5 text-primary" />
         <h2 className="text-lg font-semibold">Par exercice</h2>
-      </div>
+      </div> */}
 
       {mostPracticedExercises.length > 0 && (
         <div className="flex gap-1 flex-wrap items-center justify-between overflow-y-auto h-16 pr-2">

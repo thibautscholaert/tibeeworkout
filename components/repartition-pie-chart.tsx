@@ -157,7 +157,7 @@ export function RepartitionPieChart({
 
   return (
     <motion.div
-      className={cn('space-y-4', className)}
+      className={cn('space-y-1', className)}
       initial={animated ? { opacity: 0, y: 10 } : false}
       animate={animated ? { opacity: 1, y: 0 } : false}
       transition={{ duration: 0.35, ease: 'easeOut' }}
@@ -191,7 +191,7 @@ export function RepartitionPieChart({
                     const Icon = slice?.icon;
                     return (
                       <>
-                        <span className="flex items-center gap-2 min-w-0">
+                        <span className="flex items-center gap-0.5 min-w-0">
                           {Icon ? (
                             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md" style={{ backgroundColor: slice?.fill }}>
                               <Icon className="h-3.5 w-3.5 text-primary-foreground" />
@@ -236,7 +236,7 @@ export function RepartitionPieChart({
       </motion.div>
 
       <motion.ul
-        className={cn('grid gap-3 text-xs', filled && hasIcons ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 gap-y-1.5 sm:grid-cols-3')}
+        className={cn('flex flex-wrap justify-between gap-2 text-xs', filled && hasIcons ? ' ' : 'gap-y-1.5 ')}
         variants={animated ? listVariants : undefined}
         initial={animated ? 'hidden' : false}
         animate={animated ? 'show' : false}
@@ -246,15 +246,15 @@ export function RepartitionPieChart({
             key={slice.name}
             variants={animated ? listItemVariants : undefined}
             className={cn(
-              'flex items-center justify-between gap-2 min-w-0',
-              filled && hasIcons && 'rounded-lg border border-border/40 bg-muted/20 px-3 py-2'
+              'flex items-center justify-between gap-1 min-w-0',
+              filled && hasIcons && 'rounded-lg border border-border/40 bg-muted/20 p-2'
             )}
             whileHover={animated ? { scale: 1.02 } : undefined}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
           >
-            <span className="flex items-center gap-2 min-w-0">
+            <span className="flex items-center gap-1 min-w-0">
               <SliceIndicator slice={slice} />
-              <span className={cn('truncate', filled && hasIcons ? 'font-medium text-foreground' : 'text-muted-foreground')}>{slice.name}</span>
+              <span className={cn('truncate text-muted-foreground')}>{slice.name}</span>
             </span>
             <span className="shrink-0 font-medium tabular-nums">{slice.percent}%</span>
           </motion.li>
