@@ -1228,13 +1228,13 @@
           },
           {
             "timestamp": "2026-02-13T12:13:02.749Z",
-            "exerciseName": "Pistol Squat",
+            "exerciseName": "Pistol squat",
             "weight": 0,
             "reps": 7
           },
           {
             "timestamp": "2026-02-13T12:16:38.007Z",
-            "exerciseName": "Pistol Squat",
+            "exerciseName": "Pistol squat",
             "weight": 0,
             "reps": 6
           },
@@ -1891,7 +1891,7 @@
                 "name": "Unilat.",
                 "exercises": [
                   {
-                    "exerciseName": "Pistol Squat",
+                    "exerciseName": "Pistol squat",
                     "sets": 2,
                     "reps": "6-8",
                     "charge": "Par jambe",
