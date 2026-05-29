@@ -11,9 +11,9 @@ export interface Exercise {
     content: string;
   };
   category: ExerciseCategory[];
-  strengthType?: 'strength' | 'hypertrophy' | 'power' | 'skill';
+  strengthType?: 'strength' | 'hypertrophy' | 'power' | 'skill' | 'endurance';
   unilateral?: boolean;
-  equipment?: 'barbell' | 'rings' | 'bodyweight' | 'dumbbell';
+  equipment?: 'barbell' | 'rings' | 'bodyweight' | 'dumbbell' | 'machine';
 }
 
 export const EXERCISE_TAGS = [
@@ -45,6 +45,7 @@ export const EXERCISE_TAGS = [
   'Adductors',
   'Cardio',
   'Full Body',
+  'Stretching'
 ] as const;
 
 export type ExerciseCategory =
@@ -57,6 +58,7 @@ export type ExerciseCategory =
   | 'core'
   | 'skill'
   | 'mobility'
+  | 'cardio'
   | 'conditioning';
 
 export type ExerciseTag = (typeof EXERCISE_TAGS)[number];
@@ -524,6 +526,17 @@ export const EXERCISES: Exercise[] = [
     bodyweight: true,
     repType: 'reps',
     category: ['push_vertical', 'push_horizontal'],
+    strengthType: 'strength',
+    equipment: 'rings',
+  },
+  {
+    name: 'Ring support hold',
+    tags: ['Triceps', 'Shoulders', 'Compound', 'Pushing'],
+    favorite: false,
+    isPowerlifting: false,
+    bodyweight: true,
+    repType: 'time',
+    category: ['core', 'push_horizontal'],
     strengthType: 'strength',
     equipment: 'rings',
   },
@@ -1124,6 +1137,17 @@ export const EXERCISES: Exercise[] = [
     equipment: 'dumbbell',
   },
   {
+    name: 'Jefferson curls',
+    tags: ['Back', 'Legs', 'Hamstrings', 'Glutes', 'Compound', 'Pulling', 'Stretching'],
+    favorite: false,
+    isPowerlifting: false,
+    bodyweight: false,
+    repType: 'reps',
+    category: ['pull_vertical'],
+    strengthType: 'hypertrophy',
+    equipment: 'dumbbell',
+  },
+  {
     name: 'Shrugs',
     tags: ['Back', 'Traps', 'Isolation', 'Pulling'],
     favorite: false,
@@ -1202,6 +1226,17 @@ export const EXERCISES: Exercise[] = [
     category: ['core'],
     strengthType: 'hypertrophy',
     equipment: 'bodyweight',
+  },
+  {
+    name: 'Bike',
+    tags: ['Legs', 'Cardio', 'Compound'],
+    favorite: false,
+    isPowerlifting: false,
+    bodyweight: false,
+    repType: 'time',
+    category: ['cardio', 'conditioning'],
+    strengthType: 'endurance',
+    equipment: 'machine',
   },
   {
     name: 'Mountain climbers',
