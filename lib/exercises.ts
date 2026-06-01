@@ -45,7 +45,7 @@ export const EXERCISE_TAGS = [
   'Adductors',
   'Cardio',
   'Full Body',
-  'Stretching'
+  'Stretching',
 ] as const;
 
 export type ExerciseCategory =
@@ -453,7 +453,18 @@ export const EXERCISES: Exercise[] = [
     equipment: 'bodyweight',
   },
   {
-    name: 'Planche push up',
+    name: 'Tuck planche hold',
+    tags: ['Chest', 'Triceps', 'Shoulders', 'Core', 'Compound', 'Pushing'],
+    favorite: false,
+    isPowerlifting: false,
+    bodyweight: true,
+    repType: 'reps',
+    category: ['skill', 'push_horizontal'],
+    strengthType: 'skill',
+    equipment: 'bodyweight',
+  },
+  {
+    name: 'Tuck planche push up',
     tags: ['Chest', 'Triceps', 'Shoulders', 'Core', 'Compound', 'Pushing'],
     favorite: false,
     isPowerlifting: false,
@@ -492,6 +503,17 @@ export const EXERCISES: Exercise[] = [
     isPowerlifting: false,
     bodyweight: true,
     repType: 'reps',
+    category: ['skill', 'push_vertical'],
+    strengthType: 'skill',
+    equipment: 'bodyweight',
+  },
+  {
+    name: 'Handstand',
+    tags: ['Shoulders', 'Core', 'Balance', 'Pushing'],
+    favorite: true,
+    isPowerlifting: false,
+    bodyweight: true,
+    repType: 'time',
     category: ['skill', 'push_vertical'],
     strengthType: 'skill',
     equipment: 'bodyweight',
