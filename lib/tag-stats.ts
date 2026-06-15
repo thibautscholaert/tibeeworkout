@@ -73,6 +73,7 @@ export const CATEGORY_CHART_COLORS: Record<ExerciseCategory, string> = {
   skill: 'oklch(0.68 0.16 300)',
   mobility: 'oklch(0.72 0.14 185)',
   conditioning: 'oklch(0.65 0.13 200)',
+  cardio: 'oklch(0.65 0.13 200)',
 };
 
 export type CategoryRepartitionSlice = {
