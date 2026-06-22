@@ -13,7 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { copySessionToClipboard } from '@/lib/clipboard-utils';
 import { EXERCISES } from '@/lib/exercises';
 import { useReactFormPersistence } from '@/lib/form-persistence';
-import { setFormSchema, type SetFormData } from '@/lib/schemas';
+import { setFormSchema, WORKOUT_VARIANTS, type SetFormData } from '@/lib/schemas';
 import { getWithTTL, setWithTTL } from '@/lib/storage';
 import { getTodaySession, groupTodaySessionByExercise } from '@/lib/today-session';
 import type { WorkoutSet } from '@/lib/types';
@@ -173,6 +173,7 @@ export function LogView() {
   const [selectedSession, setSelectedSession] = useState<string>('');
   const [programOpen, setProgramOpen] = useState(false);
   const [sessionOpen, setSessionOpen] = useState(false);
+  const [variantOpen, setVariantOpen] = useState(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
 
   // Load selected program/day from localStorage on mount
@@ -368,6 +369,7 @@ export function LogView() {
   // Initialize form persistence
   const { loadSavedValues, saveFormValues } = useReactFormPersistence('workout-log-form', {
     exerciseName: defaultExercise,
+    variant: 'default',
     weight: 0,
     reps: 0,
   });
@@ -383,6 +385,7 @@ export function LogView() {
     resolver: zodResolver(setFormSchema),
     defaultValues: {
       exerciseName: 'Pull up',
+      variant: 'default',
       weight: 0,
       reps: 0,
     },
@@ -415,6 +418,7 @@ export function LogView() {
   }, [defaultExercise, setValue, reset]);
 
   const selectedExercise = watch('exerciseName');
+  const selectedVariant = watch('variant');
 
   const note = useMemo(() => {
     return notes.find((note) => note.exerciseName === selectedExercise);
@@ -555,7 +559,7 @@ export function LogView() {
       </div>
 
       {/* Program and Day Selection */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-2">
         <div className="space-y-2">
           <Label htmlFor="program" className="text-sm text-muted-foreground">
             Programme
@@ -829,6 +833,46 @@ export function LogView() {
 
         <Separator className="" />
 
+        <div className="flex justify-between gap-4">
+          <Label htmlFor="variant" className="text-sm text-muted-foreground">
+            Variante
+          </Label>
+          <div className="w-full">
+            <input type="hidden" {...register('variant')} />
+            <Popover open={variantOpen} onOpenChange={setVariantOpen}>
+              <PopoverTrigger asChild>
+                <Button id="variant" type="button" variant="outline" role="combobox" aria-expanded={variantOpen} className="w-full justify-between">
+                  {selectedVariant || 'Select variant...'}
+                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[calc(100vw-3rem)] max-w-md p-0" align="start">
+                <div className="max-h-[300px] overflow-y-auto p-1">
+                  {WORKOUT_VARIANTS.map((variant) => (
+                    <button
+                      key={variant}
+                      type="button"
+                      onClick={() => {
+                        setValue('variant', variant, { shouldDirty: true, shouldValidate: true });
+                        setVariantOpen(false);
+                      }}
+                      className={cn(
+                        'relative flex w-full cursor-pointer items-center rounded-md px-3 py-2.5 text-sm outline-none transition-colors',
+                        'hover:bg-accent hover:text-accent-foreground',
+                        selectedVariant === variant && 'bg-accent/50'
+                      )}
+                    >
+                      <Check className={cn('mr-2 h-4 w-4', selectedVariant === variant ? 'opacity-100' : 'opacity-0')} />
+                      {variant}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+            {errors.variant && <p className="text-sm text-destructive">{errors.variant.message}</p>}
+          </div>
+        </div>
+
         {/* Warmup Protocol + Target + Best perf */}
         <div className="bg-muted/30 rounded-lg p-2 border border-border/50 flex flex-col gap-3">
           <div className="flex items-center justify-between gap-0.5 flex-wrap">
@@ -1010,7 +1054,14 @@ export function LogView() {
                     <span className="text-lg font-bold text-primary">{groupIndex + 1}</span>
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-base">{exerciseGroup.exerciseName}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-base">{exerciseGroup.exerciseName}</h3>
+                      {exerciseGroup.variant !== 'default' && (
+                        <Badge variant="secondary" className="text-xs">
+                          {exerciseGroup.variant}
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {exerciseGroup.totalSets} série
                       {exerciseGroup.totalSets !== 1 ? 's' : ''} •{exerciseGroup.sets.reduce((total, set) => total + set.reps, 0)} reps au total

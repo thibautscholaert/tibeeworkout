@@ -286,17 +286,6 @@ export const EXERCISES: Exercise[] = [
     equipment: 'rings',
   },
   {
-    name: 'Ring muscle up slow',
-    tags: ['Back', 'Lats', 'Triceps', 'Chest', 'Compound', 'Pulling', 'Pushing'],
-    favorite: false,
-    isPowerlifting: false,
-    bodyweight: true,
-    repType: 'reps',
-    category: ['pull_vertical', 'push_vertical'],
-    strengthType: 'skill',
-    equipment: 'rings',
-  },
-  {
     name: 'Body rows',
     tags: ['Back', 'Lats', 'Biceps', 'Compound', 'Pulling'],
     favorite: false,

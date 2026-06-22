@@ -1,6 +1,9 @@
+import type { WorkoutVariant } from './schemas';
+
 export interface WorkoutSet {
   id: string;
   exerciseName: string;
+  variant: WorkoutVariant;
   weight: number;
   reps: number;
   timestamp: Date;

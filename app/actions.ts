@@ -1,6 +1,6 @@
 'use server';
 
-import type { NoteFormData, SetFormData } from '@/lib/schemas';
+import { WORKOUT_VARIANTS, type NoteFormData, type SetFormData, type WorkoutVariant } from '@/lib/schemas';
 import { ExerciseNote, Profile, Program } from '@/lib/types';
 import { calculateEstimated1RM } from '@/lib/utils';
 import { JWT } from 'google-auth-library';
@@ -24,12 +24,13 @@ export async function saveWorkoutSet(data: SetFormData & { timestamp: Date }) {
     const sheet = doc.sheetsByTitle['Workouts'] || doc.sheetsByIndex[0];
 
     if (sheet.rowCount <= 1 && sheet.columnCount <= 1) {
-      await sheet.setHeaderRow(['Exercise', 'Weight', 'Reps', 'Timestamp']);
+      await sheet.setHeaderRow(['Exercise', 'Variant', 'Weight', 'Reps', 'Timestamp']);
     }
 
     const newRow = {
       Timestamp: data.timestamp.toISOString(),
       Exercise: data.exerciseName,
+      Variant: data.variant,
       Weight: data.weight.toString(),
       Reps: data.reps.toString(),
     };
@@ -67,7 +68,7 @@ export async function saveNote(data: NoteFormData & { timestamp: Date; exerciseN
 
     // Get all rows to find existing entry for this exercise
     const rows = await sheet.getRows();
-    const existingRow = rows.find(row => row.get('Exercise') === data.exerciseName);
+    const existingRow = rows.find((row) => row.get('Exercise') === data.exerciseName);
 
     if (existingRow) {
       // Update existing row
@@ -104,9 +105,12 @@ export async function getWorkoutHistory() {
       const weight = parseFloat(row.get('Weight'));
       const reps = parseInt(row.get('Reps'));
       const exerciseName = row.get('Exercise');
+      const sheetVariant = row.get('Variant');
+      const variant: WorkoutVariant = WORKOUT_VARIANTS.includes(sheetVariant as WorkoutVariant) ? sheetVariant : 'default';
       return {
         timestamp: row.get('Timestamp'),
         exerciseName,
+        variant,
         weight,
         reps,
         oneRM: calculateEstimated1RM(weight, reps, exerciseName),
@@ -251,5 +255,3 @@ export async function getProfile() {
     return { success: false, data: null, error: 'Failed to fetch profile data' };
   }
 }
-
-

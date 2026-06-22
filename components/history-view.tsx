@@ -9,7 +9,9 @@ import { Separator } from '@/components/ui/separator';
 import { copySessionToClipboard, copyWeekToClipboard } from '@/lib/clipboard-utils';
 import { EXERCISES } from '@/lib/exercises';
 import { useReactFormPersistence } from '@/lib/form-persistence';
-import { cn, formatDate, formatReps, formatWeight, groupSetsByDate, groupSetsByExercise, groupSetsByWeek } from '@/lib/utils';
+import type { WorkoutVariant } from '@/lib/schemas';
+import type { WorkoutSet } from '@/lib/types';
+import { cn, formatDate, formatReps, formatWeight, groupSetsByDate, groupSetsByWeek } from '@/lib/utils';
 import { useWorkout } from '@/lib/workout-context';
 import { isWarmupSet } from '@/lib/workout-suggestions';
 import {
@@ -25,9 +27,22 @@ import {
   Target,
   TrendingUp,
   Trophy,
-  X
+  X,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+
+function groupSetsByExerciseAndVariant(sets: WorkoutSet[]): Map<string, WorkoutSet[]> {
+  const grouped = new Map<string, WorkoutSet[]>();
+
+  sets.forEach((set) => {
+    const variant = set.variant || 'default';
+    const key = `${set.exerciseName}\u0000${variant}`;
+    const existing = grouped.get(key) || [];
+    grouped.set(key, [...existing, set]);
+  });
+
+  return grouped;
+}
 
 export function HistoryView() {
   const { history } = useWorkout();
@@ -300,13 +315,14 @@ export function HistoryView() {
 
                 <Accordion type="multiple" className="space-y-3">
                   {sortedDates.map(([dateString, sets], dateIndex) => {
-                    const byExercise = groupSetsByExercise(sets);
+                    const byExercise = groupSetsByExerciseAndVariant(sets);
                     const exerciseEntries = Array.from(byExercise.entries());
                     const date = new Date(dateString);
                     const isToday = dateString === new Date().toDateString();
                     const sessionVolume = sets.reduce((acc, set) => acc + set.weight * set.reps, 0);
 
-                    const exerciseTypes = exerciseEntries.map(([exerciseName]) => {
+                    const exerciseTypes = exerciseEntries.map(([, exerciseSets]) => {
+                      const exerciseName = exerciseSets[0].exerciseName;
                       const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === exerciseName.toLowerCase());
                       return {
                         name: exerciseName,
@@ -349,7 +365,8 @@ export function HistoryView() {
                               </div>
                               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
                                 <p className="text-sm text-muted-foreground whitespace-nowrap">
-                                  {exerciseEntries.length} exercice{exerciseEntries.length > 1 ? 's' : ''} • {sets.length} série{sets.length > 1 ? 's' : ''}
+                                  {exerciseEntries.length} exercice{exerciseEntries.length > 1 ? 's' : ''} • {sets.length} série
+                                  {sets.length > 1 ? 's' : ''}
                                 </p>
                                 {otherCount > 0 && (
                                   <Badge variant="outline" className="text-sm px-2 h-6 bg-blue-500/10 text-blue-600 border-blue-300/50">
@@ -365,12 +382,21 @@ export function HistoryView() {
                                 )}
                               </div>
                               <div className="flex flex-wrap items-center gap-1 mt-1.5">
-                                {exerciseEntries.map(([name], idx) => (
-                                  <span key={name} className="text-sm text-muted-foreground/70">
-                                    {name}
-                                    {idx < exerciseEntries.length - 1 && ' •'}
-                                  </span>
-                                ))}
+                                {exerciseEntries.map(([groupKey, exerciseSets], idx) => {
+                                  const { exerciseName, variant = 'default' } = exerciseSets[0];
+
+                                  return (
+                                    <span key={groupKey} className="inline-flex items-center gap-1 text-sm text-muted-foreground/70">
+                                      {exerciseName}
+                                      {variant !== 'default' && (
+                                        <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                                          {variant}
+                                        </Badge>
+                                      )}
+                                      {idx < exerciseEntries.length - 1 && ' •'}
+                                    </span>
+                                  );
+                                })}
                               </div>
                             </div>
                           </div>
@@ -378,7 +404,9 @@ export function HistoryView() {
 
                         <AccordionContent>
                           <div className="space-y-3 ml-2 mt-2">
-                            {exerciseEntries.map(([exerciseName, exerciseSets], exerciseIndex) => {
+                            {exerciseEntries.map(([groupKey, exerciseSets], exerciseIndex) => {
+                              const exerciseName = exerciseSets[0].exerciseName;
+                              const variant: WorkoutVariant = exerciseSets[0].variant || 'default';
                               const totalVolume = exerciseSets.reduce((acc, s) => acc + s.weight * s.reps, 0);
                               const maxWeight = Math.max(...exerciseSets.map((s) => s.weight));
                               const avgReps = Math.round(exerciseSets.reduce((acc, s) => acc + s.reps, 0) / exerciseSets.length);
@@ -396,13 +424,18 @@ export function HistoryView() {
                               const isBodyweight = exerciseData?.bodyweight || false;
 
                               return (
-                                <div key={exerciseName} className="space-y-1">
+                                <div key={groupKey} className="space-y-1">
                                   <div className="flex items-center justify-between flex-wrap gap-2">
                                     <div className="flex items-center gap-2 flex-wrap">
                                       <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
                                         {exerciseIndex + 1}
                                       </div>
                                       <h4 className="font-medium text-sm">{exerciseName}</h4>
+                                      {variant !== 'default' && (
+                                        <Badge variant="secondary" className="text-xs">
+                                          {variant}
+                                        </Badge>
+                                      )}
                                       {isPowerlifting && (
                                         <Badge variant="outline" className="text-xs p-1 bg-blue-500/10 text-blue-600 border-blue-300/50">
                                           <Dumbbell className="h-3.5 w-3.5" />

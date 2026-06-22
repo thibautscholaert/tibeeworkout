@@ -1,9 +1,9 @@
-import { Program, ProgramBloc, ProgramExercise, ProgramSession } from '@/lib/types';
+import { Program, ProgramBloc, ProgramExercise, ProgramSession, WorkoutSet } from '@/lib/types';
 import { toast } from 'sonner';
 import { EXERCISES } from './exercises';
-import { getDayLabel, groupSetsByDate, groupSetsByExercise } from './utils';
+import { getDayLabel, groupSetsByDate } from './utils';
 
-export const copySessionToClipboard = async (sets: any[]) => {
+export const copySessionToClipboard = async (sets: WorkoutSet[]) => {
   try {
     const sessionText = formatSessionSets(sets);
     await navigator.clipboard.writeText(sessionText);
@@ -14,10 +14,19 @@ export const copySessionToClipboard = async (sets: any[]) => {
   }
 };
 
-const formatSessionSets = (sets: any[]): string => {
-  const groupedByExercise = groupSetsByExercise(sets);
-  return Array.from(groupedByExercise.entries())
-    .map(([exerciseName, exerciseSets]) => {
+const formatSessionSets = (sets: WorkoutSet[]): string => {
+  const groupedSets = new Map<string, { exerciseName: string; variant: WorkoutSet['variant']; sets: WorkoutSet[] }>();
+
+  sets.forEach((set) => {
+    const variant = set.variant || 'default';
+    const groupKey = `${set.exerciseName}\u0000${variant}`;
+    const group = groupedSets.get(groupKey) || { exerciseName: set.exerciseName, variant, sets: [] };
+    group.sets.push(set);
+    groupedSets.set(groupKey, group);
+  });
+
+  return Array.from(groupedSets.values())
+    .map(({ exerciseName, variant, sets: exerciseSets }) => {
       const setsByWeight = exerciseSets.reduce(
         (acc, set) => {
           const weightKey = set.weight === 0 ? 'BW' : `${set.weight}kg`;
@@ -29,17 +38,18 @@ const formatSessionSets = (sets: any[]): string => {
       );
       const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === exerciseName.toLowerCase());
       const isTimeType = exerciseData?.repType === 'time';
+      const exerciseLabel = variant === 'default' ? exerciseName : `${exerciseName} - ${variant}`;
       return Object.entries(setsByWeight)
         .map(([weight, reps]) => {
           const repsStr = reps.map((rep) => (isTimeType ? `${rep}''` : rep)).join('/');
-          return `${exerciseName} ${weight} ${repsStr}`;
+          return `${exerciseLabel} ${weight} ${repsStr}`;
         })
         .join('\n');
     })
     .join('\n');
 };
 
-export const copyWeekToClipboard = async (weekSets: any[]) => {
+export const copyWeekToClipboard = async (weekSets: WorkoutSet[]) => {
   try {
     const byDate = groupSetsByDate(weekSets);
     const sortedDates = Array.from(byDate.entries()).sort((a, b) => new Date(a[0] as string).getTime() - new Date(b[0] as string).getTime());
@@ -72,11 +82,20 @@ export const copyProgramToClipboard = async (program: Program, sessionDay?: stri
       );
     }
 
-    const programText = sessionsToCopy
-      .map((session: ProgramSession) => {
-        const exercisesText = session.blocs
-          .flatMap((bloc: ProgramBloc) => bloc.exercises.map((e) => ({ ...e, day: session.day })))
-          .map((exercise: ProgramExercise & { day: string }) => {
+    const sessionsByDay = new Map<string, { day: string; sessions: ProgramSession[] }>();
+    sessionsToCopy.forEach((session) => {
+      const dayKey = session.day.toLowerCase();
+      const dayGroup = sessionsByDay.get(dayKey) || { day: session.day, sessions: [] };
+      dayGroup.sessions.push(session);
+      sessionsByDay.set(dayKey, dayGroup);
+    });
+
+    const programText = Array.from(sessionsByDay.values())
+      .map(({ day, sessions }) => {
+        const exercisesText = sessions
+          .flatMap((session) => session.blocs)
+          .flatMap((bloc: ProgramBloc) => bloc.exercises)
+          .map((exercise: ProgramExercise) => {
             const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === exercise.exerciseName.toLowerCase());
             const isTimeType = exerciseData?.repType === 'time';
             const isBodyweight = exerciseData?.bodyweight || false;
@@ -100,7 +119,7 @@ export const copyProgramToClipboard = async (program: Program, sessionDay?: stri
             // Formater les séries
             const setsText = exercise.sets ? `${exercise.sets}x` : '';
 
-            let exerciseLine = `${exercise.day.toLocaleLowerCase() === 'any' ? '' : `[${exercise.day}] `}${exercise.exerciseName} ${setsText}${repsText}${weightText}`;
+            let exerciseLine = `${exercise.exerciseName} ${setsText}${repsText}${weightText}`;
 
             // Ajouter les notes si présentes
             if (exercise.notes) {
@@ -113,11 +132,12 @@ export const copyProgramToClipboard = async (program: Program, sessionDay?: stri
             }
 
             return exerciseLine;
-          });
+          })
+          .join('\n');
 
-        return exercisesText.join('\n');
+        return `[${day}]\n${exercisesText}`;
       })
-      .join('\n');
+      .join('\n\n');
 
     await navigator.clipboard.writeText(programText.trim());
     toast.success('Copied to clipboard!');

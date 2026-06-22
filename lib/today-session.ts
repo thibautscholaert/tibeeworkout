@@ -1,3 +1,4 @@
+import type { WorkoutVariant } from './schemas';
 import { WorkoutSet } from './types';
 
 // Fonction pour obtenir les séries d'aujourd'hui
@@ -16,31 +17,35 @@ export function getTodaySession(history: WorkoutSet[]): WorkoutSet[] {
 
 export function groupTodaySessionByExercise(todaySession: WorkoutSet[]): {
   exerciseName: string;
+  variant: WorkoutVariant;
   sets: WorkoutSet[];
   totalSets: number;
 }[] {
-  // const exerciseGroups = new Map<string, WorkoutSet[]>();
   let key = '';
   const list: {
     exerciseName: string;
+    variant: WorkoutVariant;
     sets: WorkoutSet[];
     totalSets: number;
   }[] = [];
 
   todaySession.forEach((set) => {
-    if (key === set.exerciseName) {
+    const variant = set.variant || 'default';
+    const groupKey = `${set.exerciseName}\u0000${variant}`;
+
+    if (key === groupKey) {
       list[list.length - 1].sets.push(set);
       list[list.length - 1].totalSets++;
     } else {
-      key = set.exerciseName;
+      key = groupKey;
       list.push({
         exerciseName: set.exerciseName,
+        variant,
         sets: [set],
         totalSets: 1,
       });
     }
   });
-
 
   return list;
 }
