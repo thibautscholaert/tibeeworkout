@@ -41,7 +41,7 @@ const formatSessionSets = (sets: WorkoutSet[]): string => {
       const exerciseLabel = variant === 'default' ? exerciseName : `${exerciseName} - ${variant}`;
       return Object.entries(setsByWeight)
         .map(([weight, reps]) => {
-          const repsStr = reps.map((rep) => (isTimeType ? `${rep}''` : rep)).join('/');
+          const repsStr = reps.map((rep) => (isTimeType ? `${rep}${exerciseData.repTypeUnit === 'minute' ? "'" : "''"}` : rep)).join('/');
           return `${exerciseLabel} ${weight} ${repsStr}`;
         })
         .join('\n');
@@ -113,11 +113,11 @@ export const copyProgramToClipboard = async (program: Program, sessionDay?: stri
             // Formater les reps
             let repsText = exercise.reps;
             if (isTimeType) {
-              repsText = exercise.reps.includes('"') ? exercise.reps : `${exercise.reps}s`;
+              repsText = exercise.reps.includes('"') ? exercise.reps : `${exercise.reps}${exerciseData.repTypeUnit === 'minute' ? "'" : "''"}`;
             }
 
             // Formater les séries
-            const setsText = exercise.sets ? `${exercise.sets}x` : '';
+            const setsText = exercise.sets && exercise.sets > 1 ? `${exercise.sets}x` : '';
 
             let exerciseLine = `${exercise.exerciseName} ${setsText}${repsText}${weightText}`;
 

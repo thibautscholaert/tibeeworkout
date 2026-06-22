@@ -180,7 +180,6 @@ export function HistoryView() {
                 filteredExerciseNames.map((exerciseName) => {
                   const isSelected = selectedExercises.includes(exerciseName);
                   const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === exerciseName.toLowerCase());
-                  const isPowerlifting = exerciseData?.isPowerlifting || false;
                   const isBodyweight = exerciseData?.bodyweight || false;
 
                   return (
@@ -335,9 +334,9 @@ export function HistoryView() {
                     const otherCount = exerciseTypes.length - bodyweightCount;
 
                     return (
-                      <AccordionItem key={dateString} value={`${weekStart}-${dateString}`} className="border-none">
+                      <AccordionItem key={dateString} value={`${weekStart}-${dateString}`} className="relative border-none">
                         <AccordionTrigger
-                          className={`rounded-lg p-4 border-l-4 hover:no-underline ${isToday ? 'border-l-primary bg-primary/5 shadow-sm' : 'border-l-muted bg-muted/20'}`}
+                          className={`rounded-lg p-4 pr-10 border-l-4 hover:no-underline ${isToday ? 'border-l-primary bg-primary/5 shadow-sm' : 'border-l-muted bg-muted/20'}`}
                         >
                           <div className="flex items-start gap-4 w-full pr-2">
                             <div className="flex-1 text-left min-w-0">
@@ -351,17 +350,6 @@ export function HistoryView() {
                                     </Badge>
                                   )}
                                 </h3>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    copySessionToClipboard(sets);
-                                  }}
-                                  className="h-8 w-8 p-0 hover:bg-primary/10"
-                                >
-                                  <Copy className="h-4 w-4" />
-                                </Button>
                               </div>
                               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
                                 <p className="text-sm text-muted-foreground whitespace-nowrap">
@@ -401,6 +389,16 @@ export function HistoryView() {
                             </div>
                           </div>
                         </AccordionTrigger>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => copySessionToClipboard(sets)}
+                          className="absolute right-2 top-3 z-10 hover:bg-primary/10"
+                          aria-label={`Copier la session du ${formatDate(date)}`}
+                          title="Copier la session"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
 
                         <AccordionContent>
                           <div className="space-y-3 ml-2 mt-2">

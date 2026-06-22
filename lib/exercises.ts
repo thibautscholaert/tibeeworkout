@@ -5,6 +5,7 @@ export interface Exercise {
   isPowerlifting: boolean;
   bodyweight: boolean;
   repType: 'reps' | 'time';
+  repTypeUnit?: 'second' | 'minute';
   warmupProtocol?: { exo?: string; weight: string; reps: number; weightUnit: 'kg' | '%' }[];
   description?: {
     title: string;
@@ -74,7 +75,7 @@ export const EXERCISES: Exercise[] = [
   {
     name: 'Squat',
     tags: ['Legs', 'Quads', 'Glutes', 'Compound', 'Powerlifting'],
-    favorite: true,
+    favorite: false,
     isPowerlifting: true,
     bodyweight: false,
     repType: 'reps',
@@ -124,7 +125,7 @@ export const EXERCISES: Exercise[] = [
   {
     name: 'Bench Press',
     tags: ['Chest', 'Triceps', 'Shoulders', 'Compound', 'Powerlifting'],
-    favorite: true,
+    favorite: false,
     isPowerlifting: true,
     bodyweight: false,
     repType: 'reps',
@@ -308,6 +309,17 @@ export const EXERCISES: Exercise[] = [
     equipment: 'rings',
   },
   {
+    name: 'Ring face Pull',
+    tags: ['Shoulders', 'Back', 'Isolation', 'Pulling'],
+    favorite: true,
+    isPowerlifting: false,
+    bodyweight: true,
+    repType: 'reps',
+    category: ['pull_horizontal'],
+    strengthType: 'hypertrophy',
+    equipment: 'dumbbell',
+  },
+  {
     name: 'Australian pull up',
     tags: ['Back', 'Lats', 'Biceps', 'Compound', 'Pulling'],
     favorite: false,
@@ -444,7 +456,7 @@ export const EXERCISES: Exercise[] = [
   {
     name: 'Planche lean hold',
     tags: ['Chest', 'Triceps', 'Shoulders', 'Compound', 'Pushing'],
-    favorite: false,
+    favorite: true,
     isPowerlifting: false,
     bodyweight: true,
     repType: 'time',
@@ -455,10 +467,10 @@ export const EXERCISES: Exercise[] = [
   {
     name: 'Tuck planche hold',
     tags: ['Chest', 'Triceps', 'Shoulders', 'Core', 'Compound', 'Pushing'],
-    favorite: false,
+    favorite: true,
     isPowerlifting: false,
     bodyweight: true,
-    repType: 'reps',
+    repType: 'time',
     category: ['skill', 'push_horizontal'],
     strengthType: 'skill',
     equipment: 'bodyweight',
@@ -488,7 +500,7 @@ export const EXERCISES: Exercise[] = [
   {
     name: 'Handstand push up',
     tags: ['Shoulders', 'Triceps', 'Core', 'Compound', 'Pushing'],
-    favorite: false,
+    favorite: true,
     isPowerlifting: false,
     bodyweight: true,
     repType: 'reps',
@@ -502,7 +514,8 @@ export const EXERCISES: Exercise[] = [
     favorite: true,
     isPowerlifting: false,
     bodyweight: true,
-    repType: 'reps',
+    repType: 'time',
+    repTypeUnit: 'minute',
     category: ['skill', 'push_vertical'],
     strengthType: 'skill',
     equipment: 'bodyweight',
@@ -511,6 +524,18 @@ export const EXERCISES: Exercise[] = [
     name: 'Handstand',
     tags: ['Shoulders', 'Core', 'Balance', 'Pushing'],
     favorite: true,
+    isPowerlifting: false,
+    bodyweight: true,
+    repType: 'time',
+    repTypeUnit: 'minute',
+    category: ['skill', 'push_vertical'],
+    strengthType: 'skill',
+    equipment: 'bodyweight',
+  },
+  {
+    name: 'Handstand hold',
+    tags: ['Shoulders', 'Core', 'Balance', 'Isometric', 'Pushing'],
+    favorite: false,
     isPowerlifting: false,
     bodyweight: true,
     repType: 'time',
@@ -592,17 +617,6 @@ export const EXERCISES: Exercise[] = [
     bodyweight: true,
     repType: 'time',
     category: ['skill', 'push_horizontal', 'core'],
-    strengthType: 'skill',
-    equipment: 'bodyweight',
-  },
-  {
-    name: 'Handstand hold',
-    tags: ['Shoulders', 'Core', 'Balance', 'Isometric', 'Pushing'],
-    favorite: false,
-    isPowerlifting: false,
-    bodyweight: true,
-    repType: 'time',
-    category: ['skill', 'push_vertical'],
     strengthType: 'skill',
     equipment: 'bodyweight',
   },
@@ -967,7 +981,7 @@ export const EXERCISES: Exercise[] = [
   {
     name: 'Overhead press dumbell',
     tags: ['Shoulders', 'Triceps', 'Core', 'Compound', 'Pushing'],
-    favorite: true,
+    favorite: false,
     isPowerlifting: false,
     bodyweight: false,
     repType: 'reps',
@@ -1095,7 +1109,7 @@ export const EXERCISES: Exercise[] = [
   {
     name: 'Barbell row',
     tags: ['Back', 'Lats', 'Biceps', 'Compound', 'Pulling'],
-    favorite: true,
+    favorite: false,
     isPowerlifting: true,
     bodyweight: false,
     repType: 'reps',
@@ -1136,6 +1150,7 @@ export const EXERCISES: Exercise[] = [
     strengthType: 'hypertrophy',
     equipment: 'dumbbell',
   },
+
   {
     name: 'Bicep curls',
     tags: ['Biceps', 'Isolation', 'Pulling'],

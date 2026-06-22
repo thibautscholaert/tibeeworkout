@@ -12,7 +12,7 @@ import { useReactFormPersistence } from '@/lib/form-persistence';
 import { calculate1RM, groupSetsBySession } from '@/lib/stats-utils';
 import type { WorkoutSet } from '@/lib/types';
 import { calculateEstimated1RM, cn, formatDate, formatReps, formatWeight, isBW } from '@/lib/utils';
-import { BicepsFlexed, Check, ChevronDown, Search, TrendingUp } from 'lucide-react';
+import { BicepsFlexed, Check, ChevronDown, Search, Star, TrendingUp } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useEffect, useMemo, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
@@ -284,25 +284,29 @@ export function StatsExerciseSection({ history }: StatsExerciseSectionProps) {
             {filteredExercises.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">No exercise found.</p>
             ) : (
-              filteredExercises.map((exercise) => (
-                <button
-                  key={exercise}
-                  type="button"
-                  onClick={() => {
-                    setSelectedExercise(exercise);
-                    setExerciseOpen(false);
-                    setSearchQuery('');
-                  }}
-                  className={cn(
-                    'relative flex w-full cursor-pointer items-center rounded-md px-3 py-2.5 text-sm outline-none transition-colors',
-                    'hover:bg-accent hover:text-accent-foreground',
-                    selectedExercise === exercise && 'bg-accent/50'
-                  )}
-                >
-                  <Check className={cn('mr-2 h-4 w-4', selectedExercise === exercise ? 'opacity-100' : 'opacity-0')} />
-                  {exercise}
-                </button>
-              ))
+              filteredExercises.map((exercise) => {
+                const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === exercise.toLowerCase());
+                return (
+                  <button
+                    key={exercise}
+                    type="button"
+                    onClick={() => {
+                      setSelectedExercise(exercise);
+                      setExerciseOpen(false);
+                      setSearchQuery('');
+                    }}
+                    className={cn(
+                      'relative flex w-full cursor-pointer items-center rounded-md px-3 py-2.5 text-sm outline-none transition-colors',
+                      'hover:bg-accent hover:text-accent-foreground',
+                      selectedExercise === exercise && 'bg-accent/50'
+                    )}
+                  >
+                    <Check className={cn('mr-2 h-4 w-4', selectedExercise === exercise ? 'opacity-100' : 'opacity-0')} />
+                    {exerciseData?.favorite && <Star className="mr-2 h-4 w-4 fill-yellow-500 text-yellow-500" />}
+                    {exercise}
+                  </button>
+                );
+              })
             )}
           </div>
         </PopoverContent>

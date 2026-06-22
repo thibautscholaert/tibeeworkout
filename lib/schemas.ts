@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const WORKOUT_VARIANTS = ['default', 'slow', 'explosive', 'tempo'] as const;
+export const WORKOUT_VARIANTS = ['default', 'slow', 'explosive', 'tempo', 'negative'] as const;
 export type WorkoutVariant = (typeof WORKOUT_VARIANTS)[number];
 
 export const setFormSchema = z.object({

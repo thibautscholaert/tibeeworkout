@@ -208,9 +208,6 @@ export function getWorkoutSuggestions(
           const todaySets = todayStats.get(exercise.exerciseName) || [];
           const completedSets = todaySets.filter((set) => !isWarmupSet(set, allTimeBest, todaySets));
 
-          console.log('todayStats', todayStats);
-          console.log('completedSets', exercise.exerciseName, completedSets.length);
-
           if (!isExerciseCompleted(exercise, completedSets)) {
             const completedExerciseNames = Array.from(todayStats.keys()).filter((exerciseName) => {
               const exerciseInProgram = selectedProgram.blocs.flatMap((b) => b.exercises).find((ex) => ex.exerciseName === exerciseName);
@@ -221,8 +218,6 @@ export function getWorkoutSuggestions(
             const remainingInBloc = bloc.exercises
               .filter((ex) => !isExerciseCompleted(ex, todayStats.get(ex.exerciseName) || []))
               .map((ex) => ex.exerciseName);
-
-            console.log('remainingInBloc', remainingInBloc);
 
             const suggestedCharge = allTimeBest ? parseFloat(allTimeBest.weight) : 0;
 
