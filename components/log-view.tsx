@@ -337,14 +337,21 @@ export function LogView() {
   // Calculate most practiced exercises (top 5 by number of sets)
   const mostPracticedExercises = useMemo(() => {
     const exerciseCounts = new Map<string, number>();
-    history.forEach((set) => {
-      const count = exerciseCounts.get(set.exerciseName) || 0;
-      exerciseCounts.set(set.exerciseName, count + 1);
-    });
+    history
+      .filter(set => {
+        const exercice = EXERCISES.find(e => e.name === set.exerciseName);
+        return exercice && exercice.favorite;
+      })
+      .forEach((set) => {
+        const count = exerciseCounts.get(set.exerciseName) || 0;
+        exerciseCounts.set(set.exerciseName, count + 1);
+      });
 
     return Array.from(exerciseCounts.entries())
       .sort((a, b) => b[1] - a[1]) // Sort by count descending
       .slice(0, 19) // Take top 19 to prevent excessive renders
+      .sort(([a], [b]) => Number(b.toLowerCase().includes('handstand')) - Number(a.toLowerCase().includes('handstand')))
+      .sort(([a], [b]) => Number(b.toLowerCase() === ('handstand')) - Number(a.toLowerCase() === ('handstand')))
       .map(([name]) => name); // Extract just the names
   }, [history]);
 
@@ -674,13 +681,13 @@ export function LogView() {
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <p className="font-medium text-sm">{suggestions.nextExercise}</p>
+                    <p className="font-medium text-sm overflow-ellipsis line-clamp-1">{suggestions.nextExercise}</p>
                     <Badge variant={suggestions.isCompletingCurrentExercise ? 'default' : 'outline'} className="shrink-0 text-xs">
-                      {suggestions.completedSeries}/{suggestions.totalSeries} séries
+                      {suggestions.completedSeries}/{suggestions.totalSeries} série{`${suggestions.totalSeries > 1 ? 's' : ''}`}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mb-1">
-                    Bloc: {suggestions.blocName} • {suggestions.suggestedReps} reps
+                    {suggestions.blocName && suggestions.blocName.length > 0 ? `Bloc: ${suggestions.blocName} - ` : ''} {`${suggestions.totalSeries} séries • ${suggestions.suggestedReps} ${suggestions.exercise?.repType === 'time' ? suggestions.exercise?.repTypeUnit === 'minute' ? 'min' : 'sec' : 'reps'}`}
                   </p>
 
                   <p className="text-xs text-muted-foreground flex gap-1 items-center">
@@ -747,14 +754,14 @@ export function LogView() {
         <div className="space-y-2">
           {/* Exercise Favorites - Subtle suggestions */}
           {mostPracticedExercises.length > 0 && (
-            <div className="flex gap-1 flex-wrap items-center justify-between overflow-y-auto h-16 pr-2">
+            <div className="flex gap-1 flex-wrap items-center justify-between overflow-y-auto h-16">
               {mostPracticedExercises.map((exerciseName) => (
                 <button
                   key={exerciseName}
                   type="button"
                   onClick={() => setValue('exerciseName', exerciseName)}
                   className={cn(
-                    'px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-200',
+                    'px-1 py-1.5 rounded-md text-xs font-medium transition-all duration-200',
                     'border border-border/40 bg-muted/30 hover:bg-muted/60 hover:border-border/60',
                     'text-muted-foreground hover:text-foreground',
                     selectedExercise === exerciseName && 'bg-primary/10 border-primary/30 text-primary'

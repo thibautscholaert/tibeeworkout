@@ -1,4 +1,4 @@
-import { EXERCISES } from './exercises';
+import { Exercise, EXERCISES } from './exercises';
 import { Program, ProgramExercise, WorkoutSet } from './types';
 
 // Fonction pour obtenir le jour de la semaine en français
@@ -166,6 +166,7 @@ export interface ExerciseSuggestion {
   completedExercises: string[];
   remainingExercises: string[];
   isCompletingCurrentExercise: boolean;
+  exercise: Exercise | null;
 }
 
 // Fonction principale pour obtenir les suggestions (retourne maintenant un tableau)
@@ -194,6 +195,7 @@ export function getWorkoutSuggestions(
     const selectedProgram = todayProgram ?? program.sessions[0];
 
     if (selectedProgram) {
+      console.log('selectedProgram.blocs', selectedProgram.blocs)
       // Collecter tous les exercices incomplets dans l'ordre
       for (const bloc of selectedProgram.blocs) {
         for (const exercise of bloc.exercises) {
@@ -211,7 +213,6 @@ export function getWorkoutSuggestions(
           if (!isExerciseCompleted(exercise, completedSets)) {
             const completedExerciseNames = Array.from(todayStats.keys()).filter((exerciseName) => {
               const exerciseInProgram = selectedProgram.blocs.flatMap((b) => b.exercises).find((ex) => ex.exerciseName === exerciseName);
-              console.log(todayStats.get(exerciseName));
               return exerciseInProgram && isExerciseCompleted(exerciseInProgram, todayStats.get(exerciseName) || []);
             });
 
@@ -235,6 +236,7 @@ export function getWorkoutSuggestions(
               completedExercises: completedExerciseNames,
               remainingExercises: remainingInBloc,
               isCompletingCurrentExercise: completedSets.length > 0,
+              exercise: EXERCISES.find((ex) => ex.name === exercise.exerciseName) || null
             });
           }
         }
@@ -255,6 +257,8 @@ export function getWorkoutSuggestions(
           completedExercises: allCompletedExercises,
           remainingExercises: [],
           isCompletingCurrentExercise: false,
+          exercise: null
+
         });
       }
 
@@ -277,6 +281,8 @@ export function getWorkoutSuggestions(
       completedExercises: [],
       remainingExercises: [],
       isCompletingCurrentExercise: false,
+      exercise: null
+
     },
   ];
 }

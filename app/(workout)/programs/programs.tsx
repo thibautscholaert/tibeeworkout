@@ -102,11 +102,10 @@ export default function Programs() {
                 <button
                   key={program.id}
                   onClick={() => setSelectedProgram(program)}
-                  className={`flex-shrink-0 p-2 m-0.5 rounded-xl border transition-all ${
-                    isSelected
-                      ? 'border-primary bg-primary/5 shadow-lg scale-105'
-                      : 'border-muted bg-card hover:border-primary/50 hover:shadow-md hover:scale-102'
-                  }`}
+                  className={`flex-shrink-0 p-2 m-0.5 rounded-xl border transition-all ${isSelected
+                    ? 'border-primary bg-primary/5 shadow-lg scale-105'
+                    : 'border-muted bg-card hover:border-primary/50 hover:shadow-md hover:scale-102'
+                    }`}
                 >
                   <div className="text-left">
                     <div className="flex items-start justify-between mb-2">
@@ -186,11 +185,9 @@ export default function Programs() {
                   const otherCount = exerciseTypes.length - bodyweightCount;
 
                   return (
-                    <AccordionItem key={sessionIndex} value={sessionIndex.toString()} className="border-none">
+                    <AccordionItem key={sessionIndex} value={sessionIndex.toString()} className="relative border-none">
                       <AccordionTrigger
-                        className={`rounded-lg p-4 border-l-4 hover:no-underline ${
-                          isToday ? 'border-l-primary bg-primary/5 shadow-sm' : 'border-l-muted bg-muted/20'
-                        }`}
+                        className={`rounded-lg p-4 pr-10 border-l-4 hover:no-underline ${isToday ? 'border-l-primary bg-primary/5 shadow-sm' : 'border-l-muted bg-muted/20'}`}
                       >
                         <div className="flex items-center gap-2 w-full pr-2">
                           <div className="flex-1 text-left min-w-0">
@@ -237,16 +234,19 @@ export default function Programs() {
                               )}
                             </div>
                           </div>
-                          <button
-                            onClick={(e) => handleCopySession(e, session.day)}
-                            className="flex-shrink-0 p-1.5 rounded hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
-                            title="Copier cette session"
-                          >
-                            <Copy className="h-3.5 w-3.5" />
-                          </button>
+
                         </div>
                       </AccordionTrigger>
 
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={(e) => handleCopySession(e, session.day)}
+                        className="absolute right-2 top-3 z-10 hover:bg-primary/10"
+                        title="Copier la session"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
                       <AccordionContent>
                         {/* Blocs de la session */}
                         <div className="space-y-3 ml-2 mt-2">
@@ -268,9 +268,8 @@ export default function Programs() {
                                   return (
                                     <div
                                       key={exerciseIndex}
-                                      className={`rounded-lg border p-3 transition-all ${
-                                        isToday ? 'border-primary/20 bg-primary/5' : 'border-muted bg-background'
-                                      }`}
+                                      className={`rounded-lg border p-3 transition-all ${isToday ? 'border-primary/20 bg-primary/5' : 'border-muted bg-background'
+                                        }`}
                                     >
                                       <div className="flex items-start justify-between">
                                         <div className="flex-1">
