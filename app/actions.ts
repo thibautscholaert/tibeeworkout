@@ -18,14 +18,35 @@ const auth = new JWT({
 
 const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID || '', auth);
 
+function normalizeWorkoutVariant(value: unknown): WorkoutVariant {
+  return WORKOUT_VARIANTS.includes(value as WorkoutVariant) ? (value as WorkoutVariant) : 'default';
+}
+
+async function ensureHeaders(sheet: any, headers: string[]) {
+  if (sheet.rowCount <= 1 && sheet.columnCount <= 1) {
+    await sheet.setHeaderRow(headers);
+    return;
+  }
+
+  await sheet.loadHeaderRow();
+  const currentHeaders = sheet.headerValues || [];
+  const missingHeaders = headers.filter((header) => !currentHeaders.includes(header));
+
+  if (missingHeaders.length > 0) {
+    const nextHeaders = [...currentHeaders, ...missingHeaders];
+    if (nextHeaders.length > sheet.columnCount) {
+      await sheet.resize({ rowCount: sheet.rowCount, columnCount: nextHeaders.length });
+    }
+    await sheet.setHeaderRow(nextHeaders);
+  }
+}
+
 export async function saveWorkoutSet(data: SetFormData & { timestamp: Date }) {
   try {
     await doc.loadInfo();
     const sheet = doc.sheetsByTitle['Workouts'] || doc.sheetsByIndex[0];
 
-    if (sheet.rowCount <= 1 && sheet.columnCount <= 1) {
-      await sheet.setHeaderRow(['Exercise', 'Variant', 'Weight', 'Reps', 'Timestamp']);
-    }
+    await ensureHeaders(sheet, ['Exercise', 'Variant', 'Weight', 'Reps', 'Timestamp']);
 
     const newRow = {
       Timestamp: data.timestamp.toISOString(),
@@ -105,8 +126,7 @@ export async function getWorkoutHistory() {
       const weight = parseFloat(row.get('Weight'));
       const reps = parseInt(row.get('Reps'));
       const exerciseName = row.get('Exercise');
-      const sheetVariant = row.get('Variant');
-      const variant: WorkoutVariant = WORKOUT_VARIANTS.includes(sheetVariant as WorkoutVariant) ? sheetVariant : 'default';
+      const variant = normalizeWorkoutVariant(row.get('Variant'));
       return {
         timestamp: row.get('Timestamp'),
         exerciseName,
@@ -145,6 +165,7 @@ export async function getPrograms() {
       const day = row.get('Jour') || '';
       const bloc = row.get('Bloc') || '';
       const exerciseName = row.get('Exercice') || '';
+      const variant = normalizeWorkoutVariant(row.get('Variante') || row.get('Variant'));
       const sets = parseInt(row.get('Séries') || '0');
       const reps = row.get('Reps') || '';
       const charge = row.get('Charge / Objectif') || '';
@@ -181,6 +202,7 @@ export async function getPrograms() {
       // Ajouter l'exercice
       blocObj.exercises.push({
         exerciseName,
+        variant,
         sets,
         reps,
         charge,

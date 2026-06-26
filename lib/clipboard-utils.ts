@@ -119,7 +119,9 @@ export const copyProgramToClipboard = async (program: Program, sessionDay?: stri
             // Formater les séries
             const setsText = exercise.sets && exercise.sets > 1 ? `${exercise.sets}x` : '';
 
-            let exerciseLine = `${exercise.exerciseName} ${setsText}${repsText}${weightText}`;
+            const exerciseLabel =
+              exercise.variant && exercise.variant !== 'default' ? `${exercise.exerciseName} - ${exercise.variant}` : exercise.exerciseName;
+            let exerciseLine = `${exerciseLabel} ${setsText}${repsText}${weightText}`;
 
             // Ajouter les notes si présentes
             if (exercise.notes) {

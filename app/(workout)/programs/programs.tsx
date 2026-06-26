@@ -102,10 +102,11 @@ export default function Programs() {
                 <button
                   key={program.id}
                   onClick={() => setSelectedProgram(program)}
-                  className={`flex-shrink-0 p-2 m-0.5 rounded-xl border transition-all ${isSelected
-                    ? 'border-primary bg-primary/5 shadow-lg scale-105'
-                    : 'border-muted bg-card hover:border-primary/50 hover:shadow-md hover:scale-102'
-                    }`}
+                  className={`flex-shrink-0 p-2 m-0.5 rounded-xl border transition-all ${
+                    isSelected
+                      ? 'border-primary bg-primary/5 shadow-lg scale-105'
+                      : 'border-muted bg-card hover:border-primary/50 hover:shadow-md hover:scale-102'
+                  }`}
                 >
                   <div className="text-left">
                     <div className="flex items-start justify-between mb-2">
@@ -234,7 +235,6 @@ export default function Programs() {
                               )}
                             </div>
                           </div>
-
                         </div>
                       </AccordionTrigger>
 
@@ -268,8 +268,9 @@ export default function Programs() {
                                   return (
                                     <div
                                       key={exerciseIndex}
-                                      className={`rounded-lg border p-3 transition-all ${isToday ? 'border-primary/20 bg-primary/5' : 'border-muted bg-background'
-                                        }`}
+                                      className={`rounded-lg border p-3 transition-all ${
+                                        isToday ? 'border-primary/20 bg-primary/5' : 'border-muted bg-background'
+                                      }`}
                                     >
                                       <div className="flex items-start justify-between">
                                         <div className="flex-1">
@@ -280,6 +281,11 @@ export default function Programs() {
                                               {exerciseIndex + 1}
                                             </div>
                                             <h6 className="font-medium text-sm">{exercise.exerciseName}</h6>
+                                            {exercise.variant && exercise.variant !== 'default' && (
+                                              <Badge variant="secondary" className="text-xs">
+                                                {exercise.variant}
+                                              </Badge>
+                                            )}
                                             {isBodyweight && (
                                               <Badge variant="outline" className="text-xs p-1 bg-green-500/10 text-green-600 border-green-300/50">
                                                 <PersonStandingIcon className="h-3 w-3" />

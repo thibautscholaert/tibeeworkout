@@ -40,6 +40,7 @@ import {
   Star,
   Target,
   TargetIcon,
+  Timer,
   Trophy,
   Zap,
 } from 'lucide-react';
@@ -320,6 +321,7 @@ export function LogView() {
         totalSeries: 0,
         suggestedReps: null,
         suggestedCharge: null,
+        suggestedVariant: 'default',
         exerciseDetails: null,
         completedExercises: [],
         remainingExercises: [],
@@ -338,8 +340,8 @@ export function LogView() {
   const mostPracticedExercises = useMemo(() => {
     const exerciseCounts = new Map<string, number>();
     history
-      .filter(set => {
-        const exercice = EXERCISES.find(e => e.name === set.exerciseName);
+      .filter((set) => {
+        const exercice = EXERCISES.find((e) => e.name === set.exerciseName);
         return exercice && exercice.favorite;
       })
       .forEach((set) => {
@@ -351,7 +353,7 @@ export function LogView() {
       .sort((a, b) => b[1] - a[1]) // Sort by count descending
       .slice(0, 19) // Take top 19 to prevent excessive renders
       .sort(([a], [b]) => Number(b.toLowerCase().includes('handstand')) - Number(a.toLowerCase().includes('handstand')))
-      .sort(([a], [b]) => Number(b.toLowerCase() === ('handstand')) - Number(a.toLowerCase() === ('handstand')))
+      .sort(([a], [b]) => Number(b.toLowerCase() === 'handstand') - Number(a.toLowerCase() === 'handstand'))
       .map(([name]) => name); // Extract just the names
   }, [history]);
 
@@ -445,6 +447,14 @@ export function LogView() {
   const selectedExerciseData = useMemo(() => {
     return EXERCISES.find((ex) => ex.name.toLowerCase() === selectedExercise.toLowerCase());
   }, [selectedExercise]);
+  const setPreviewWeight = watchedValues.weight ?? 0;
+  const setPreviewReps = watchedValues.reps ?? 0;
+  const isSetPreviewBodyweight = Boolean(selectedExerciseData?.bodyweight && setPreviewWeight === 0);
+  const setPreviewRepsLabel = (reps: number) => {
+    const label = selectedExerciseData?.repType === 'time' ? (selectedExerciseData.repTypeUnit === 'minute' ? 'min' : 'sec') : 'rep';
+
+    return label + (reps > 1 ? 's' : '');
+  };
 
   // Calculate best 1RM for selected exercise (for target weight default / warmup)
   const best1RM = useMemo(() => {
@@ -682,12 +692,18 @@ export function LogView() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <p className="font-medium text-sm overflow-ellipsis line-clamp-1">{suggestions.nextExercise}</p>
+                    {suggestions.suggestedVariant !== 'default' && (
+                      <Badge variant="secondary" className="shrink-0 text-xs">
+                        {suggestions.suggestedVariant}
+                      </Badge>
+                    )}
                     <Badge variant={suggestions.isCompletingCurrentExercise ? 'default' : 'outline'} className="shrink-0 text-xs">
                       {suggestions.completedSeries}/{suggestions.totalSeries} série{`${suggestions.totalSeries > 1 ? 's' : ''}`}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mb-1">
-                    {suggestions.blocName && suggestions.blocName.length > 0 ? `Bloc: ${suggestions.blocName} - ` : ''} {`${suggestions.totalSeries} séries • ${suggestions.suggestedReps} ${suggestions.exercise?.repType === 'time' ? suggestions.exercise?.repTypeUnit === 'minute' ? 'min' : 'sec' : 'reps'}`}
+                    {suggestions.blocName && suggestions.blocName.length > 0 ? `Bloc: ${suggestions.blocName} - ` : ''}{' '}
+                    {`${suggestions.totalSeries} séries • ${suggestions.suggestedReps} ${suggestions.exercise?.repType === 'time' ? (suggestions.exercise?.repTypeUnit === 'minute' ? 'min' : 'sec') : 'reps'}`}
                   </p>
 
                   <p className="text-xs text-muted-foreground flex gap-1 items-center">
@@ -716,6 +732,7 @@ export function LogView() {
                     type="button"
                     onClick={() => {
                       setValue('exerciseName', suggestions.nextExercise!);
+                      setValue('variant', suggestions.suggestedVariant, { shouldDirty: true, shouldValidate: true });
                       if (suggestions.suggestedReps !== null) {
                         setValue('reps', suggestions.suggestedReps);
                       }
@@ -840,46 +857,6 @@ export function LogView() {
 
         <Separator className="" />
 
-        <div className="flex justify-between gap-4">
-          <Label htmlFor="variant" className="text-sm text-muted-foreground">
-            Variante
-          </Label>
-          <div className="w-full">
-            <input type="hidden" {...register('variant')} />
-            <Popover open={variantOpen} onOpenChange={setVariantOpen}>
-              <PopoverTrigger asChild>
-                <Button id="variant" type="button" variant="outline" role="combobox" aria-expanded={variantOpen} className="w-full justify-between">
-                  {selectedVariant || 'Select variant...'}
-                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[calc(100vw-3rem)] max-w-md p-0" align="start">
-                <div className="max-h-[300px] overflow-y-auto p-1">
-                  {WORKOUT_VARIANTS.map((variant) => (
-                    <button
-                      key={variant}
-                      type="button"
-                      onClick={() => {
-                        setValue('variant', variant, { shouldDirty: true, shouldValidate: true });
-                        setVariantOpen(false);
-                      }}
-                      className={cn(
-                        'relative flex w-full cursor-pointer items-center rounded-md px-3 py-2.5 text-sm outline-none transition-colors',
-                        'hover:bg-accent hover:text-accent-foreground',
-                        selectedVariant === variant && 'bg-accent/50'
-                      )}
-                    >
-                      <Check className={cn('mr-2 h-4 w-4', selectedVariant === variant ? 'opacity-100' : 'opacity-0')} />
-                      {variant}
-                    </button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-            {errors.variant && <p className="text-sm text-destructive">{errors.variant.message}</p>}
-          </div>
-        </div>
-
         {/* Warmup Protocol + Target + Best perf */}
         <div className="bg-muted/30 rounded-lg p-2 border border-border/50 flex flex-col gap-3">
           <div className="flex items-center justify-between gap-0.5 flex-wrap">
@@ -981,8 +958,8 @@ export function LogView() {
           )}
         </div>
 
-        {/* Weight & Reps Row */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* Variant + Weight + Reps Row */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           <div className="flex flex-col gap-1">
             <Label htmlFor="weight" className="text-sm text-muted-foreground">
               Weight (kg)
@@ -998,6 +975,7 @@ export function LogView() {
             />
             {errors.weight && <p className="text-sm text-destructive">{errors.weight.message}</p>}
           </div>
+
           <div className="flex flex-col gap-1">
             <Label htmlFor="reps" className="text-sm text-muted-foreground">
               {selectedExerciseData?.repType === 'time' ? 'Temps (s)' : 'Reps'}
@@ -1012,12 +990,89 @@ export function LogView() {
             />
             {errors.reps && <p className="text-sm text-destructive">{errors.reps.message}</p>}
           </div>
+
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="variant" className="text-sm text-muted-foreground">
+              Variante
+            </Label>
+            <input type="hidden" {...register('variant')} />
+            <Popover open={variantOpen} onOpenChange={setVariantOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  id="variant"
+                  type="button"
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={variantOpen}
+                  className="h-10 w-full justify-between px-2 text-sm font-semibold"
+                >
+                  <span className="truncate">{selectedVariant || 'Select...'}</span>
+                  <ChevronDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[calc(100vw-3rem)] max-w-md p-0" align="end">
+                <div className="max-h-[300px] overflow-y-auto p-1">
+                  {WORKOUT_VARIANTS.map((variant) => (
+                    <button
+                      key={variant}
+                      type="button"
+                      onClick={() => {
+                        setValue('variant', variant, { shouldDirty: true, shouldValidate: true });
+                        setVariantOpen(false);
+                      }}
+                      className={cn(
+                        'relative flex w-full cursor-pointer items-center rounded-md px-3 py-2.5 text-sm outline-none transition-colors',
+                        'hover:bg-accent hover:text-accent-foreground',
+                        selectedVariant === variant && 'bg-accent/50'
+                      )}
+                    >
+                      <Check className={cn('mr-2 h-4 w-4', selectedVariant === variant ? 'opacity-100' : 'opacity-0')} />
+                      {variant}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+            {errors.variant && <p className="text-sm text-destructive">{errors.variant.message}</p>}
+          </div>
         </div>
 
         {/* Quick Add Button */}
-        <Button type="submit" size="lg" className="w-full h-14 text-lg font-semibold" disabled={isSubmitting}>
-          <Plus className="mr-2 h-5 w-5" />
-          {isSubmitting ? 'Ajout...' : 'Ajouter'}
+        <Button
+          type="submit"
+          size="lg"
+          className="group relative h-auto min-h-14 w-full overflow-hidden rounded-lg border border-primary/25 bg-primary px-3 py-2.5 text-left shadow-sm transition-all hover:bg-primary/95 hover:shadow-md"
+          disabled={isSubmitting}
+        >
+          <div className="relative flex w-full items-center gap-2.5">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary-foreground/15 text-primary-foreground">
+              <Plus className="h-5 w-5" />
+            </div>
+            <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold leading-tight text-primary-foreground">
+                  {isSubmitting ? 'Ajout...' : selectedExercise || 'Exercice'}
+                </div>
+                {selectedVariant !== 'default' && <div className="mt-0.5 truncate text-xs text-primary-foreground/75">{selectedVariant}</div>}
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 rounded-md bg-primary-foreground/15 p-1.5 text-xs font-semibold text-primary-foreground">
+                  {isSetPreviewBodyweight ? (
+                    <PersonStandingIcon className="h-3.5 w-3.5" />
+                  ) : (
+                    <>
+                      <DumbbellIcon className="h-3.5 w-3.5" />
+                      {formatWeight(setPreviewWeight, selectedExercise)}
+                    </>
+                  )}
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-md bg-primary-foreground/15 p-1.5 text-xs font-semibold text-primary-foreground">
+                  {selectedExerciseData?.repType === 'time' ? <Timer className="h-3.5 w-3.5" /> : <BicepsFlexedIcon className="h-3.5 w-3.5" />}
+                  {setPreviewReps || 0} {setPreviewRepsLabel(setPreviewReps || 0)}
+                </span>
+              </div>
+            </div>
+          </div>
         </Button>
       </form>
 
@@ -1181,7 +1236,8 @@ export function LogView() {
         </div>
       )}
 
-      {/* Notes Form */}
+      <Separator className="my-3" />
+
       <div className="">
         <NotesForm selectedExercise={selectedExercise} note={note} />
       </div>

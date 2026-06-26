@@ -1,4 +1,5 @@
 import { Exercise, EXERCISES } from './exercises';
+import { WorkoutVariant } from './schemas';
 import { Program, ProgramExercise, WorkoutSet } from './types';
 
 // Fonction pour obtenir le jour de la semaine en français
@@ -128,6 +129,10 @@ function normalizeDayName(day: string): string {
 }
 
 // Fonction pour obtenir les séries réalisées aujourd'hui par exercice
+function getExerciseVariantKey(exerciseName: string, variant: WorkoutVariant = 'default') {
+  return `${exerciseName}\u0000${variant}`;
+}
+
 function getTodayExerciseStats(history: WorkoutSet[]): Map<string, WorkoutSet[]> {
   const today = new Date();
   const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -140,10 +145,11 @@ function getTodayExerciseStats(history: WorkoutSet[]): Map<string, WorkoutSet[]>
       return setDate >= todayStart;
     })
     .forEach((set) => {
-      if (!exerciseStats.has(set.exerciseName)) {
-        exerciseStats.set(set.exerciseName, []);
+      const key = getExerciseVariantKey(set.exerciseName, set.variant || 'default');
+      if (!exerciseStats.has(key)) {
+        exerciseStats.set(key, []);
       }
-      exerciseStats.get(set.exerciseName)!.push(set);
+      exerciseStats.get(key)!.push(set);
     });
   return exerciseStats;
 }
@@ -162,6 +168,7 @@ export interface ExerciseSuggestion {
   totalSeries: number;
   suggestedReps: number | null;
   suggestedCharge: number | null;
+  suggestedVariant: WorkoutVariant;
   exerciseDetails: ProgramExercise | null;
   completedExercises: string[];
   remainingExercises: string[];
@@ -195,11 +202,13 @@ export function getWorkoutSuggestions(
     const selectedProgram = todayProgram ?? program.sessions[0];
 
     if (selectedProgram) {
-      console.log('selectedProgram.blocs', selectedProgram.blocs)
+      console.log('selectedProgram.blocs', selectedProgram.blocs);
       // Collecter tous les exercices incomplets dans l'ordre
       for (const bloc of selectedProgram.blocs) {
         for (const exercise of bloc.exercises) {
-          const allTimeSets = history.filter((set) => set.exerciseName === exercise.exerciseName);
+          const variant = exercise.variant || 'default';
+          const exerciseKey = getExerciseVariantKey(exercise.exerciseName, variant);
+          const allTimeSets = history.filter((set) => set.exerciseName === exercise.exerciseName && (set.variant || 'default') === variant);
           const allTimeBest = allTimeSets.reduce<any>((best, set) => {
             if (!best) return set;
             const bestScore = best.estimated1RM || best.weight * best.reps;
@@ -207,20 +216,24 @@ export function getWorkoutSuggestions(
             return setScore > bestScore ? set : best;
           }, null);
 
-          const todaySets = todayStats.get(exercise.exerciseName) || [];
+          const todaySets = todayStats.get(exerciseKey) || [];
           const completedSets = todaySets.filter((set) => !isWarmupSet(set, allTimeBest, todaySets));
 
           if (!isExerciseCompleted(exercise, completedSets)) {
-            const completedExerciseNames = Array.from(todayStats.keys()).filter((exerciseName) => {
-              const exerciseInProgram = selectedProgram.blocs.flatMap((b) => b.exercises).find((ex) => ex.exerciseName === exerciseName);
-              return exerciseInProgram && isExerciseCompleted(exerciseInProgram, todayStats.get(exerciseName) || []);
+            const completedExerciseNames = selectedProgram.blocs
+              .flatMap((b) => b.exercises)
+              .filter((programExercise) => {
+                const key = getExerciseVariantKey(programExercise.exerciseName, programExercise.variant || 'default');
+                return isExerciseCompleted(programExercise, todayStats.get(key) || []);
+              })
+              .map((programExercise) => programExercise.exerciseName);
+
+            const remainingInBloc = bloc.exercises.filter((ex) => {
+              const key = getExerciseVariantKey(ex.exerciseName, ex.variant || 'default');
+              return !isExerciseCompleted(ex, todayStats.get(key) || []);
             });
 
-            const remainingInBloc = bloc.exercises
-              .filter((ex) => !isExerciseCompleted(ex, todayStats.get(ex.exerciseName) || []))
-              .map((ex) => ex.exerciseName);
-
-            const suggestedCharge = allTimeBest ? parseFloat(allTimeBest.weight) : 0;
+            const suggestedCharge = allTimeBest ? allTimeBest.weight : 0;
 
             // Filtrer les séries d'échauffement pour le compteur
 
@@ -232,11 +245,12 @@ export function getWorkoutSuggestions(
               totalSeries: exercise.sets,
               suggestedReps: parseInt(exercise.reps),
               suggestedCharge,
+              suggestedVariant: variant,
               exerciseDetails: exercise,
               completedExercises: completedExerciseNames,
-              remainingExercises: remainingInBloc,
+              remainingExercises: remainingInBloc.map((ex) => ex.exerciseName),
               isCompletingCurrentExercise: completedSets.length > 0,
-              exercise: EXERCISES.find((ex) => ex.name === exercise.exerciseName) || null
+              exercise: EXERCISES.find((ex) => ex.name === exercise.exerciseName) || null,
             });
           }
         }
@@ -244,7 +258,7 @@ export function getWorkoutSuggestions(
 
       // Si aucune suggestion n'a été trouvée, tous les exercices sont terminés
       if (suggestions.length === 0) {
-        const allCompletedExercises = Array.from(todayStats.keys());
+        const allCompletedExercises = Array.from(todayStats.keys()).map((key) => key.split('\u0000')[0]);
         suggestions.push({
           nextExercise: null,
           programName: program.title,
@@ -253,12 +267,12 @@ export function getWorkoutSuggestions(
           totalSeries: 0,
           suggestedReps: null,
           suggestedCharge: null,
+          suggestedVariant: 'default',
           exerciseDetails: null,
           completedExercises: allCompletedExercises,
           remainingExercises: [],
           isCompletingCurrentExercise: false,
-          exercise: null
-
+          exercise: null,
         });
       }
 
@@ -277,12 +291,12 @@ export function getWorkoutSuggestions(
       totalSeries: 0,
       suggestedReps: null,
       suggestedCharge: null,
+      suggestedVariant: 'default',
       exerciseDetails: null,
       completedExercises: [],
       remainingExercises: [],
       isCompletingCurrentExercise: false,
-      exercise: null
-
+      exercise: null,
     },
   ];
 }
