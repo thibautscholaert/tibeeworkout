@@ -2,15 +2,9 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { CHRONO_STATE_EVENT, readChronoState, writeChronoState, type ChronoState } from '@/lib/chrono';
 import { Pause, Play, RotateCcw, Timer } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-
-interface ChronoState {
-  time: number;
-  isRunning: boolean;
-  startTime: number | null;
-  initialStartTime: number | null;
-}
 
 export default function ChronoPage() {
   const [time, setTime] = useState(0);
@@ -21,26 +15,35 @@ export default function ChronoPage() {
 
   // Charger l'état depuis localStorage au montage
   useEffect(() => {
-    const savedState = localStorage.getItem('chronoState');
-    if (savedState) {
-      try {
-        const parsed: ChronoState = JSON.parse(savedState);
+    const applyState = (parsed: ChronoState | null) => {
+      if (!parsed) return;
 
-        // Si le chrono était en cours, calculer le temps écoulé depuis le début
-        if (parsed.isRunning && parsed.initialStartTime) {
-          const elapsed = Date.now() - parsed.initialStartTime;
-          setTime(elapsed); // Utiliser le temps écoulé depuis le vrai début
-          setIsRunning(true);
-          startTimeRef.current = parsed.startTime;
-          initialStartTimeRef.current = parsed.initialStartTime;
-        } else {
-          setTime(parsed.time || 0); // Utiliser le temps sauvegardé (incluant les pauses)
-          initialStartTimeRef.current = parsed.initialStartTime;
-        }
-      } catch (error) {
-        console.error("Erreur lors du chargement de l'état du chrono:", error);
+      // Si le chrono était en cours, calculer le temps écoulé depuis le début
+      if (parsed.isRunning && parsed.initialStartTime) {
+        const elapsed = Date.now() - parsed.initialStartTime;
+        setTime(elapsed); // Utiliser le temps écoulé depuis le vrai début
+        setIsRunning(true);
+        startTimeRef.current = parsed.startTime;
+        initialStartTimeRef.current = parsed.initialStartTime;
+      } else {
+        setTime(parsed.time || 0); // Utiliser le temps sauvegardé (incluant les pauses)
+        setIsRunning(false);
+        startTimeRef.current = null;
+        initialStartTimeRef.current = parsed.initialStartTime;
       }
-    }
+    };
+
+    applyState(readChronoState());
+
+    const handleChronoStateChange = (event: Event) => {
+      applyState((event as CustomEvent<ChronoState>).detail);
+    };
+
+    window.addEventListener(CHRONO_STATE_EVENT, handleChronoStateChange);
+
+    return () => {
+      window.removeEventListener(CHRONO_STATE_EVENT, handleChronoStateChange);
+    };
   }, []);
 
   // Sauvegarder l'état dans localStorage à chaque changement (uniquement si le chrono est en cours)
@@ -52,7 +55,7 @@ export default function ChronoPage() {
         startTime: startTimeRef.current,
         initialStartTime: initialStartTimeRef.current,
       };
-      localStorage.setItem('chronoState', JSON.stringify(stateToSave));
+      writeChronoState(stateToSave, { emitEvent: false });
     }
   }, [time, isRunning]);
 
@@ -65,7 +68,7 @@ export default function ChronoPage() {
         startTime: null,
         initialStartTime: initialStartTimeRef.current,
       };
-      localStorage.setItem('chronoState', JSON.stringify(stateToSave));
+      writeChronoState(stateToSave);
     }
   }, [isRunning, time]);
 
@@ -113,7 +116,7 @@ export default function ChronoPage() {
         startTime: Date.now(),
         initialStartTime: initialStartTimeRef.current,
       };
-      localStorage.setItem('chronoState', JSON.stringify(stateToSave));
+      writeChronoState(stateToSave);
     }
   };
 
@@ -135,7 +138,7 @@ export default function ChronoPage() {
       startTime: null,
       initialStartTime: null,
     };
-    localStorage.setItem('chronoState', JSON.stringify(stateToSave));
+    writeChronoState(stateToSave);
   };
 
   const formatTime = (milliseconds: number) => {

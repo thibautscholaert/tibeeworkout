@@ -13,9 +13,150 @@ export interface Exercise {
   };
   category: ExerciseCategory[];
   strengthType?: 'strength' | 'hypertrophy' | 'power' | 'skill' | 'endurance';
-  unilateral?: boolean;
   equipment?: 'barbell' | 'rings' | 'bodyweight' | 'dumbbell' | 'machine';
+  restSecondsRange?: [number, number];
 }
+
+export const REST_SECONDS_BY_EXERCISE: Record<string, [number, number]> = {
+  // ===== POWERLIFTING =====
+  Squat: [180, 300],
+  Deadlift: [180, 300],
+  'Trap bar Deadlift': [180, 300],
+  'Bench Press': [180, 300],
+
+  // ===== CALISTHÉNIE - PULLING / STRENGTH =====
+  'Pull up': [180, 300],
+  'Chin up': [180, 300],
+  'Wide grip pull up': [180, 300],
+  'Close grip pull up': [180, 300],
+  'Hammer pull up': [180, 300],
+  'L-sit pull up': [180, 300],
+  'Archer pull up': [180, 300],
+  'Typewriter pull up': [180, 300],
+
+  'One arm pull up': [180, 300],
+  'Eccentric OAP': [180, 300],
+  'Assisted OAP': [180, 300],
+
+  'Muscle up': [180, 300],
+  'Ring muscle up': [180, 300],
+
+  // Pull horizontal moins nerveux
+  'Body rows': [120, 180],
+  'Ring rows': [120, 180],
+  'Australian pull up': [120, 180],
+
+  // Préhab / isolation
+  'Ring face Pull': [45, 90],
+  'Face Pull': [45, 90],
+
+  // Levers / skills statiques lourds
+  'Front lever': [120, 300],
+  'Front lever pull': [180, 300],
+  'Back lever': [120, 300],
+
+  // Hangs
+  'Dead hang hold': [90, 180],
+  'Active hang hold': [90, 180],
+  'One arm hang hold': [180, 300],
+
+  // ===== CALISTHÉNIE - PUSHING =====
+  'Push up': [120, 180],
+  'Diamond push up': [60, 120],
+  'Wide push up': [60, 120],
+  'Archer push up': [120, 180],
+
+  'Pseudo planche push up': [180, 300],
+  'Planche lean hold': [120, 300],
+  'Tuck planche hold': [120, 300],
+  'Tuck planche push up': [180, 300],
+  Planche: [180, 300],
+
+  'Pike push up': [180, 300],
+  'Handstand push up': [180, 300],
+
+  // Technique pure : repos plus court car pas forcément proche échec
+  Handstand: [30, 90],
+  'Handstand hold': [60, 180],
+
+  Dips: [180, 300],
+  'Bar dips': [180, 300],
+  'Ring dips': [180, 300],
+
+  'Ring support hold': [90, 180],
+  'L-sit dips': [180, 300],
+  'Korean dips': [180, 300],
+
+  // ===== CORE / SKILL =====
+  'L-sit hold': [90, 180],
+  'V-sit hold': [90, 180],
+  'Hanging leg raise': [60, 120],
+  'Toes to bar': [90, 180],
+  'Dragon flag': [180, 300],
+  'Human flag': [180, 300],
+  'Ab wheel rollout': [120, 240],
+
+  Plank: [60, 120],
+  'Side plank': [60, 120],
+  'Hollow body hold': [60, 120],
+  'Arch hold': [60, 120],
+
+  // ===== LEGS BODYWEIGHT =====
+  'Pistol squat': [120, 240],
+  'Shrimp squat': [120, 240],
+  'Sissy squat': [60, 120],
+  'Jump squat': [120, 180],
+  'Bulgarian split squat': [90, 180],
+  Lunges: [60, 120],
+  'Reverse lunges': [60, 120],
+  'Walking lunges': [60, 120],
+  'Calf raises': [45, 90],
+  'Single leg calf raise': [45, 90],
+  'Nordic curl': [180, 300],
+  'Glute bridge': [60, 120],
+  'Single leg glute bridge': [60, 120],
+  'Hip thrust': [90, 180],
+
+  // ===== MUSCULATION PUSH =====
+  'Incline bench press': [90, 180],
+  'Decline bench press': [90, 180],
+  'Dumbbell bench press': [90, 180],
+  'Incline dumbbell press': [90, 180],
+  'Dumbbell flyes': [45, 90],
+  'Cable flyes': [45, 90],
+
+  'Overhead press': [180, 300],
+  'Overhead press dumbell': [180, 300],
+  'Overhead press dumbell - standing': [180, 300],
+
+  'Lateral raises': [45, 90],
+  'Front raises': [45, 90],
+  'Rear delt flyes': [45, 90],
+  'Tricep dips': [60, 120],
+  'Tricep extensions': [45, 90],
+  'Overhead tricep extension': [45, 90],
+  'Cable tricep pushdown': [45, 90],
+  'Close grip bench press': [180, 300],
+
+  // ===== MUSCULATION PULL =====
+  'Barbell row': [180, 300],
+  'T-bar row': [90, 180],
+  'Bicep curls': [45, 90],
+  'Hammer curls': [45, 90],
+  'Jefferson curls': [45, 90],
+  Shrugs: [45, 90],
+  'Upright row': [60, 120],
+
+  // ===== LOWER / CORE / CONDITIONING =====
+  'Front squat': [180, 300],
+  'Russian twist': [45, 90],
+  Crunches: [45, 90],
+  'Sit ups': [45, 90],
+  'Bicycle crunches': [45, 90],
+  Bike: [60, 180],
+  'Mountain climbers': [45, 90],
+  Burpees: [60, 120],
+};
 
 export const EXERCISE_TAGS = [
   'Legs',
@@ -70,7 +211,36 @@ export const defaultWarmupProtocol = [
   { weight: '85', reps: 2, weightUnit: '%' },
 ];
 
-export const EXERCISES: Exercise[] = [
+function getDefaultRestSecondsRange(exercise: Exercise): [number, number] {
+  if (exercise.isPowerlifting) {
+    return [180, 300];
+  }
+
+  if (exercise.strengthType === 'power') {
+    return [120, 180];
+  }
+
+  if (exercise.strengthType === 'skill') {
+    return [120, 240];
+  }
+
+  if (exercise.strengthType === 'strength') {
+    return [120, 240];
+  }
+
+  if (exercise.strengthType === 'hypertrophy') {
+    const isIsolation = exercise.tags.includes('Isolation');
+    return isIsolation ? [45, 90] : [60, 120];
+  }
+
+  if (exercise.strengthType === 'endurance') {
+    return [30, 120];
+  }
+
+  return [60, 120];
+}
+
+const EXERCISE_DEFINITIONS: Exercise[] = [
   // ===== POWERLIFTING =====
   {
     name: 'Squat',
@@ -1297,11 +1467,16 @@ export const EXERCISES: Exercise[] = [
     strengthType: 'power',
     equipment: 'bodyweight',
   },
-].map(
+];
+
+export const EXERCISES: Exercise[] = EXERCISE_DEFINITIONS.map(
   (exercise) =>
     ({
       ...exercise,
       warmupProtocol: exercise.warmupProtocol ? exercise.warmupProtocol : exercise.bodyweight ? undefined : defaultWarmupProtocol,
+      restSecondsRange: exercise.restSecondsRange ??
+        REST_SECONDS_BY_EXERCISE[exercise.name] ??
+        getDefaultRestSecondsRange(exercise)
     }) as Exercise
 );
 

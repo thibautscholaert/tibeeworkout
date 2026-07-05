@@ -1,17 +1,10 @@
 'use client';
 
+import { CHRONO_STATE_EVENT, readChronoState, type ChronoState } from '@/lib/chrono';
 import { cn } from '@/lib/utils';
 import { Timer } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-
-interface ChronoState {
-  time: number;
-  isRunning: boolean;
-  startTime: number | null;
-  initialStartTime: number | null;
-  savedTimes: Array<{ time: number; date: string }>;
-}
 
 export function ChronoIndicator() {
   const [time, setTime] = useState(0);
@@ -21,29 +14,24 @@ export function ChronoIndicator() {
 
   // Charger l'état depuis localStorage
   useEffect(() => {
-    const loadState = () => {
-      const savedState = localStorage.getItem('chronoState');
-      if (savedState) {
-        try {
-          const parsed: ChronoState = JSON.parse(savedState);
+    const applyState = (parsed: ChronoState | null) => {
+      if (!parsed) return;
 
-          if (parsed.isRunning && parsed.initialStartTime) {
-            const elapsed = Date.now() - parsed.initialStartTime;
-            setTime(elapsed);
-            setIsRunning(true);
-            setStartTime(parsed.startTime);
-            setInitialStartTime(parsed.initialStartTime);
-          } else {
-            setTime(parsed.time || 0);
-            setIsRunning(false);
-            setStartTime(null);
-            setInitialStartTime(parsed.initialStartTime);
-          }
-        } catch (error) {
-          console.error("Erreur lors du chargement de l'état du chrono:", error);
-        }
+      if (parsed.isRunning && parsed.initialStartTime) {
+        const elapsed = Date.now() - parsed.initialStartTime;
+        setTime(elapsed);
+        setIsRunning(true);
+        setStartTime(parsed.startTime);
+        setInitialStartTime(parsed.initialStartTime);
+      } else {
+        setTime(parsed.time || 0);
+        setIsRunning(false);
+        setStartTime(null);
+        setInitialStartTime(parsed.initialStartTime);
       }
     };
+
+    const loadState = () => applyState(readChronoState());
 
     loadState();
 
@@ -53,8 +41,12 @@ export function ChronoIndicator() {
         loadState();
       }
     };
+    const handleChronoStateChange = (event: Event) => {
+      applyState((event as CustomEvent<ChronoState>).detail);
+    };
 
     window.addEventListener('storage', handleStorageChange);
+    window.addEventListener(CHRONO_STATE_EVENT, handleChronoStateChange);
 
     // Mettre à jour le temps si le chrono est en cours
     let interval: NodeJS.Timeout | null = null;
@@ -67,6 +59,7 @@ export function ChronoIndicator() {
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener(CHRONO_STATE_EVENT, handleChronoStateChange);
       if (interval) {
         clearInterval(interval);
       }

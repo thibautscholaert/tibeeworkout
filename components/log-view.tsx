@@ -10,6 +10,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
+import {
+  createRestAlert,
+  getChronoElapsed,
+  markRestAlertNotified,
+  readChronoState,
+  readRestAlert,
+  startChronoIfNeeded,
+  type RestAlertState,
+} from '@/lib/chrono';
 import { copySessionToClipboard } from '@/lib/clipboard-utils';
 import { EXERCISES } from '@/lib/exercises';
 import { useReactFormPersistence } from '@/lib/form-persistence';
@@ -23,6 +32,7 @@ import { getWorkoutSuggestions, isWarmupSet } from '@/lib/workout-suggestions';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   BarChart3,
+  Bed,
   BicepsFlexedIcon,
   Check,
   ChevronDown,
@@ -78,6 +88,29 @@ function normalizeDayName(day: string): string {
   return dayMap[day.toLowerCase()] || day;
 }
 
+function formatRestSecondsRange(range?: [number, number]): string {
+  if (!range) return '';
+
+  const formatSeconds = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+
+    if (minutes > 0 && remainingSeconds > 0) {
+      return `${minutes}min ${remainingSeconds}s`;
+    }
+
+    return minutes > 0 ? `${minutes}min` : `${remainingSeconds}s`;
+  };
+
+  const [minSeconds, maxSeconds] = range;
+
+  if (minSeconds === maxSeconds) {
+    return formatSeconds(minSeconds);
+  }
+
+  return `${formatSeconds(minSeconds)} - ${formatSeconds(maxSeconds)}`;
+}
+
 // Memoized component for exercise set item to prevent unnecessary re-renders
 const ExerciseSetItem = memo(
   ({
@@ -97,6 +130,7 @@ const ExerciseSetItem = memo(
   }) => {
     const { allTimeBest } = getBestSetComparison(exerciseName, []);
     const isWarmup = isWarmupSet(set, allTimeBest, sets);
+    const exo = EXERCISES.find((ex) => ex.name.toLocaleLowerCase() === set.exerciseName.toLocaleLowerCase());
 
     return (
       <div
@@ -124,11 +158,11 @@ const ExerciseSetItem = memo(
                 <span className="text-sm font-medium">{formatWeight(set.weight, set.exerciseName)}</span>
                 <span className="text-xs text-muted-foreground">×</span>
                 <span className="text-sm font-medium">{set.reps}</span>
-                <span className="text-sm text-muted-foreground">
-                  {EXERCISES.find((ex) => ex.name.toLocaleLowerCase() === set.exerciseName.toLocaleLowerCase())?.repType === 'time'
-                    ? 'seconds'
-                    : 'reps'}
-                </span>
+                {exo && (
+                  <span className="text-sm text-muted-foreground">
+                    {exo.repType === 'time' ? (exo.repTypeUnit === 'minute' ? 'min' : 'sec') : 'rep'}s
+                  </span>
+                )}
               </div>
               {set.estimated1RM && (
                 <div className="flex items-center gap-1">
@@ -176,6 +210,7 @@ export function LogView() {
   const [sessionOpen, setSessionOpen] = useState(false);
   const [variantOpen, setVariantOpen] = useState(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
+  const [restAlert, setRestAlert] = useState<RestAlertState | null>(null);
 
   // Load selected program/day from localStorage on mount
   useEffect(() => {
@@ -256,6 +291,32 @@ export function LogView() {
       }
     }
   }, [workoutPrograms, history]);
+
+  useEffect(() => {
+    setRestAlert(readRestAlert());
+  }, []);
+
+  useEffect(() => {
+    if (!restAlert || restAlert.notifiedAt) return;
+
+    const interval = setInterval(() => {
+      const chronoState = readChronoState();
+      if (!chronoState) return;
+
+      const elapsed = getChronoElapsed(chronoState);
+
+      if (elapsed >= restAlert.targetElapsed) {
+        markRestAlertNotified(restAlert);
+        setRestAlert({ ...restAlert, notifiedAt: Date.now() });
+        toast.warning('Temps de repos atteint', {
+          description: `${restAlert.exerciseName} • ${formatRestSecondsRange(restAlert.restSecondsRange)}`,
+          duration: 10000,
+        });
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [restAlert]);
 
   // Obtenir les séries d'aujourd'hui
   const todaySession = useMemo(() => {
@@ -545,6 +606,15 @@ export function LogView() {
       await saveWorkoutSet({ ...data, timestamp });
       fetchHistory(true);
       toast.success(`${data.exerciseName} set logged successfully!`);
+
+      const exerciseData = EXERCISES.find((exercise) => exercise.name.toLowerCase() === data.exerciseName.toLowerCase());
+      if (exerciseData?.restSecondsRange) {
+        const now = Date.now();
+        const chronoState = startChronoIfNeeded(now);
+        const startElapsed = getChronoElapsed(chronoState, now);
+        const alert = createRestAlert(data.exerciseName, exerciseData.restSecondsRange, startElapsed, now);
+        setRestAlert(alert);
+      }
     } catch (error) {
       console.error('Failed to save set:', error);
       toast.error('Failed to save workout set');
@@ -702,6 +772,7 @@ export function LogView() {
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mb-1">
+                    <BicepsFlexedIcon className="inline h-4 w-4 mr-1" />
                     {suggestions.blocName && suggestions.blocName.length > 0 ? `Bloc: ${suggestions.blocName} - ` : ''}{' '}
                     {`${suggestions.totalSeries} séries • ${suggestions.suggestedReps} ${suggestions.exercise?.repType === 'time' ? (suggestions.exercise?.repTypeUnit === 'minute' ? 'min' : 'sec') : 'reps'}`}
                   </p>
@@ -717,6 +788,13 @@ export function LogView() {
                       </>
                     )}
                   </p>
+
+                  {suggestions.exercise?.restSecondsRange && (
+                    <p className="text-xs text-muted-foreground flex gap-1 items-center mt-1">
+                      <Bed className="inline h-4 w-4 mr-1" />
+                      {formatRestSecondsRange(suggestions.exercise.restSecondsRange)}
+                    </p>
+                  )}
 
                   <p className="text-xs text-primary/80 italic mt-1 flex gap-1 items-center min-h-4">
                     {suggestions.exerciseDetails?.notes && (
@@ -890,7 +968,7 @@ export function LogView() {
               />
               {/* <span className="text-xs text-muted-foreground">reps</span> */}
             </div>
-            <div className="flex items-center gap-0.5 flex-wrap">
+            <div className="flex items-center gap-1 flex-wrap">
               {bestPerfRepsWeight != null && (
                 <button
                   type="button"
@@ -906,7 +984,7 @@ export function LogView() {
                   {formatReps(bestPerfRepsWeight.reps, selectedExercise)} × {formatWeight(bestPerfRepsWeight.weight, selectedExercise)}
                 </button>
               )}
-              {best1RM != null && (
+              {/* {best1RM != null && (
                 <button
                   type="button"
                   onClick={() => {
@@ -920,6 +998,12 @@ export function LogView() {
                   <Star className="h-4 w-4" />
                   1RM: {best1RM}kg
                 </button>
+              )} */}
+              {selectedExerciseData?.restSecondsRange && (
+                <div className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-sky-500/10 text-sky-700 border border-sky-500/20">
+                  <Bed className="h-4 w-4" />
+                  {formatRestSecondsRange(selectedExerciseData.restSecondsRange)}
+                </div>
               )}
             </div>
           </div>
@@ -1173,14 +1257,17 @@ export function LogView() {
                   const allTimeScore = allTimeBest?.estimated1RM || allTimeBest?.weight * allTimeBest?.reps || 0;
                   const isNewRecord = todayScore >= allTimeScore;
 
+                  const exo = EXERCISES.find((ex) => ex.name.toLocaleLowerCase() === exerciseGroup.exerciseName.toLocaleLowerCase());
+
                   return (
                     <div className="mt-3 ml-13 flex items-center gap-4 rounded-lg bg-muted/30 p-2 text-xs text-muted-foreground">
                       <div className={`flex items-center gap-1 ${isNewRecord ? 'text-green-600 font-medium' : ''}`}>
                         <Trophy className={`h-3 w-3 ${isNewRecord ? 'text-green-600' : ''}`} />
                         <span>
                           Aujourd'hui: {formatWeight(todayBest?.weight || 0, exerciseGroup.exerciseName)} × {todayBest?.reps || 0}
-                          {todayBest?.estimated1RM && ` (~${todayBest.estimated1RM}kg)`}
-                          {isNewRecord && todayScore > 0 && ' 🔥'}
+                          {exo?.repTypeUnit === 'minute' ? "'" : "''"}
+                          {todayBest?.estimated1RM ? ` (~${todayBest.estimated1RM}kg)` : <></>}
+                          {isNewRecord && todayScore > 0 ? ' 🔥' : <></>}
                         </span>
                       </div>
 
@@ -1189,7 +1276,8 @@ export function LogView() {
                           <Star className={`h-3 w-3 ${!isNewRecord ? 'text-amber-600' : ''}`} />
                           <span>
                             Record: {formatWeight(allTimeBest.weight, exerciseGroup.exerciseName)} × {allTimeBest.reps}
-                            {allTimeBest.estimated1RM && ` (~${allTimeBest.estimated1RM}kg)`}
+                            {exo?.repTypeUnit === 'minute' ? "'" : "''"}
+                            {allTimeBest.estimated1RM ? ` (~${allTimeBest.estimated1RM}kg)` : <></>}
                             {!isNewRecord && ' 👑'}
                           </span>
                         </div>
