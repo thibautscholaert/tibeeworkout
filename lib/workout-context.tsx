@@ -1,17 +1,20 @@
 'use client';
 
 import { useNotes } from '@/lib/use-notes';
+import { useTutorialVideos } from '@/lib/use-tutorial-videos';
 import { useWorkoutHistory } from '@/lib/use-workout-history';
 import { useWorkoutPrograms } from '@/lib/use-workout-programs';
 import { createContext, useContext, type ReactNode } from 'react';
-import type { ExerciseNote, Program, WorkoutSet } from './types';
+import type { ExerciseNote, Program, TutorialVideo, WorkoutSet } from './types';
 
 interface WorkoutContextType {
   history: WorkoutSet[];
   workoutPrograms: Program[];
   notes: ExerciseNote[];
+  tutorialVideos: TutorialVideo[];
   fetchHistory: (forceRefresh?: boolean) => void;
   fetchNotes: (forceRefresh?: boolean) => void;
+  fetchTutorialVideos: (forceRefresh?: boolean) => void;
   isLoading: boolean;
 }
 
@@ -21,6 +24,7 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
   const { history, fetchHistory, isLoading: isLoadingHistory } = useWorkoutHistory();
   const { workoutPrograms, isLoading: isLoadingPrograms } = useWorkoutPrograms();
   const { notes, fetchNotes, isLoading: isLoadingNotes } = useNotes();
+  const { tutorialVideos, fetchTutorialVideos, isLoading: isLoadingTutorialVideos } = useTutorialVideos();
 
   return (
     <WorkoutContext.Provider
@@ -29,8 +33,10 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
         fetchHistory,
         workoutPrograms,
         notes,
+        tutorialVideos,
         fetchNotes,
-        isLoading: isLoadingHistory || isLoadingPrograms || isLoadingNotes,
+        fetchTutorialVideos,
+        isLoading: isLoadingHistory || isLoadingPrograms || isLoadingNotes || isLoadingTutorialVideos,
       }}
     >
       {children}

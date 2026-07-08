@@ -1,8 +1,9 @@
 'use server';
 
 import { WORKOUT_VARIANTS, type NoteFormData, type SetFormData, type WorkoutVariant } from '@/lib/schemas';
-import { ExerciseNote, Profile, Program } from '@/lib/types';
+import { ExerciseNote, Profile, Program, TutorialVideo } from '@/lib/types';
 import { calculateEstimated1RM } from '@/lib/utils';
+import { extractYouTubeId } from '@/lib/youtube';
 import { JWT } from 'google-auth-library';
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { revalidatePath } from 'next/cache';
@@ -41,6 +42,21 @@ async function ensureHeaders(sheet: any, headers: string[]) {
   }
 }
 
+async function getOrCreateTutoSheet() {
+  await doc.loadInfo();
+  let sheet = doc.sheetsByTitle['Tuto'];
+
+  if (!sheet) {
+    sheet = await doc.addSheet({
+      title: 'Tuto',
+      headerValues: ['id', 'exerciseName', 'youtubeId', 'label', 'timestamp'],
+    });
+  }
+
+  await ensureHeaders(sheet, ['id', 'exerciseName', 'youtubeId', 'label', 'timestamp']);
+  return sheet;
+}
+
 export async function saveWorkoutSet(data: SetFormData & { timestamp: Date }) {
   try {
     await doc.loadInfo();
@@ -66,6 +82,45 @@ export async function saveWorkoutSet(data: SetFormData & { timestamp: Date }) {
   } catch (error) {
     console.error('Error saving to Google Sheets:', error);
     return { success: false, error: 'Failed to save data' };
+  }
+}
+
+function isSameStoredTimestamp(storedTimestamp: string, targetTimestamp: string) {
+  if (storedTimestamp === targetTimestamp) return true;
+
+  const storedTime = new Date(storedTimestamp).getTime();
+  const targetTime = new Date(targetTimestamp).getTime();
+
+  return Number.isFinite(storedTime) && Number.isFinite(targetTime) && storedTime === targetTime;
+}
+
+export async function deleteWorkoutSet(data: { exerciseName: string; timestamp: string }) {
+  try {
+    if (!data.exerciseName || !data.timestamp) {
+      return { success: false, error: 'Missing workout set data' };
+    }
+
+    await doc.loadInfo();
+    const sheet = doc.sheetsByTitle['Workouts'] || doc.sheetsByIndex[0];
+    const rows = await sheet.getRows();
+    const existingRow = rows.find((row: any) => {
+      return row.get('Exercise') === data.exerciseName && isSameStoredTimestamp(row.get('Timestamp') || '', data.timestamp);
+    });
+
+    if (!existingRow) {
+      return { success: false, error: 'Workout set not found' };
+    }
+
+    await existingRow.delete();
+
+    revalidatePath('/log');
+    revalidatePath('/history');
+    revalidatePath('/stats');
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting workout set from Google Sheets:', error);
+    return { success: false, error: 'Failed to delete workout set' };
   }
 }
 
@@ -242,6 +297,85 @@ export async function getNotes() {
   } catch (error) {
     console.error('Error fetching notes from Google Sheets:', error);
     return { success: false, data: [], error: 'Failed to fetch notes' };
+  }
+}
+
+export async function getTutorialVideos() {
+  try {
+    const sheet = await getOrCreateTutoSheet();
+    const rows = await sheet.getRows();
+
+    const videos: TutorialVideo[] = rows
+      .map((row: any) => {
+        const youtubeId = extractYouTubeId(row.get('youtubeId') || '');
+        if (!youtubeId) return null;
+
+        return {
+          id: row.get('id') || `row-${row.rowNumber}`,
+          exerciseName: row.get('exerciseName') || '',
+          youtubeId,
+          label: row.get('label') || '',
+          timestamp: new Date(row.get('timestamp') || Date.now()),
+        };
+      })
+      .filter((video: TutorialVideo | null): video is TutorialVideo => Boolean(video?.exerciseName && video.youtubeId));
+
+    return { success: true, data: videos };
+  } catch (error) {
+    console.error('Error fetching tutorial videos from Google Sheets:', error);
+    return { success: false, data: [], error: 'Failed to fetch tutorial videos' };
+  }
+}
+
+export async function addTutorialVideo(data: { exerciseName: string; youtubeInput: string; label?: string }) {
+  try {
+    const youtubeId = extractYouTubeId(data.youtubeInput);
+
+    if (!data.exerciseName || !youtubeId) {
+      return { success: false, error: 'Invalid tutorial video data' };
+    }
+
+    const sheet = await getOrCreateTutoSheet();
+    const id = crypto.randomUUID();
+
+    await sheet.addRow({
+      id,
+      exerciseName: data.exerciseName,
+      youtubeId,
+      label: data.label?.trim() || 'Tutoriel',
+      timestamp: new Date().toISOString(),
+    });
+
+    revalidatePath('/log');
+
+    return { success: true, id };
+  } catch (error) {
+    console.error('Error adding tutorial video to Google Sheets:', error);
+    return { success: false, error: 'Failed to add tutorial video' };
+  }
+}
+
+export async function deleteTutorialVideo(id: string) {
+  try {
+    if (!id) {
+      return { success: false, error: 'Missing tutorial video id' };
+    }
+
+    const sheet = await getOrCreateTutoSheet();
+    const rows = await sheet.getRows();
+    const existingRow = rows.find((row: any) => row.get('id') === id || `row-${row.rowNumber}` === id);
+
+    if (!existingRow) {
+      return { success: false, error: 'Tutorial video not found' };
+    }
+
+    await existingRow.delete();
+    revalidatePath('/log');
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting tutorial video from Google Sheets:', error);
+    return { success: false, error: 'Failed to delete tutorial video' };
   }
 }
 

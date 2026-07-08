@@ -37,6 +37,7 @@ export function useWorkoutHistory() {
           weight: item.weight,
           reps: item.reps,
           timestamp: new Date(item.timestamp),
+          sourceTimestamp: item.timestamp,
           estimated1RM: item.oneRM,
         }));
         setHistory(transformedHistory);

@@ -7,6 +7,7 @@ export interface WorkoutSet {
   weight: number;
   reps: number;
   timestamp: Date;
+  sourceTimestamp?: string;
   estimated1RM?: number;
 }
 
@@ -54,6 +55,14 @@ export interface ExerciseNote {
   id: string;
   exerciseName: string;
   note: string;
+  timestamp: Date;
+}
+
+export interface TutorialVideo {
+  id: string;
+  exerciseName: string;
+  youtubeId: string;
+  label: string;
   timestamp: Date;
 }
 

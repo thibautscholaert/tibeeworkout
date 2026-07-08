@@ -1,11 +1,13 @@
 'use client';
 
-import { saveWorkoutSet } from '@/app/actions';
+import { deleteWorkoutSet, saveWorkoutSet } from '@/app/actions';
 import { ChronoIndicator } from '@/components/chrono-indicator';
+import { ExerciseTutorials } from '@/components/exercise-tutorials';
 import { NotesForm } from '@/components/notes-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -42,6 +44,7 @@ import {
   Flame,
   Lightbulb,
   LightbulbIcon,
+  Loader2,
   NotebookIcon,
   PersonStandingIcon,
   Plus,
@@ -52,6 +55,7 @@ import {
   TargetIcon,
   Timer,
   Trophy,
+  Trash2,
   Zap,
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
@@ -120,6 +124,8 @@ const ExerciseSetItem = memo(
     totalSets,
     exerciseName,
     getBestSetComparison,
+    onRequestDelete,
+    isDeleting,
   }: {
     set: WorkoutSet;
     sets: WorkoutSet[];
@@ -127,6 +133,8 @@ const ExerciseSetItem = memo(
     totalSets: number;
     exerciseName: string;
     getBestSetComparison: (exerciseName: string, todaySets: any[]) => { todayBest: any; allTimeBest: any };
+    onRequestDelete: (set: WorkoutSet) => void;
+    isDeleting: boolean;
   }) => {
     const { allTimeBest } = getBestSetComparison(exerciseName, []);
     const isWarmup = isWarmupSet(set, allTimeBest, sets);
@@ -172,11 +180,24 @@ const ExerciseSetItem = memo(
               )}
             </div>
           </div>
-          <div className="text-xs text-muted-foreground">
-            {new Date(set.timestamp).toLocaleTimeString('fr-FR', {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
+          <div className="flex items-center gap-2">
+            <div className="text-xs text-muted-foreground">
+              {new Date(set.timestamp).toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => onRequestDelete(set)}
+              disabled={isDeleting}
+              aria-label="Supprimer cette série"
+              className="h-7 w-7 text-muted-foreground opacity-70 hover:bg-destructive/10 hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100"
+            >
+              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            </Button>
           </div>
         </div>
 
@@ -211,6 +232,8 @@ export function LogView() {
   const [variantOpen, setVariantOpen] = useState(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [restAlert, setRestAlert] = useState<RestAlertState | null>(null);
+  const [setToDelete, setSetToDelete] = useState<WorkoutSet | null>(null);
+  const [deletingSetKey, setDeletingSetKey] = useState<string | null>(null);
 
   // Load selected program/day from localStorage on mount
   useEffect(() => {
@@ -370,6 +393,31 @@ export function LogView() {
   const handleCopySession = useCallback(async () => {
     await copySessionToClipboard(todaySession);
   }, [todaySession]);
+
+  const handleDeleteSet = useCallback(async () => {
+    if (!setToDelete) return;
+
+    setDeletingSetKey(setToDelete.id);
+    try {
+      const result = await deleteWorkoutSet({
+        exerciseName: setToDelete.exerciseName,
+        timestamp: setToDelete.sourceTimestamp ?? setToDelete.timestamp.toISOString(),
+      });
+
+      if (result.success) {
+        toast.success('Série supprimée');
+        setSetToDelete(null);
+        fetchHistory(true);
+      } else {
+        toast.error(result.error || 'Impossible de supprimer la série');
+      }
+    } catch (error) {
+      console.error('Failed to delete workout set:', error);
+      toast.error('Impossible de supprimer la série');
+    } finally {
+      setDeletingSetKey(null);
+    }
+  }, [fetchHistory, setToDelete]);
 
   // Obtenir la suggestion actuelle en fonction de l'index
   const suggestions = useMemo(() => {
@@ -625,6 +673,25 @@ export function LogView() {
 
   return (
     <div className="flex flex-col gap-1 pb-6">
+      <ConfirmationDialog
+        open={Boolean(setToDelete)}
+        onOpenChange={(open) => {
+          if (!open && !deletingSetKey) {
+            setSetToDelete(null);
+          }
+        }}
+        title="Supprimer cette série ?"
+        description={
+          setToDelete
+            ? `${setToDelete.exerciseName} - ${formatWeight(setToDelete.weight, setToDelete.exerciseName)} x ${formatReps(setToDelete.reps, setToDelete.exerciseName)}`
+            : undefined
+        }
+        confirmLabel="Supprimer"
+        destructive
+        isConfirming={Boolean(deletingSetKey)}
+        onConfirm={handleDeleteSet}
+      />
+
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background">
         <div className="flex items-center justify-between my-2">
@@ -1172,163 +1239,170 @@ export function LogView() {
 
       {/* Today's Session */}
       {todaySession.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Dumbbell className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-semibold">Session d'aujourd'hui</h2>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleCopySession} className="h-8 px-3 text-xs">
-                <Copy className="mr-1 h-3 w-3" />
-                Copier
-              </Button>
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary">
-                {todaySession.length}
-              </div>
-              <span className="text-sm text-muted-foreground">série{todaySession.length !== 1 ? 's' : ''}</span>
-            </div>
-          </div>
-
-          {/* Affichage groupé par exercice */}
+        <>
           <div className="space-y-4">
-            {todaySessionGrouped.map((exerciseGroup, groupIndex) => (
-              <div key={`${exerciseGroup.exerciseName}_${groupIndex}`} className="relative">
-                {/* Header de l'exercice */}
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20">
-                    <span className="text-lg font-bold text-primary">{groupIndex + 1}</span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-base">{exerciseGroup.exerciseName}</h3>
-                      {exerciseGroup.variant !== 'default' && (
-                        <Badge variant="secondary" className="text-xs">
-                          {exerciseGroup.variant}
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {exerciseGroup.totalSets} série
-                      {exerciseGroup.totalSets !== 1 ? 's' : ''} •{exerciseGroup.sets.reduce((total, set) => total + set.reps, 0)} reps au total
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(exerciseGroup.sets[0].timestamp).toLocaleTimeString('fr-FR', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                      {exerciseGroup.sets.length > 1 && (
-                        <span>
-                          {' '}
-                          -{' '}
-                          {new Date(exerciseGroup.sets[exerciseGroup.sets.length - 1].timestamp).toLocaleTimeString('fr-FR', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Séries en grille */}
-                <div className="grid grid-cols-1 gap-2 ml-13">
-                  {exerciseGroup.sets.map((set, index) => (
-                    <ExerciseSetItem
-                      key={set.id}
-                      set={set}
-                      index={index}
-                      totalSets={exerciseGroup.totalSets}
-                      sets={exerciseGroup.sets}
-                      exerciseName={exerciseGroup.exerciseName}
-                      getBestSetComparison={getBestSetComparison}
-                    />
-                  ))}
-                </div>
-
-                {/* Statistiques de l'exercice - Améliorées */}
-                {(() => {
-                  const { todayBest, allTimeBest } = getBestSetComparison(exerciseGroup.exerciseName, exerciseGroup.sets);
-                  const totalReps = exerciseGroup.sets.reduce((total, set) => total + set.reps, 0);
-
-                  const todayScore = todayBest?.estimated1RM || todayBest?.weight * todayBest?.reps || 0;
-                  const allTimeScore = allTimeBest?.estimated1RM || allTimeBest?.weight * allTimeBest?.reps || 0;
-                  const isNewRecord = todayScore >= allTimeScore;
-
-                  const exo = EXERCISES.find((ex) => ex.name.toLocaleLowerCase() === exerciseGroup.exerciseName.toLocaleLowerCase());
-
-                  return (
-                    <div className="mt-3 ml-13 flex items-center gap-4 rounded-lg bg-muted/30 p-2 text-xs text-muted-foreground">
-                      <div className={`flex items-center gap-1 ${isNewRecord ? 'text-green-600 font-medium' : ''}`}>
-                        <Trophy className={`h-3 w-3 ${isNewRecord ? 'text-green-600' : ''}`} />
-                        <span>
-                          Aujourd'hui: {formatWeight(todayBest?.weight || 0, exerciseGroup.exerciseName)} × {todayBest?.reps || 0}
-                          {exo?.repTypeUnit === 'minute' ? "'" : "''"}
-                          {todayBest?.estimated1RM ? ` (~${todayBest.estimated1RM}kg)` : <></>}
-                          {isNewRecord && todayScore > 0 ? ' 🔥' : <></>}
-                        </span>
-                      </div>
-
-                      {allTimeBest && (
-                        <div className={`flex items-center gap-1 ${!isNewRecord ? 'text-amber-600 font-medium' : ''}`}>
-                          <Star className={`h-3 w-3 ${!isNewRecord ? 'text-amber-600' : ''}`} />
-                          <span>
-                            Record: {formatWeight(allTimeBest.weight, exerciseGroup.exerciseName)} × {allTimeBest.reps}
-                            {exo?.repTypeUnit === 'minute' ? "'" : "''"}
-                            {allTimeBest.estimated1RM ? ` (~${allTimeBest.estimated1RM}kg)` : <></>}
-                            {!isNewRecord && ' 👑'}
-                          </span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-1">
-                        <BarChart3 className="h-3 w-3" />
-                        <span>{totalReps} reps total</span>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Separator entre les exercices */}
-                {groupIndex < todaySessionGrouped.length - 1 && <Separator className="mt-6" />}
-              </div>
-            ))}
-          </div>
-
-          <Separator className="my-3" />
-
-          {/* Résumé global de la session - Amélioré */}
-          <div className="mt-6 rounded-xl bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-primary" />
-                <span className="font-semibold">Résumé de la session</span>
+                <Dumbbell className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold">Session d'aujourd'hui</h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={handleCopySession} className="h-8 px-3 text-xs">
+                  <Copy className="mr-1 h-3 w-3" />
+                  Copier
+                </Button>
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary">
+                  {todaySession.length}
+                </div>
+                <span className="text-sm text-muted-foreground">série{todaySession.length !== 1 ? 's' : ''}</span>
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-3 gap-4 text-center">
-              <div>
-                <div className="text-lg font-bold text-primary">{todaySessionGrouped.length}</div>
-                <div className="text-xs text-muted-foreground">Exercices</div>
-              </div>
-              <div>
-                <div className="text-lg font-bold text-primary">{todaySession.length}</div>
-                <div className="text-xs text-muted-foreground">Séries totales</div>
-              </div>
-              <div>
-                <div className="text-lg font-bold text-primary">{todaySession.reduce((total, set) => total + set.reps, 0)}</div>
-                <div className="text-xs text-muted-foreground">Reps totales</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
-      <Separator className="my-3" />
+            {/* Affichage groupé par exercice */}
+            <div className="space-y-4">
+              {todaySessionGrouped.map((exerciseGroup, groupIndex) => (
+                <div key={`${exerciseGroup.exerciseName}_${groupIndex}`} className="relative">
+                  {/* Header de l'exercice */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20">
+                      <span className="text-lg font-bold text-primary">{groupIndex + 1}</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-base">{exerciseGroup.exerciseName}</h3>
+                        {exerciseGroup.variant !== 'default' && (
+                          <Badge variant="secondary" className="text-xs">
+                            {exerciseGroup.variant}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {exerciseGroup.totalSets} série
+                        {exerciseGroup.totalSets !== 1 ? 's' : ''} •{exerciseGroup.sets.reduce((total, set) => total + set.reps, 0)} reps au total
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(exerciseGroup.sets[0].timestamp).toLocaleTimeString('fr-FR', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                        {exerciseGroup.sets.length > 1 && (
+                          <span>
+                            {' '}
+                            -{' '}
+                            {new Date(exerciseGroup.sets[exerciseGroup.sets.length - 1].timestamp).toLocaleTimeString('fr-FR', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Séries en grille */}
+                  <div className="grid grid-cols-1 gap-2 ml-13">
+                    {exerciseGroup.sets.map((set, index) => (
+                      <ExerciseSetItem
+                        key={set.id}
+                        set={set}
+                        index={index}
+                        totalSets={exerciseGroup.totalSets}
+                        sets={exerciseGroup.sets}
+                        exerciseName={exerciseGroup.exerciseName}
+                        getBestSetComparison={getBestSetComparison}
+                        onRequestDelete={setSetToDelete}
+                        isDeleting={deletingSetKey === set.id}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Statistiques de l'exercice - Améliorées */}
+                  {(() => {
+                    const { todayBest, allTimeBest } = getBestSetComparison(exerciseGroup.exerciseName, exerciseGroup.sets);
+                    const totalReps = exerciseGroup.sets.reduce((total, set) => total + set.reps, 0);
+
+                    const todayScore = todayBest?.estimated1RM || todayBest?.weight * todayBest?.reps || 0;
+                    const allTimeScore = allTimeBest?.estimated1RM || allTimeBest?.weight * allTimeBest?.reps || 0;
+                    const isNewRecord = todayScore >= allTimeScore;
+
+                    const exo = EXERCISES.find((ex) => ex.name.toLocaleLowerCase() === exerciseGroup.exerciseName.toLocaleLowerCase());
+
+                    return (
+                      <div className="mt-3 ml-13 flex items-center gap-4 rounded-lg bg-muted/30 p-2 text-xs text-muted-foreground">
+                        <div className={`flex items-center gap-1 ${isNewRecord ? 'text-green-600 font-medium' : ''}`}>
+                          <Trophy className={`h-3 w-3 ${isNewRecord ? 'text-green-600' : ''}`} />
+                          <span>
+                            Aujourd'hui: {formatWeight(todayBest?.weight || 0, exerciseGroup.exerciseName)} × {todayBest?.reps || 0}
+                            {exo?.repTypeUnit === 'minute' ? "'" : "''"}
+                            {todayBest?.estimated1RM ? ` (~${todayBest.estimated1RM}kg)` : <></>}
+                            {isNewRecord && todayScore > 0 ? ' 🔥' : <></>}
+                          </span>
+                        </div>
+
+                        {allTimeBest && (
+                          <div className={`flex items-center gap-1 ${!isNewRecord ? 'text-amber-600 font-medium' : ''}`}>
+                            <Star className={`h-3 w-3 ${!isNewRecord ? 'text-amber-600' : ''}`} />
+                            <span>
+                              Record: {formatWeight(allTimeBest.weight, exerciseGroup.exerciseName)} × {allTimeBest.reps}
+                              {exo?.repTypeUnit === 'minute' ? "'" : "''"}
+                              {allTimeBest.estimated1RM ? ` (~${allTimeBest.estimated1RM}kg)` : <></>}
+                              {!isNewRecord && ' 👑'}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-1">
+                          <BarChart3 className="h-3 w-3" />
+                          <span>{totalReps} reps total</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Separator entre les exercices */}
+                  {groupIndex < todaySessionGrouped.length - 1 && <Separator className="mt-6" />}
+                </div>
+              ))}
+            </div>
+
+            <Separator className="my-3" />
+
+            {/* Résumé global de la session - Amélioré */}
+            <div className="mt-6 rounded-xl bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-primary" />
+                  <span className="font-semibold">Résumé de la session</span>
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-lg font-bold text-primary">{todaySessionGrouped.length}</div>
+                  <div className="text-xs text-muted-foreground">Exercices</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-primary">{todaySession.length}</div>
+                  <div className="text-xs text-muted-foreground">Séries totales</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-primary">{todaySession.reduce((total, set) => total + set.reps, 0)}</div>
+                  <div className="text-xs text-muted-foreground">Reps totales</div>
+                </div>
+              </div>
+            </div>
+          </div>{' '}
+          <Separator className="my-3" />
+        </>
+      )}
 
       <div className="">
         <NotesForm selectedExercise={selectedExercise} note={note} />
       </div>
+
+      <Separator className="my-3" />
+
+      <ExerciseTutorials selectedExercise={selectedExercise} />
     </div>
   );
 }
