@@ -92,27 +92,115 @@ function normalizeDayName(day: string): string {
   return dayMap[day.toLowerCase()] || day;
 }
 
+function formatRestSeconds(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+
+  if (minutes > 0 && remainingSeconds > 0) {
+    return `${minutes}min ${remainingSeconds}s`;
+  }
+
+  return minutes > 0 ? `${minutes}min` : `${remainingSeconds}s`;
+}
+
 function formatRestSecondsRange(range?: [number, number]): string {
   if (!range) return '';
-
-  const formatSeconds = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-
-    if (minutes > 0 && remainingSeconds > 0) {
-      return `${minutes}min ${remainingSeconds}s`;
-    }
-
-    return minutes > 0 ? `${minutes}min` : `${remainingSeconds}s`;
-  };
 
   const [minSeconds, maxSeconds] = range;
 
   if (minSeconds === maxSeconds) {
-    return formatSeconds(minSeconds);
+    return formatRestSeconds(minSeconds);
   }
 
-  return `${formatSeconds(minSeconds)} - ${formatSeconds(maxSeconds)}`;
+  return `${formatRestSeconds(minSeconds)} - ${formatRestSeconds(maxSeconds)}`;
+}
+
+function formatDuration(milliseconds: number): string {
+  const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${minutes.toString().padStart(2, '0')}min`;
+  }
+
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function RestTimeStatus({ restAlert, lastSet }: { restAlert: RestAlertState | null; lastSet: WorkoutSet | null }) {
+  const [now, setNow] = useState(Date.now());
+  const [chronoElapsed, setChronoElapsed] = useState(0);
+
+  useEffect(() => {
+    const updateTime = () => {
+      const currentNow = Date.now();
+      setNow(currentNow);
+      setChronoElapsed(getChronoElapsed(readChronoState(), currentNow));
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!lastSet && !restAlert) return null;
+
+  const lastSetElapsed = lastSet ? now - new Date(lastSet.timestamp).getTime() : 0;
+  const restElapsedSeconds = restAlert ? Math.max(0, Math.floor((chronoElapsed - restAlert.startElapsed) / 1000)) : 0;
+  const restMaxSeconds = restAlert?.restSecondsRange[1] ?? 0;
+  const restProgress = restMaxSeconds > 0 ? Math.min(100, (restElapsedSeconds / restMaxSeconds) * 100) : 0;
+  const hasReachedMinRest = restAlert ? restElapsedSeconds >= restAlert.restSecondsRange[0] : false;
+  const hasReachedMaxRest = restAlert ? restElapsedSeconds >= restAlert.restSecondsRange[1] : false;
+
+  return (
+    <div className="grid grid-cols-1 gap-2 py-2 sm:grid-cols-2">
+      <div className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2">
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <Timer className="h-3.5 w-3.5" />
+          Dernier log
+        </div>
+        <div className="mt-1 flex items-baseline justify-between gap-2">
+          <span className="truncate text-sm font-medium">{lastSet?.exerciseName ?? 'Aucune série'}</span>
+          <span className="font-mono text-lg font-semibold text-primary">{formatDuration(lastSetElapsed)}</span>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2">
+        <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Bed className="h-3.5 w-3.5" />
+            Rest time
+          </span>
+          {restAlert && <span>{formatRestSecondsRange(restAlert.restSecondsRange)}</span>}
+        </div>
+        {restAlert ? (
+          <>
+            <div className="mt-1 flex items-baseline justify-between gap-2">
+              <span className="truncate text-sm font-medium">{restAlert.exerciseName}</span>
+              <span
+                className={cn(
+                  'font-mono text-lg font-semibold',
+                  hasReachedMaxRest ? 'text-destructive' : hasReachedMinRest ? 'text-green-600' : 'text-primary'
+                )}
+              >
+                {formatDuration(restElapsedSeconds * 1000)}
+              </span>
+            </div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+              <div
+                className={cn('h-full transition-all', hasReachedMaxRest ? 'bg-destructive' : hasReachedMinRest ? 'bg-green-600' : 'bg-primary')}
+                style={{ width: `${restProgress}%` }}
+              />
+            </div>
+          </>
+        ) : (
+          <div className="mt-1 text-sm font-medium text-muted-foreground">Aucun repos actif</div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // Memoized component for exercise set item to prevent unnecessary re-renders
@@ -320,22 +408,26 @@ export function LogView() {
   }, []);
 
   useEffect(() => {
-    if (!restAlert || restAlert.notifiedAt) return;
+    if (!restAlert || restAlert.notifiedAtRange.every(Boolean)) return;
 
     const interval = setInterval(() => {
       const chronoState = readChronoState();
       if (!chronoState) return;
 
       const elapsed = getChronoElapsed(chronoState);
+      let updatedAlert = restAlert;
 
-      if (elapsed >= restAlert.targetElapsed) {
-        markRestAlertNotified(restAlert);
-        setRestAlert({ ...restAlert, notifiedAt: Date.now() });
-        toast.warning('Temps de repos atteint', {
-          description: `${restAlert.exerciseName} • ${formatRestSecondsRange(restAlert.restSecondsRange)}`,
+      restAlert.targetElapsedRange.forEach((targetElapsed, index) => {
+        const alertIndex = index as 0 | 1;
+        if (updatedAlert.notifiedAtRange[alertIndex] || elapsed < targetElapsed) return;
+
+        updatedAlert = markRestAlertNotified(updatedAlert, alertIndex);
+        setRestAlert(updatedAlert);
+        toast.warning(alertIndex === 0 ? 'Temps de repos minimum atteint' : 'Temps de repos maximum atteint', {
+          description: `${updatedAlert.exerciseName} • ${formatRestSeconds(updatedAlert.restSecondsRange[alertIndex])}`,
           duration: 10000,
         });
-      }
+      });
     }, 1000);
 
     return () => clearInterval(interval);
@@ -345,6 +437,8 @@ export function LogView() {
   const todaySession = useMemo(() => {
     return getTodaySession(history);
   }, [history]);
+
+  const lastLoggedSet = todaySession[todaySession.length - 1] ?? null;
 
   // Grouper les séries par exercice
   const todaySessionGrouped = useMemo(() => {
@@ -711,6 +805,8 @@ export function LogView() {
 
         <Separator className="my-3" />
       </div>
+
+      <RestTimeStatus restAlert={restAlert} lastSet={lastLoggedSet} />
 
       {/* Program and Day Selection */}
       <div className="flex items-center justify-between gap-2">

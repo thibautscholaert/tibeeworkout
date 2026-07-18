@@ -15,17 +15,21 @@ export const copySessionToClipboard = async (sets: WorkoutSet[]) => {
 };
 
 const formatSessionSets = (sets: WorkoutSet[]): string => {
-  const groupedSets = new Map<string, { exerciseName: string; variant: WorkoutSet['variant']; sets: WorkoutSet[] }>();
+  const groupedSets: { exerciseName: string; variant: WorkoutSet['variant']; sets: WorkoutSet[] }[] = [];
 
   sets.forEach((set) => {
     const variant = set.variant || 'default';
-    const groupKey = `${set.exerciseName}\u0000${variant}`;
-    const group = groupedSets.get(groupKey) || { exerciseName: set.exerciseName, variant, sets: [] };
-    group.sets.push(set);
-    groupedSets.set(groupKey, group);
+    const previousGroup = groupedSets[groupedSets.length - 1];
+
+    if (previousGroup && previousGroup.exerciseName === set.exerciseName && previousGroup.variant === variant) {
+      previousGroup.sets.push(set);
+      return;
+    }
+
+    groupedSets.push({ exerciseName: set.exerciseName, variant, sets: [set] });
   });
 
-  return Array.from(groupedSets.values())
+  return groupedSets
     .map(({ exerciseName, variant, sets: exerciseSets }) => {
       const setsByWeight = exerciseSets.reduce(
         (acc, set) => {
@@ -38,7 +42,7 @@ const formatSessionSets = (sets: WorkoutSet[]): string => {
       );
       const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === exerciseName.toLowerCase());
       const isTimeType = exerciseData?.repType === 'time';
-      const exerciseLabel = variant === 'default' ? exerciseName : `${exerciseName} - ${variant}`;
+      const exerciseLabel = variant === 'default' ? exerciseName : `${exerciseName} (${variant})`;
       return Object.entries(setsByWeight)
         .map(([weight, reps]) => {
           const repsStr = reps.map((rep) => (isTimeType ? `${rep}${exerciseData.repTypeUnit === 'minute' ? "'" : "''"}` : rep)).join('/');

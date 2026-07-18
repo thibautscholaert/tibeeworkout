@@ -16,8 +16,10 @@ export interface RestAlertState {
   startedAt: number;
   startElapsed: number;
   targetElapsed: number;
+  targetElapsedRange: [number, number];
   dueAt: number;
   notifiedAt: number | null;
+  notifiedAtRange: [number | null, number | null];
 }
 
 function dispatchChronoStateChange(state: ChronoState) {
@@ -66,6 +68,7 @@ export function getChronoElapsed(state: ChronoState | null, now = Date.now()): n
 }
 
 export function createRestAlert(exerciseName: string, restSecondsRange: [number, number], startElapsed: number, now = Date.now()): RestAlertState {
+  const minRestSeconds = restSecondsRange[0];
   const maxRestSeconds = restSecondsRange[1];
   const alert: RestAlertState = {
     id: `${exerciseName}-${now}`,
@@ -74,8 +77,10 @@ export function createRestAlert(exerciseName: string, restSecondsRange: [number,
     startedAt: now,
     startElapsed,
     targetElapsed: startElapsed + maxRestSeconds * 1000,
+    targetElapsedRange: [startElapsed + minRestSeconds * 1000, startElapsed + maxRestSeconds * 1000],
     dueAt: now + maxRestSeconds * 1000,
     notifiedAt: null,
+    notifiedAtRange: [null, null],
   };
 
   localStorage.setItem(REST_ALERT_KEY, JSON.stringify(alert));
@@ -88,21 +93,33 @@ export function readRestAlert(): RestAlertState | null {
 
   try {
     const parsed = JSON.parse(savedAlert) as RestAlertState;
-    if (parsed.targetElapsed === undefined) {
-      const maxRestSeconds = parsed.restSecondsRange[1];
-      return {
-        ...parsed,
-        startElapsed: parsed.startElapsed ?? 0,
-        targetElapsed: (parsed.startElapsed ?? 0) + maxRestSeconds * 1000,
-      };
-    }
-    return parsed;
+    const startElapsed = parsed.startElapsed ?? 0;
+    const [minRestSeconds, maxRestSeconds] = parsed.restSecondsRange;
+    const targetElapsed = parsed.targetElapsed ?? startElapsed + maxRestSeconds * 1000;
+
+    return {
+      ...parsed,
+      startElapsed,
+      targetElapsed,
+      targetElapsedRange: parsed.targetElapsedRange ?? [startElapsed + minRestSeconds * 1000, targetElapsed],
+      notifiedAtRange: parsed.notifiedAtRange ?? [parsed.notifiedAt, parsed.notifiedAt],
+    };
   } catch (error) {
     console.error("Erreur lors du chargement de l'alerte de repos:", error);
     return null;
   }
 }
 
-export function markRestAlertNotified(alert: RestAlertState, now = Date.now()) {
-  localStorage.setItem(REST_ALERT_KEY, JSON.stringify({ ...alert, notifiedAt: now }));
+export function markRestAlertNotified(alert: RestAlertState, index: 0 | 1, now = Date.now()): RestAlertState {
+  const notifiedAtRange: [number | null, number | null] = [...alert.notifiedAtRange];
+  notifiedAtRange[index] = now;
+
+  const updatedAlert: RestAlertState = {
+    ...alert,
+    notifiedAt: notifiedAtRange.every(Boolean) ? now : null,
+    notifiedAtRange,
+  };
+
+  localStorage.setItem(REST_ALERT_KEY, JSON.stringify(updatedAlert));
+  return updatedAlert;
 }
