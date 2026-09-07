@@ -34,6 +34,7 @@ export function useWorkoutHistory() {
           id: `history-${index}-${item.timestamp}`,
           exerciseName: item.exerciseName,
           variant: item.variant,
+          equipment: item.equipment,
           weight: item.weight,
           reps: item.reps,
           timestamp: new Date(item.timestamp),

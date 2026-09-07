@@ -1,5 +1,5 @@
-import { Exercise, EXERCISES } from './exercises';
-import { WorkoutVariant } from './schemas';
+import { Exercise, EXERCISES, getDefaultEquipment } from './exercises';
+import { WorkoutEquipment, WorkoutVariant } from './schemas';
 import { Program, ProgramExercise, WorkoutSet } from './types';
 
 // Fonction pour obtenir le jour de la semaine en français
@@ -129,8 +129,8 @@ function normalizeDayName(day: string): string {
 }
 
 // Fonction pour obtenir les séries réalisées aujourd'hui par exercice
-function getExerciseVariantKey(exerciseName: string, variant: WorkoutVariant = 'default') {
-  return `${exerciseName}\u0000${variant}`;
+function getExerciseVariantKey(exerciseName: string, variant: WorkoutVariant = 'default', equipment: WorkoutEquipment = getDefaultEquipment(exerciseName)) {
+  return `${exerciseName}\u0000${variant}\u0000${equipment}`;
 }
 
 function getTodayExerciseStats(history: WorkoutSet[]): Map<string, WorkoutSet[]> {
@@ -145,7 +145,7 @@ function getTodayExerciseStats(history: WorkoutSet[]): Map<string, WorkoutSet[]>
       return setDate >= todayStart;
     })
     .forEach((set) => {
-      const key = getExerciseVariantKey(set.exerciseName, set.variant || 'default');
+      const key = getExerciseVariantKey(set.exerciseName, set.variant || 'default', set.equipment || getDefaultEquipment(set.exerciseName));
       if (!exerciseStats.has(key)) {
         exerciseStats.set(key, []);
       }
@@ -169,6 +169,7 @@ export interface ExerciseSuggestion {
   suggestedReps: number | null;
   suggestedCharge: number | null;
   suggestedVariant: WorkoutVariant;
+  suggestedEquipment: WorkoutEquipment;
   exerciseDetails: ProgramExercise | null;
   completedExercises: string[];
   remainingExercises: string[];
@@ -207,8 +208,11 @@ export function getWorkoutSuggestions(
       for (const bloc of selectedProgram.blocs) {
         for (const exercise of bloc.exercises) {
           const variant = exercise.variant || 'default';
-          const exerciseKey = getExerciseVariantKey(exercise.exerciseName, variant);
-          const allTimeSets = history.filter((set) => set.exerciseName === exercise.exerciseName && (set.variant || 'default') === variant);
+          const equipment = exercise.equipment || getDefaultEquipment(exercise.exerciseName);
+          const exerciseKey = getExerciseVariantKey(exercise.exerciseName, variant, equipment);
+          const allTimeSets = history.filter(
+            (set) => set.exerciseName === exercise.exerciseName && (set.variant || 'default') === variant && (set.equipment || getDefaultEquipment(set.exerciseName)) === equipment
+          );
           const allTimeBest = allTimeSets.reduce<any>((best, set) => {
             if (!best) return set;
             const bestScore = best.estimated1RM || best.weight * best.reps;
@@ -223,13 +227,13 @@ export function getWorkoutSuggestions(
             const completedExerciseNames = selectedProgram.blocs
               .flatMap((b) => b.exercises)
               .filter((programExercise) => {
-                const key = getExerciseVariantKey(programExercise.exerciseName, programExercise.variant || 'default');
+                const key = getExerciseVariantKey(programExercise.exerciseName, programExercise.variant || 'default', programExercise.equipment || getDefaultEquipment(programExercise.exerciseName));
                 return isExerciseCompleted(programExercise, todayStats.get(key) || []);
               })
               .map((programExercise) => programExercise.exerciseName);
 
             const remainingInBloc = bloc.exercises.filter((ex) => {
-              const key = getExerciseVariantKey(ex.exerciseName, ex.variant || 'default');
+              const key = getExerciseVariantKey(ex.exerciseName, ex.variant || 'default', ex.equipment || getDefaultEquipment(ex.exerciseName));
               return !isExerciseCompleted(ex, todayStats.get(key) || []);
             });
 
@@ -246,6 +250,7 @@ export function getWorkoutSuggestions(
               suggestedReps: parseInt(exercise.reps),
               suggestedCharge,
               suggestedVariant: variant,
+              suggestedEquipment: equipment,
               exerciseDetails: exercise,
               completedExercises: completedExerciseNames,
               remainingExercises: remainingInBloc.map((ex) => ex.exerciseName),
@@ -268,6 +273,7 @@ export function getWorkoutSuggestions(
           suggestedReps: null,
           suggestedCharge: null,
           suggestedVariant: 'default',
+          suggestedEquipment: 'floor',
           exerciseDetails: null,
           completedExercises: allCompletedExercises,
           remainingExercises: [],
@@ -292,6 +298,7 @@ export function getWorkoutSuggestions(
       suggestedReps: null,
       suggestedCharge: null,
       suggestedVariant: 'default',
+      suggestedEquipment: 'floor',
       exerciseDetails: null,
       completedExercises: [],
       remainingExercises: [],

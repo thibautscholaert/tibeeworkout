@@ -1,9 +1,10 @@
-import type { WorkoutVariant } from './schemas';
+import type { WorkoutEquipment, WorkoutVariant } from './schemas';
 
 export interface WorkoutSet {
   id: string;
   exerciseName: string;
   variant: WorkoutVariant;
+  equipment: WorkoutEquipment;
   weight: number;
   reps: number;
   timestamp: Date;
@@ -44,6 +45,7 @@ export interface ProgramBloc {
 export interface ProgramExercise {
   exerciseName: string;
   variant: WorkoutVariant;
+  equipment?: WorkoutEquipment;
   sets: number;
   reps: string;
   charge?: string;

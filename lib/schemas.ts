@@ -3,11 +3,18 @@ import { z } from 'zod';
 export const WORKOUT_VARIANTS = ['default', 'slow', 'explosive', 'tempo', 'negative', 'tuck'] as const;
 export type WorkoutVariant = (typeof WORKOUT_VARIANTS)[number];
 
+export const WORKOUT_EQUIPMENT = ['floor', 'parallette', 'rings', 'bar', 'dumbbell', 'band', 'barbell', 'machine'] as const;
+export type WorkoutEquipment = (typeof WORKOUT_EQUIPMENT)[number];
+
 export const setFormSchema = z.object({
   exerciseName: z.string().min(1, 'Select an exercise'),
   variant: z.enum(WORKOUT_VARIANTS, {
     required_error: 'Select a variant',
     invalid_type_error: 'Select a variant',
+  }),
+  equipment: z.enum(WORKOUT_EQUIPMENT, {
+    required_error: 'Select equipment',
+    invalid_type_error: 'Select equipment',
   }),
   weight: z.number().min(0, 'Weight must be positive').max(2000, 'Weight too high'),
   reps: z.number().int().min(1, 'At least 1 rep').max(100, 'Reps too high'),

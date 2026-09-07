@@ -1,6 +1,7 @@
 'use server';
 
-import { WORKOUT_VARIANTS, type NoteFormData, type SetFormData, type WorkoutVariant } from '@/lib/schemas';
+import { getDefaultEquipment } from '@/lib/exercises';
+import { WORKOUT_EQUIPMENT, WORKOUT_VARIANTS, type NoteFormData, type SetFormData, type WorkoutEquipment, type WorkoutVariant } from '@/lib/schemas';
 import { ExerciseNote, Profile, Program, TutorialVideo } from '@/lib/types';
 import { calculateEstimated1RM } from '@/lib/utils';
 import { extractYouTubeId } from '@/lib/youtube';
@@ -21,6 +22,14 @@ const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID || '', auth);
 
 function normalizeWorkoutVariant(value: unknown): WorkoutVariant {
   return WORKOUT_VARIANTS.includes(value as WorkoutVariant) ? (value as WorkoutVariant) : 'default';
+}
+
+function normalizeWorkoutEquipment(value: unknown, exerciseName: string): WorkoutEquipment {
+  return WORKOUT_EQUIPMENT.includes(value as WorkoutEquipment) ? (value as WorkoutEquipment) : getDefaultEquipment(exerciseName);
+}
+
+function normalizeOptionalWorkoutEquipment(value: unknown): WorkoutEquipment | undefined {
+  return WORKOUT_EQUIPMENT.includes(value as WorkoutEquipment) ? (value as WorkoutEquipment) : undefined;
 }
 
 async function ensureHeaders(sheet: any, headers: string[]) {
@@ -62,12 +71,13 @@ export async function saveWorkoutSet(data: SetFormData & { timestamp: Date }) {
     await doc.loadInfo();
     const sheet = doc.sheetsByTitle['Workouts'] || doc.sheetsByIndex[0];
 
-    await ensureHeaders(sheet, ['Exercise', 'Variant', 'Weight', 'Reps', 'Timestamp']);
+    await ensureHeaders(sheet, ['Exercise', 'Variant', 'Equipement', 'Weight', 'Reps', 'Timestamp']);
 
     const newRow = {
       Timestamp: data.timestamp.toISOString(),
       Exercise: data.exerciseName,
       Variant: data.variant,
+      Equipement: data.equipment,
       Weight: data.weight.toString(),
       Reps: data.reps.toString(),
     };
@@ -182,10 +192,12 @@ export async function getWorkoutHistory() {
       const reps = parseInt(row.get('Reps'));
       const exerciseName = row.get('Exercise');
       const variant = normalizeWorkoutVariant(row.get('Variant'));
+      const equipment = normalizeWorkoutEquipment(row.get('Equipement'), exerciseName);
       return {
         timestamp: row.get('Timestamp'),
         exerciseName,
         variant,
+        equipment,
         weight,
         reps,
         oneRM: calculateEstimated1RM(weight, reps, exerciseName),
@@ -220,7 +232,8 @@ export async function getPrograms() {
       const day = row.get('Jour') || '';
       const bloc = row.get('Bloc') || '';
       const exerciseName = row.get('Exercice') || '';
-      const variant = normalizeWorkoutVariant(row.get('Variante') || row.get('Variant'));
+      const variant = normalizeWorkoutVariant(row.get('Variant') || row.get('Variant'));
+      const equipment = normalizeOptionalWorkoutEquipment(row.get('Equipement') || row.get('Equipment'));
       const sets = parseInt(row.get('Séries') || '0');
       const reps = row.get('Reps') || '';
       const charge = row.get('Charge / Objectif') || '';
@@ -258,6 +271,7 @@ export async function getPrograms() {
       blocObj.exercises.push({
         exerciseName,
         variant,
+        equipment,
         sets,
         reps,
         charge,

@@ -22,9 +22,9 @@ import {
   type RestAlertState,
 } from '@/lib/chrono';
 import { copySessionToClipboard } from '@/lib/clipboard-utils';
-import { EXERCISES } from '@/lib/exercises';
+import { EXERCISES, getDefaultEquipment } from '@/lib/exercises';
 import { useReactFormPersistence } from '@/lib/form-persistence';
-import { setFormSchema, WORKOUT_VARIANTS, type SetFormData } from '@/lib/schemas';
+import { setFormSchema, WORKOUT_EQUIPMENT, WORKOUT_VARIANTS, type SetFormData } from '@/lib/schemas';
 import { getWithTTL, setWithTTL } from '@/lib/storage';
 import { getTodaySession, groupTodaySessionByExercise } from '@/lib/today-session';
 import type { WorkoutSet } from '@/lib/types';
@@ -54,11 +54,11 @@ import {
   Target,
   TargetIcon,
   Timer,
-  Trophy,
   Trash2,
+  Trophy,
   Zap,
 } from 'lucide-react';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -97,10 +97,10 @@ function formatRestSeconds(seconds: number): string {
   const remainingSeconds = seconds % 60;
 
   if (minutes > 0 && remainingSeconds > 0) {
-    return `${minutes}min ${remainingSeconds}s`;
+    return `${minutes}' ${remainingSeconds}''`;
   }
 
-  return minutes > 0 ? `${minutes}min` : `${remainingSeconds}s`;
+  return minutes > 0 ? `${minutes}'` : `${remainingSeconds}''`;
 }
 
 function formatRestSecondsRange(range?: [number, number]): string {
@@ -155,8 +155,8 @@ function RestTimeStatus({ restAlert, lastSet }: { restAlert: RestAlertState | nu
   const hasReachedMaxRest = restAlert ? restElapsedSeconds >= restAlert.restSecondsRange[1] : false;
 
   return (
-    <div className="grid grid-cols-1 gap-2 py-2 sm:grid-cols-2">
-      <div className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2">
+    <div className="grid grid-cols-1 gap-2 py-2">
+      {/* <div className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2">
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <Timer className="h-3.5 w-3.5" />
           Dernier log
@@ -165,7 +165,7 @@ function RestTimeStatus({ restAlert, lastSet }: { restAlert: RestAlertState | nu
           <span className="truncate text-sm font-medium">{lastSet?.exerciseName ?? 'Aucune série'}</span>
           <span className="font-mono text-lg font-semibold text-primary">{formatDuration(lastSetElapsed)}</span>
         </div>
-      </div>
+      </div> */}
 
       <div className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2">
         <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
@@ -318,6 +318,8 @@ export function LogView() {
   const [programOpen, setProgramOpen] = useState(false);
   const [sessionOpen, setSessionOpen] = useState(false);
   const [variantOpen, setVariantOpen] = useState(false);
+  const [equipmentOpen, setEquipmentOpen] = useState(false);
+  const preserveSuggestedEquipment = useRef(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [restAlert, setRestAlert] = useState<RestAlertState | null>(null);
   const [setToDelete, setSetToDelete] = useState<WorkoutSet | null>(null);
@@ -525,6 +527,7 @@ export function LogView() {
         suggestedReps: null,
         suggestedCharge: null,
         suggestedVariant: 'default',
+        suggestedEquipment: 'floor',
         exerciseDetails: null,
         completedExercises: [],
         remainingExercises: [],
@@ -582,6 +585,7 @@ export function LogView() {
   const { loadSavedValues, saveFormValues } = useReactFormPersistence('workout-log-form', {
     exerciseName: defaultExercise,
     variant: 'default',
+    equipment: 'floor',
     weight: 0,
     reps: 0,
   });
@@ -598,6 +602,7 @@ export function LogView() {
     defaultValues: {
       exerciseName: 'Pull up',
       variant: 'default',
+      equipment: 'floor',
       weight: 0,
       reps: 0,
     },
@@ -631,6 +636,18 @@ export function LogView() {
 
   const selectedExercise = watch('exerciseName');
   const selectedVariant = watch('variant');
+  const selectedEquipment = watch('equipment');
+
+  useEffect(() => {
+    if (selectedExercise) {
+      if (preserveSuggestedEquipment.current) {
+        preserveSuggestedEquipment.current = false;
+        return;
+      }
+      setValue('equipment', getDefaultEquipment(selectedExercise), { shouldValidate: true });
+      setValue('variant', 'default');
+    }
+  }, [selectedExercise, setValue]);
 
   const note = useMemo(() => {
     return notes.find((note) => note.exerciseName === selectedExercise);
@@ -654,9 +671,9 @@ export function LogView() {
   const setPreviewReps = watchedValues.reps ?? 0;
   const isSetPreviewBodyweight = Boolean(selectedExerciseData?.bodyweight && setPreviewWeight === 0);
   const setPreviewRepsLabel = (reps: number) => {
-    const label = selectedExerciseData?.repType === 'time' ? (selectedExerciseData.repTypeUnit === 'minute' ? 'min' : 'sec') : 'rep';
+    const label = selectedExerciseData?.repType === 'time' ? (selectedExerciseData.repTypeUnit === 'minute' ? "'" : "''") : 'rep';
 
-    return label + (reps > 1 ? 's' : '');
+    return label + (reps > 1 ? "''" : '');
   };
 
   // Calculate best 1RM for selected exercise (for target weight default / warmup)
@@ -917,27 +934,29 @@ export function LogView() {
                     </span>
                   </span>
                 </div>
-                <Badge variant="outline" className="text-xs">
-                  {suggestions.programName}
+                <Badge variant={suggestions.isCompletingCurrentExercise ? 'default' : 'outline'} className="shrink-0 text-xs">
+                  {suggestions.completedSeries}/{suggestions.totalSeries} série{`${suggestions.totalSeries > 1 ? 's' : ''}`}
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-1 justify-between">
                     <p className="font-medium text-sm overflow-ellipsis line-clamp-1">{suggestions.nextExercise}</p>
-                    {suggestions.suggestedVariant !== 'default' && (
-                      <Badge variant="secondary" className="shrink-0 text-xs">
-                        {suggestions.suggestedVariant}
+                    <div className="flex gap-1">
+                      {suggestions.suggestedVariant !== 'default' && (
+                        <Badge variant="secondary" className="shrink-0 text-xs">
+                          {suggestions.suggestedVariant}
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="shrink-0 text-xs">
+                        {suggestions.suggestedEquipment}
                       </Badge>
-                    )}
-                    <Badge variant={suggestions.isCompletingCurrentExercise ? 'default' : 'outline'} className="shrink-0 text-xs">
-                      {suggestions.completedSeries}/{suggestions.totalSeries} série{`${suggestions.totalSeries > 1 ? 's' : ''}`}
-                    </Badge>
+                    </div>
                   </div>
                   <p className="text-xs text-muted-foreground mb-1">
                     <BicepsFlexedIcon className="inline h-4 w-4 mr-1" />
                     {suggestions.blocName && suggestions.blocName.length > 0 ? `Bloc: ${suggestions.blocName} - ` : ''}{' '}
-                    {`${suggestions.totalSeries} séries • ${suggestions.suggestedReps} ${suggestions.exercise?.repType === 'time' ? (suggestions.exercise?.repTypeUnit === 'minute' ? 'min' : 'sec') : 'reps'}`}
+                    {`${suggestions.totalSeries} séries • ${suggestions.suggestedReps} ${suggestions.exercise?.repType === 'time' ? (suggestions.exercise?.repTypeUnit === 'minute' ? "'" : "''") : 'reps'}`}
                   </p>
 
                   <p className="text-xs text-muted-foreground flex gap-1 items-center">
@@ -972,8 +991,10 @@ export function LogView() {
                   <Button
                     type="button"
                     onClick={() => {
+                      preserveSuggestedEquipment.current = true;
                       setValue('exerciseName', suggestions.nextExercise!);
                       setValue('variant', suggestions.suggestedVariant, { shouldDirty: true, shouldValidate: true });
+                      setValue('equipment', suggestions.suggestedEquipment, { shouldDirty: true, shouldValidate: true });
                       if (suggestions.suggestedReps !== null) {
                         setValue('reps', suggestions.suggestedReps);
                       }
@@ -1205,8 +1226,8 @@ export function LogView() {
           )}
         </div>
 
-        {/* Variant + Weight + Reps Row */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        {/* Equipment + Variant + Weight + Reps Row */}
+        <div className="grid grid-cols-2 gap-2">
           <div className="flex flex-col gap-1">
             <Label htmlFor="weight" className="text-sm text-muted-foreground">
               Weight (kg)
@@ -1282,6 +1303,51 @@ export function LogView() {
             </Popover>
             {errors.variant && <p className="text-sm text-destructive">{errors.variant.message}</p>}
           </div>
+
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="equipment" className="text-sm text-muted-foreground">
+              Équipement
+            </Label>
+            <input type="hidden" {...register('equipment')} />
+            <Popover open={equipmentOpen} onOpenChange={setEquipmentOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  id="equipment"
+                  type="button"
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={equipmentOpen}
+                  className="h-10 w-full justify-between px-2 text-sm font-semibold"
+                >
+                  <span className="truncate">{selectedEquipment || 'Select...'}</span>
+                  <ChevronDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[calc(100vw-3rem)] max-w-md p-0" align="end">
+                <div className="max-h-[300px] overflow-y-auto p-1">
+                  {WORKOUT_EQUIPMENT.map((equipment) => (
+                    <button
+                      key={equipment}
+                      type="button"
+                      onClick={() => {
+                        setValue('equipment', equipment, { shouldDirty: true, shouldValidate: true });
+                        setEquipmentOpen(false);
+                      }}
+                      className={cn(
+                        'relative flex w-full cursor-pointer items-center rounded-md px-3 py-2.5 text-sm outline-none transition-colors',
+                        'hover:bg-accent hover:text-accent-foreground',
+                        selectedEquipment === equipment && 'bg-accent/50'
+                      )}
+                    >
+                      <Check className={cn('mr-2 h-4 w-4', selectedEquipment === equipment ? 'opacity-100' : 'opacity-0')} />
+                      {equipment}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+            {errors.equipment && <p className="text-sm text-destructive">{errors.equipment.message}</p>}
+          </div>
         </div>
 
         {/* Quick Add Button */}
@@ -1301,6 +1367,7 @@ export function LogView() {
                   {isSubmitting ? 'Ajout...' : selectedExercise || 'Exercice'}
                 </div>
                 {selectedVariant !== 'default' && <div className="mt-0.5 truncate text-xs text-primary-foreground/75">{selectedVariant}</div>}
+                <div className="mt-0.5 truncate text-xs text-primary-foreground/75">{selectedEquipment}</div>
               </div>
               <div className="flex shrink-0 items-center gap-1.5">
                 <span className="inline-flex items-center gap-1 rounded-md bg-primary-foreground/15 p-1.5 text-xs font-semibold text-primary-foreground">
@@ -1364,18 +1431,25 @@ export function LogView() {
                       <span className="text-lg font-bold text-primary">{groupIndex + 1}</span>
                     </div>
                     <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-base">{exerciseGroup.exerciseName}</h3>
-                        {exerciseGroup.variant !== 'default' && (
-                          <Badge variant="secondary" className="text-xs">
-                            {exerciseGroup.variant}
+                      <div className="flex items-center justify-between gap-1">
+                        <div className="flex gap-1 flex-col">
+                          <h3 className="font-semibold text-base">{exerciseGroup.exerciseName}</h3>
+                          <p className="text-xs text-muted-foreground">
+                            {exerciseGroup.totalSets} série
+                            {exerciseGroup.totalSets !== 1 ? 's' : ''} •{exerciseGroup.sets.reduce((total, set) => total + set.reps, 0)} reps au total
+                          </p>
+                        </div>
+                        <div className="flex gap-1 flex-col">
+                          {exerciseGroup.variant !== 'default' && (
+                            <Badge variant="secondary" className="text-xs">
+                              {exerciseGroup.variant}
+                            </Badge>
+                          )}
+                          <Badge variant="outline" className="text-xs">
+                            {exerciseGroup.equipment}
                           </Badge>
-                        )}
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {exerciseGroup.totalSets} série
-                        {exerciseGroup.totalSets !== 1 ? 's' : ''} •{exerciseGroup.sets.reduce((total, set) => total + set.reps, 0)} reps au total
-                      </p>
                     </div>
                     <div className="text-right">
                       <div className="text-xs text-muted-foreground">

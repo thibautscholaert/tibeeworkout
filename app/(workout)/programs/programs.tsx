@@ -109,7 +109,7 @@ export default function Programs() {
                   }`}
                 >
                   <div className="text-left">
-                    <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-start justify-between mb-2 gap-2">
                       <h3 className={`font-semibold text-sm ${isSelected ? 'text-primary' : ''}`}>{program.title}</h3>
                       {todaySession && (
                         <Badge variant="default" className="text-xs px-1.5 py-0.5">
@@ -286,6 +286,13 @@ export default function Programs() {
                                                 {exercise.variant}
                                               </Badge>
                                             )}
+
+                                            {exercise.equipment && exercise.equipment !== 'default' && (
+                                              <Badge variant="outline" className="text-xs">
+                                                {exercise.equipment}
+                                              </Badge>
+                                            )}
+
                                             {isBodyweight && (
                                               <Badge variant="outline" className="text-xs p-1 bg-green-500/10 text-green-600 border-green-300/50">
                                                 <PersonStandingIcon className="h-3 w-3" />

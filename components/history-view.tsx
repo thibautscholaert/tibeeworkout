@@ -36,7 +36,8 @@ function groupSetsByExerciseAndVariant(sets: WorkoutSet[]): Map<string, WorkoutS
 
   sets.forEach((set) => {
     const variant = set.variant || 'default';
-    const key = `${set.exerciseName}\u0000${variant}`;
+    const equipment = set.equipment || 'floor';
+    const key = `${set.exerciseName}\u0000${variant}\u0000${equipment}`;
     const existing = grouped.get(key) || [];
     grouped.set(key, [...existing, set]);
   });
@@ -371,7 +372,7 @@ export function HistoryView() {
                               </div>
                               <div className="flex flex-wrap items-center gap-1 mt-1.5">
                                 {exerciseEntries.map(([groupKey, exerciseSets], idx) => {
-                                  const { exerciseName, variant = 'default' } = exerciseSets[0];
+                                  const { exerciseName, variant = 'default', equipment = 'floor' } = exerciseSets[0];
 
                                   return (
                                     <span key={groupKey} className="inline-flex items-center gap-1 text-sm text-muted-foreground/70">
@@ -381,6 +382,9 @@ export function HistoryView() {
                                           {variant}
                                         </Badge>
                                       )}
+                                      <Badge variant="outline" className="h-5 px-1.5 text-xs">
+                                        {equipment}
+                                      </Badge>
                                       {idx < exerciseEntries.length - 1 && ' •'}
                                     </span>
                                   );
@@ -405,6 +409,7 @@ export function HistoryView() {
                             {exerciseEntries.map(([groupKey, exerciseSets], exerciseIndex) => {
                               const exerciseName = exerciseSets[0].exerciseName;
                               const variant: WorkoutVariant = exerciseSets[0].variant || 'default';
+                              const equipment = exerciseSets[0].equipment || 'floor';
                               const totalVolume = exerciseSets.reduce((acc, s) => acc + s.weight * s.reps, 0);
                               const maxWeight = Math.max(...exerciseSets.map((s) => s.weight));
                               const avgReps = Math.round(exerciseSets.reduce((acc, s) => acc + s.reps, 0) / exerciseSets.length);
@@ -434,6 +439,9 @@ export function HistoryView() {
                                           {variant}
                                         </Badge>
                                       )}
+                                      <Badge variant="outline" className="text-xs">
+                                        {equipment}
+                                      </Badge>
                                       {isPowerlifting && (
                                         <Badge variant="outline" className="text-xs p-1 bg-blue-500/10 text-blue-600 border-blue-300/50">
                                           <Dumbbell className="h-3.5 w-3.5" />

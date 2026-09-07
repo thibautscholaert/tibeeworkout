@@ -1,4 +1,4 @@
-import type { WorkoutVariant } from './schemas';
+import type { WorkoutEquipment, WorkoutVariant } from './schemas';
 import { WorkoutSet } from './types';
 
 // Fonction pour obtenir les séries d'aujourd'hui
@@ -18,6 +18,7 @@ export function getTodaySession(history: WorkoutSet[]): WorkoutSet[] {
 export function groupTodaySessionByExercise(todaySession: WorkoutSet[]): {
   exerciseName: string;
   variant: WorkoutVariant;
+  equipment: WorkoutEquipment;
   sets: WorkoutSet[];
   totalSets: number;
 }[] {
@@ -25,13 +26,15 @@ export function groupTodaySessionByExercise(todaySession: WorkoutSet[]): {
   const list: {
     exerciseName: string;
     variant: WorkoutVariant;
+    equipment: WorkoutEquipment;
     sets: WorkoutSet[];
     totalSets: number;
   }[] = [];
 
   todaySession.forEach((set) => {
     const variant = set.variant || 'default';
-    const groupKey = `${set.exerciseName}\u0000${variant}`;
+    const equipment = set.equipment || 'floor';
+    const groupKey = `${set.exerciseName}\u0000${variant}\u0000${equipment}`;
 
     if (key === groupKey) {
       list[list.length - 1].sets.push(set);
@@ -41,6 +44,7 @@ export function groupTodaySessionByExercise(todaySession: WorkoutSet[]): {
       list.push({
         exerciseName: set.exerciseName,
         variant,
+        equipment,
         sets: [set],
         totalSets: 1,
       });

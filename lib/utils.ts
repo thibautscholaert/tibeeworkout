@@ -45,7 +45,7 @@ export function formatReps(reps: number, exerciseName?: string): string {
   if (exerciseName) {
     const exercise = EXERCISES.find((ex) => ex.name.toLocaleLowerCase() === exerciseName.toLocaleLowerCase());
     if (exercise?.repType === 'time') {
-      return `${reps}s`;
+      return `${reps}''`;
     }
   }
   return `${reps} reps`;
