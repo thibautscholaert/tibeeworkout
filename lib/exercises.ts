@@ -15,6 +15,7 @@ export interface Exercise {
   strengthType?: 'strength' | 'hypertrophy' | 'power' | 'skill' | 'endurance';
   equipment: 'floor' | 'parallette' | 'rings' | 'bar' | 'dumbbell' | 'band' | 'barbell' | 'machine';
   restSecondsRange?: [number, number];
+  exoVariants?: string[];
 }
 
 export const REST_SECONDS_BY_EXERCISE: Record<string, [number, number]> = {
@@ -677,6 +678,7 @@ const EXERCISE_DEFINITIONS: Exercise[] = [
     category: ['push_vertical', 'skill'],
     strengthType: 'skill',
     equipment: 'parallette',
+    exoVariants: ['90°'],
   },
   {
     name: 'Handstand',

@@ -36,8 +36,9 @@ function groupSetsByExerciseAndVariant(sets: WorkoutSet[]): Map<string, WorkoutS
 
   sets.forEach((set) => {
     const variant = set.variant || 'default';
+    const exoVariant = set.exoVariant || '';
     const equipment = set.equipment || 'floor';
-    const key = `${set.exerciseName}\u0000${variant}\u0000${equipment}`;
+    const key = `${set.exerciseName}\u0000${variant}\u0000${exoVariant}\u0000${equipment}`;
     const existing = grouped.get(key) || [];
     grouped.set(key, [...existing, set]);
   });
@@ -372,7 +373,7 @@ export function HistoryView() {
                               </div>
                               <div className="flex flex-wrap items-center gap-1 mt-1.5">
                                 {exerciseEntries.map(([groupKey, exerciseSets], idx) => {
-                                  const { exerciseName, variant = 'default', equipment = 'floor' } = exerciseSets[0];
+                                  const { exerciseName, variant = 'default', exoVariant, equipment = 'floor' } = exerciseSets[0];
 
                                   return (
                                     <span key={groupKey} className="inline-flex items-center gap-1 text-sm text-muted-foreground/70">
@@ -380,6 +381,11 @@ export function HistoryView() {
                                       {variant !== 'default' && (
                                         <Badge variant="secondary" className="h-5 px-1.5 text-xs">
                                           {variant}
+                                        </Badge>
+                                      )}
+                                      {exoVariant && (
+                                        <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                                          {exoVariant}
                                         </Badge>
                                       )}
                                       <Badge variant="outline" className="h-5 px-1.5 text-xs">
@@ -409,6 +415,7 @@ export function HistoryView() {
                             {exerciseEntries.map(([groupKey, exerciseSets], exerciseIndex) => {
                               const exerciseName = exerciseSets[0].exerciseName;
                               const variant: WorkoutVariant = exerciseSets[0].variant || 'default';
+                              const exoVariant = exerciseSets[0].exoVariant;
                               const equipment = exerciseSets[0].equipment || 'floor';
                               const totalVolume = exerciseSets.reduce((acc, s) => acc + s.weight * s.reps, 0);
                               const maxWeight = Math.max(...exerciseSets.map((s) => s.weight));
@@ -437,6 +444,11 @@ export function HistoryView() {
                                       {variant !== 'default' && (
                                         <Badge variant="secondary" className="text-xs">
                                           {variant}
+                                        </Badge>
+                                      )}
+                                      {exoVariant && (
+                                        <Badge variant="secondary" className="text-xs">
+                                          {exoVariant}
                                         </Badge>
                                       )}
                                       <Badge variant="outline" className="text-xs">

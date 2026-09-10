@@ -34,6 +34,7 @@ export function useWorkoutHistory() {
           id: `history-${index}-${item.timestamp}`,
           exerciseName: item.exerciseName,
           variant: item.variant,
+          exoVariant: item.exoVariant,
           equipment: item.equipment,
           weight: item.weight,
           reps: item.reps,

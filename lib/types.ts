@@ -4,6 +4,7 @@ export interface WorkoutSet {
   id: string;
   exerciseName: string;
   variant: WorkoutVariant;
+  exoVariant?: string;
   equipment: WorkoutEquipment;
   weight: number;
   reps: number;

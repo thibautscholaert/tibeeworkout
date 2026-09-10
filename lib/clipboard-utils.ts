@@ -15,23 +15,24 @@ export const copySessionToClipboard = async (sets: WorkoutSet[]) => {
 };
 
 const formatSessionSets = (sets: WorkoutSet[]): string => {
-  const groupedSets: { exerciseName: string; variant: WorkoutSet['variant']; equipment: WorkoutSet['equipment']; sets: WorkoutSet[] }[] = [];
+  const groupedSets: { exerciseName: string; variant: WorkoutSet['variant']; exoVariant?: string; equipment: WorkoutSet['equipment']; sets: WorkoutSet[] }[] = [];
 
   sets.forEach((set) => {
     const variant = set.variant || 'default';
+    const exoVariant = set.exoVariant;
     const equipment = set.equipment || 'floor';
     const previousGroup = groupedSets[groupedSets.length - 1];
 
-    if (previousGroup && previousGroup.exerciseName === set.exerciseName && previousGroup.variant === variant && previousGroup.equipment === equipment) {
+    if (previousGroup && previousGroup.exerciseName === set.exerciseName && previousGroup.variant === variant && previousGroup.exoVariant === exoVariant && previousGroup.equipment === equipment) {
       previousGroup.sets.push(set);
       return;
     }
 
-    groupedSets.push({ exerciseName: set.exerciseName, variant, equipment, sets: [set] });
+    groupedSets.push({ exerciseName: set.exerciseName, variant, exoVariant, equipment, sets: [set] });
   });
 
   return groupedSets
-    .map(({ exerciseName, variant, equipment, sets: exerciseSets }) => {
+    .map(({ exerciseName, variant, exoVariant, equipment, sets: exerciseSets }) => {
       const setsByWeight = exerciseSets.reduce(
         (acc, set) => {
           const weightKey = set.weight === 0 ? 'BW' : `${set.weight}kg`;
@@ -44,7 +45,8 @@ const formatSessionSets = (sets: WorkoutSet[]): string => {
       const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === exerciseName.toLowerCase());
       const isTimeType = exerciseData?.repType === 'time';
       const variantLabel = variant === 'default' ? '' : ` (${variant})`;
-      const exerciseLabel = `${exerciseName}${variantLabel} [${equipment}]`;
+      const exoVariantLabel = exoVariant ? ` (${exoVariant})` : '';
+      const exerciseLabel = `${exerciseName}${variantLabel}${exoVariantLabel} [${equipment}]`;
       return Object.entries(setsByWeight)
         .map(([weight, reps]) => {
           const repsStr = reps.map((rep) => (isTimeType ? `${rep}${exerciseData.repTypeUnit === 'minute' ? "'" : "''"}` : rep)).join('/');

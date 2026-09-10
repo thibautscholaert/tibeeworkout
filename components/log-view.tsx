@@ -318,6 +318,7 @@ export function LogView() {
   const [programOpen, setProgramOpen] = useState(false);
   const [sessionOpen, setSessionOpen] = useState(false);
   const [variantOpen, setVariantOpen] = useState(false);
+  const [exoVariantOpen, setExoVariantOpen] = useState(false);
   const [equipmentOpen, setEquipmentOpen] = useState(false);
   const preserveSuggestedEquipment = useRef(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
@@ -435,14 +436,12 @@ export function LogView() {
     return () => clearInterval(interval);
   }, [restAlert]);
 
-  // Obtenir les séries d'aujourd'hui
   const todaySession = useMemo(() => {
     return getTodaySession(history);
   }, [history]);
 
   const lastLoggedSet = todaySession[todaySession.length - 1] ?? null;
 
-  // Grouper les séries par exercice
   const todaySessionGrouped = useMemo(() => {
     return groupTodaySessionByExercise(todaySession);
   }, [todaySession]);
@@ -636,6 +635,7 @@ export function LogView() {
 
   const selectedExercise = watch('exerciseName');
   const selectedVariant = watch('variant');
+  const selectedExoVariant = watch('exoVariant');
   const selectedEquipment = watch('equipment');
 
   useEffect(() => {
@@ -646,6 +646,7 @@ export function LogView() {
       }
       setValue('equipment', getDefaultEquipment(selectedExercise), { shouldValidate: true });
       setValue('variant', 'default');
+      setValue('exoVariant', undefined);
     }
   }, [selectedExercise, setValue]);
 
@@ -671,9 +672,11 @@ export function LogView() {
   const setPreviewReps = watchedValues.reps ?? 0;
   const isSetPreviewBodyweight = Boolean(selectedExerciseData?.bodyweight && setPreviewWeight === 0);
   const setPreviewRepsLabel = (reps: number) => {
-    const label = selectedExerciseData?.repType === 'time' ? (selectedExerciseData.repTypeUnit === 'minute' ? "'" : "''") : 'rep';
-
-    return label + (reps > 1 ? "''" : '');
+    return selectedExerciseData?.repType === 'time'
+      ? selectedExerciseData.repTypeUnit === 'minute'
+        ? "'"
+        : "''"
+      : `${'rep' + (reps > 1 ? 's' : '')}`;
   };
 
   // Calculate best 1RM for selected exercise (for target weight default / warmup)
@@ -1020,9 +1023,6 @@ export function LogView() {
                     <SkipForward className="mr-1 h-4 w-4" />
                     Skip
                   </Button>
-                  {/* {suggestions.isCompletingCurrentExercise && (
-                    <p className="text-xs text-center text-muted-foreground">Série {suggestions.completedSeries + 1}</p>
-                  )} */}
                 </div>
               </div>
             </CardContent>
@@ -1227,7 +1227,7 @@ export function LogView() {
         </div>
 
         {/* Equipment + Variant + Weight + Reps Row */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <div className="flex flex-col gap-1">
             <Label htmlFor="weight" className="text-sm text-muted-foreground">
               Weight (kg)
@@ -1258,7 +1258,6 @@ export function LogView() {
             />
             {errors.reps && <p className="text-sm text-destructive">{errors.reps.message}</p>}
           </div>
-
           <div className="flex flex-col gap-1">
             <Label htmlFor="variant" className="text-sm text-muted-foreground">
               Variante
@@ -1303,6 +1302,54 @@ export function LogView() {
             </Popover>
             {errors.variant && <p className="text-sm text-destructive">{errors.variant.message}</p>}
           </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {selectedExerciseData?.exoVariants?.length ? (
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="exoVariant" className="text-sm text-muted-foreground">
+                Variation exercice
+              </Label>
+              <input type="hidden" {...register('exoVariant')} />
+              <Popover open={exoVariantOpen} onOpenChange={setExoVariantOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="exoVariant"
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={exoVariantOpen}
+                    className="h-10 w-full justify-between px-2 text-sm font-semibold"
+                  >
+                    <span className="truncate">{selectedExoVariant || 'Aucune'}</span>
+                    <ChevronDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[calc(100vw-3rem)] max-w-md p-0" align="end">
+                  <div className="max-h-[300px] overflow-y-auto p-1">
+                    {[undefined, ...selectedExerciseData.exoVariants].map((exoVariant) => (
+                      <button
+                        key={exoVariant || '__none__'}
+                        type="button"
+                        onClick={() => {
+                          setValue('exoVariant', exoVariant, { shouldDirty: true, shouldValidate: true });
+                          setExoVariantOpen(false);
+                        }}
+                        className={cn(
+                          'relative flex w-full cursor-pointer items-center rounded-md px-3 py-2.5 text-sm outline-none transition-colors',
+                          'hover:bg-accent hover:text-accent-foreground',
+                          selectedExoVariant === exoVariant && 'bg-accent/50'
+                        )}
+                      >
+                        <Check className={cn('mr-2 h-4 w-4', selectedExoVariant === exoVariant ? 'opacity-100' : 'opacity-0')} />
+                        {exoVariant || 'Aucune'}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+              {errors.exoVariant && <p className="text-sm text-destructive">{errors.exoVariant.message}</p>}
+            </div>
+          ) : null}
 
           <div className="flex flex-col gap-1">
             <Label htmlFor="equipment" className="text-sm text-muted-foreground">
@@ -1367,6 +1414,7 @@ export function LogView() {
                   {isSubmitting ? 'Ajout...' : selectedExercise || 'Exercice'}
                 </div>
                 {selectedVariant !== 'default' && <div className="mt-0.5 truncate text-xs text-primary-foreground/75">{selectedVariant}</div>}
+                {selectedExoVariant && <div className="mt-0.5 truncate text-xs text-primary-foreground/75">{selectedExoVariant}</div>}
                 <div className="mt-0.5 truncate text-xs text-primary-foreground/75">{selectedEquipment}</div>
               </div>
               <div className="flex shrink-0 items-center gap-1.5">
@@ -1445,6 +1493,11 @@ export function LogView() {
                               {exerciseGroup.variant}
                             </Badge>
                           )}
+                          {exerciseGroup.exoVariant && (
+                            <Badge variant="secondary" className="text-xs">
+                              {exerciseGroup.exoVariant}
+                            </Badge>
+                          )}
                           <Badge variant="outline" className="text-xs">
                             {exerciseGroup.equipment}
                           </Badge>
@@ -1471,7 +1524,6 @@ export function LogView() {
                     </div>
                   </div>
 
-                  {/* Séries en grille */}
                   <div className="grid grid-cols-1 gap-2 ml-13">
                     {exerciseGroup.sets.map((set, index) => (
                       <ExerciseSetItem

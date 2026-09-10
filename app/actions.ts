@@ -71,12 +71,13 @@ export async function saveWorkoutSet(data: SetFormData & { timestamp: Date }) {
     await doc.loadInfo();
     const sheet = doc.sheetsByTitle['Workouts'] || doc.sheetsByIndex[0];
 
-    await ensureHeaders(sheet, ['Exercise', 'Variant', 'Equipement', 'Weight', 'Reps', 'Timestamp']);
+    await ensureHeaders(sheet, ['Exercise', 'Variant', 'Exo Variant', 'Equipement', 'Weight', 'Reps', 'Timestamp']);
 
     const newRow = {
       Timestamp: data.timestamp.toISOString(),
       Exercise: data.exerciseName,
       Variant: data.variant,
+      'Exo Variant': data.exoVariant || '',
       Equipement: data.equipment,
       Weight: data.weight.toString(),
       Reps: data.reps.toString(),
@@ -192,11 +193,13 @@ export async function getWorkoutHistory() {
       const reps = parseInt(row.get('Reps'));
       const exerciseName = row.get('Exercise');
       const variant = normalizeWorkoutVariant(row.get('Variant'));
+      const exoVariant = row.get('Exo Variant') || undefined;
       const equipment = normalizeWorkoutEquipment(row.get('Equipement'), exerciseName);
       return {
         timestamp: row.get('Timestamp'),
         exerciseName,
         variant,
+        exoVariant,
         equipment,
         weight,
         reps,

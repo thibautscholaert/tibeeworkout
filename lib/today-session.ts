@@ -18,6 +18,7 @@ export function getTodaySession(history: WorkoutSet[]): WorkoutSet[] {
 export function groupTodaySessionByExercise(todaySession: WorkoutSet[]): {
   exerciseName: string;
   variant: WorkoutVariant;
+  exoVariant?: string;
   equipment: WorkoutEquipment;
   sets: WorkoutSet[];
   totalSets: number;
@@ -26,6 +27,7 @@ export function groupTodaySessionByExercise(todaySession: WorkoutSet[]): {
   const list: {
     exerciseName: string;
     variant: WorkoutVariant;
+    exoVariant?: string;
     equipment: WorkoutEquipment;
     sets: WorkoutSet[];
     totalSets: number;
@@ -33,8 +35,9 @@ export function groupTodaySessionByExercise(todaySession: WorkoutSet[]): {
 
   todaySession.forEach((set) => {
     const variant = set.variant || 'default';
+    const exoVariant = set.exoVariant;
     const equipment = set.equipment || 'floor';
-    const groupKey = `${set.exerciseName}\u0000${variant}\u0000${equipment}`;
+    const groupKey = `${set.exerciseName}\u0000${variant}\u0000${exoVariant || ''}\u0000${equipment}`;
 
     if (key === groupKey) {
       list[list.length - 1].sets.push(set);
@@ -44,6 +47,7 @@ export function groupTodaySessionByExercise(todaySession: WorkoutSet[]): {
       list.push({
         exerciseName: set.exerciseName,
         variant,
+        exoVariant,
         equipment,
         sets: [set],
         totalSets: 1,

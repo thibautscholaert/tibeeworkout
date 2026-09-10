@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const WORKOUT_VARIANTS = ['default', 'slow', 'explosive', 'tempo', 'negative', 'tuck'] as const;
+export const WORKOUT_VARIANTS = ['default', 'slow', 'explosive', 'tempo', 'negative', 'tuck', 'straddle'] as const;
 export type WorkoutVariant = (typeof WORKOUT_VARIANTS)[number];
 
 export const WORKOUT_EQUIPMENT = ['floor', 'parallette', 'rings', 'bar', 'dumbbell', 'band', 'barbell', 'machine'] as const;
@@ -12,6 +12,7 @@ export const setFormSchema = z.object({
     required_error: 'Select a variant',
     invalid_type_error: 'Select a variant',
   }),
+  exoVariant: z.string().trim().min(1).optional(),
   equipment: z.enum(WORKOUT_EQUIPMENT, {
     required_error: 'Select equipment',
     invalid_type_error: 'Select equipment',
