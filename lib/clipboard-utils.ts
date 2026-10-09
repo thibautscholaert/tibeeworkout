@@ -1,7 +1,8 @@
+import { WorkoutEquipment, WorkoutVariant } from '@/lib/schemas';
 import { Program, ProgramBloc, ProgramExercise, ProgramSession, WorkoutSet } from '@/lib/types';
 import { toast } from 'sonner';
 import { EXERCISES, getDefaultEquipment } from './exercises';
-import { getDayLabel, groupSetsByDate } from './utils';
+import { areSameVariants, getDayLabel, groupSetsByDate } from './utils';
 
 export const copySessionToClipboard = async (sets: WorkoutSet[]) => {
   try {
@@ -15,24 +16,31 @@ export const copySessionToClipboard = async (sets: WorkoutSet[]) => {
 };
 
 const formatSessionSets = (sets: WorkoutSet[]): string => {
-  const groupedSets: { exerciseName: string; variant: WorkoutSet['variant']; exoVariant?: string; equipment: WorkoutSet['equipment']; sets: WorkoutSet[] }[] = [];
+  const groupedSets: { exerciseName: string; variants: WorkoutVariant[]; exoVariant?: string; equipment: WorkoutEquipment; sets: WorkoutSet[] }[] =
+    [];
 
   sets.forEach((set) => {
-    const variant = set.variant || 'default';
+    const variants = set.variants || [];
     const exoVariant = set.exoVariant;
     const equipment = set.equipment || 'floor';
     const previousGroup = groupedSets[groupedSets.length - 1];
 
-    if (previousGroup && previousGroup.exerciseName === set.exerciseName && previousGroup.variant === variant && previousGroup.exoVariant === exoVariant && previousGroup.equipment === equipment) {
+    if (
+      previousGroup &&
+      previousGroup.exerciseName === set.exerciseName &&
+      areSameVariants(previousGroup.variants, variants) &&
+      previousGroup.exoVariant === exoVariant &&
+      previousGroup.equipment === equipment
+    ) {
       previousGroup.sets.push(set);
       return;
     }
 
-    groupedSets.push({ exerciseName: set.exerciseName, variant, exoVariant, equipment, sets: [set] });
+    groupedSets.push({ exerciseName: set.exerciseName, variants, exoVariant, equipment, sets: [set] });
   });
 
   return groupedSets
-    .map(({ exerciseName, variant, exoVariant, equipment, sets: exerciseSets }) => {
+    .map(({ exerciseName, variants, exoVariant, equipment, sets: exerciseSets }) => {
       const setsByWeight = exerciseSets.reduce(
         (acc, set) => {
           const weightKey = set.weight === 0 ? 'BW' : `${set.weight}kg`;
@@ -44,7 +52,7 @@ const formatSessionSets = (sets: WorkoutSet[]): string => {
       );
       const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === exerciseName.toLowerCase());
       const isTimeType = exerciseData?.repType === 'time';
-      const variantLabel = variant === 'default' ? '' : ` (${variant})`;
+      const variantLabel = variants.length > 0 ? ` (${variants.join(',')})` : '';
       const exoVariantLabel = exoVariant ? ` (${exoVariant})` : '';
       const exerciseLabel = `${exerciseName}${variantLabel}${exoVariantLabel} [${equipment}]`;
       return Object.entries(setsByWeight)
@@ -127,7 +135,7 @@ export const copyProgramToClipboard = async (program: Program, sessionDay?: stri
             // Formater les séries
             const setsText = exercise.sets && exercise.sets > 1 ? `${exercise.sets}x` : '';
 
-            const variantLabel = exercise.variant && exercise.variant !== 'default' ? ` - ${exercise.variant}` : '';
+            const variantLabel = exercise.variants.length > 0 ? ` - ${exercise.variants.join(',')}` : '';
             const equipment = exercise.equipment || getDefaultEquipment(exercise.exerciseName);
             const exerciseLabel = `${exercise.exerciseName}${variantLabel} [${equipment}]`;
             let exerciseLine = `${exerciseLabel} ${setsText}${repsText}${weightText}`;

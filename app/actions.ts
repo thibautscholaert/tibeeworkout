@@ -20,8 +20,18 @@ const auth = new JWT({
 
 const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID || '', auth);
 
-function normalizeWorkoutVariant(value: unknown): WorkoutVariant {
-  return WORKOUT_VARIANTS.includes(value as WorkoutVariant) ? (value as WorkoutVariant) : 'default';
+function normalizeWorkoutVariant(value?: string): WorkoutVariant[] {
+  const list: WorkoutVariant[] = [];
+  if (value && value.length > 0) {
+    const variants = value.split(',');
+    for (const variant of variants) {
+      if (WORKOUT_VARIANTS.includes(variant as WorkoutVariant)) {
+        list.push(variant as WorkoutVariant);
+      }
+    }
+  }
+
+  return list;
 }
 
 function normalizeWorkoutEquipment(value: unknown, exerciseName: string): WorkoutEquipment {
@@ -76,7 +86,7 @@ export async function saveWorkoutSet(data: SetFormData & { timestamp: Date }) {
     const newRow = {
       Timestamp: data.timestamp.toISOString(),
       Exercise: data.exerciseName,
-      Variant: data.variant,
+      Variant: data.variants.join(','),
       'Exo Variant': data.exoVariant || '',
       Equipement: data.equipment,
       Weight: data.weight.toString(),
@@ -192,13 +202,13 @@ export async function getWorkoutHistory() {
       const weight = parseFloat(row.get('Weight'));
       const reps = parseInt(row.get('Reps'));
       const exerciseName = row.get('Exercise');
-      const variant = normalizeWorkoutVariant(row.get('Variant'));
+      const variants = normalizeWorkoutVariant(row.get('Variant'));
       const exoVariant = row.get('Exo Variant') || undefined;
       const equipment = normalizeWorkoutEquipment(row.get('Equipement'), exerciseName);
       return {
         timestamp: row.get('Timestamp'),
         exerciseName,
-        variant,
+        variants,
         exoVariant,
         equipment,
         weight,
@@ -235,7 +245,7 @@ export async function getPrograms() {
       const day = row.get('Jour') || '';
       const bloc = row.get('Bloc') || '';
       const exerciseName = row.get('Exercice') || '';
-      const variant = normalizeWorkoutVariant(row.get('Variant') || row.get('Variant'));
+      const variants = normalizeWorkoutVariant(row.get('Variant') || row.get('Variant'));
       const equipment = normalizeOptionalWorkoutEquipment(row.get('Equipement') || row.get('Equipment'));
       const sets = parseInt(row.get('Séries') || '0');
       const reps = row.get('Reps') || '';
@@ -273,7 +283,7 @@ export async function getPrograms() {
       // Ajouter l'exercice
       blocObj.exercises.push({
         exerciseName,
-        variant,
+        variants,
         equipment,
         sets,
         reps,

@@ -120,3 +120,7 @@ const FR_DAYS = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 
 export function getDayLabel(date: Date): string {
   return FR_DAYS[date.getDay()];
 }
+
+export function areSameVariants(a: string[], b: string[]) {
+  return a.length === b.length && [...a].sort().every((value, index) => value === [...b].sort()[index]);
+}

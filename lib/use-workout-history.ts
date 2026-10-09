@@ -33,7 +33,7 @@ export function useWorkoutHistory() {
         const transformedHistory: WorkoutSet[] = result.data.map((item, index) => ({
           id: `history-${index}-${item.timestamp}`,
           exerciseName: item.exerciseName,
-          variant: item.variant,
+          variants: item.variants,
           exoVariant: item.exoVariant,
           equipment: item.equipment,
           weight: item.weight,

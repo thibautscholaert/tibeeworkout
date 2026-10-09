@@ -3,7 +3,7 @@ import type { WorkoutEquipment, WorkoutVariant } from './schemas';
 export interface WorkoutSet {
   id: string;
   exerciseName: string;
-  variant: WorkoutVariant;
+  variants: WorkoutVariant[];
   exoVariant?: string;
   equipment: WorkoutEquipment;
   weight: number;
@@ -45,7 +45,7 @@ export interface ProgramBloc {
 
 export interface ProgramExercise {
   exerciseName: string;
-  variant: WorkoutVariant;
+  variants: WorkoutVariant[];
   equipment?: WorkoutEquipment;
   sets: number;
   reps: string;

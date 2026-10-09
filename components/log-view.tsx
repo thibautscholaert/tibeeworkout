@@ -24,11 +24,11 @@ import {
 import { copySessionToClipboard } from '@/lib/clipboard-utils';
 import { EXERCISES, getDefaultEquipment } from '@/lib/exercises';
 import { useReactFormPersistence } from '@/lib/form-persistence';
-import { setFormSchema, WORKOUT_EQUIPMENT, WORKOUT_VARIANTS, type SetFormData } from '@/lib/schemas';
+import { setFormSchema, WORKOUT_EQUIPMENT, WORKOUT_VARIANTS, WorkoutEquipment, WorkoutVariant, type SetFormData } from '@/lib/schemas';
 import { getWithTTL, setWithTTL } from '@/lib/storage';
 import { getTodaySession, groupTodaySessionByExercise } from '@/lib/today-session';
 import type { WorkoutSet } from '@/lib/types';
-import { cn, formatReps, formatWeight, roundToNearest5 } from '@/lib/utils';
+import { areSameVariants, cn, formatReps, formatWeight, roundToNearest5 } from '@/lib/utils';
 import { useWorkout } from '@/lib/workout-context';
 import { getWorkoutSuggestions, isWarmupSet } from '@/lib/workout-suggestions';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -220,11 +220,14 @@ const ExerciseSetItem = memo(
     index: number;
     totalSets: number;
     exerciseName: string;
-    getBestSetComparison: (exerciseName: string, todaySets: any[]) => { todayBest: any; allTimeBest: any };
+    getBestSetComparison: (payload: { exerciseName: string; todaySets: any[]; variants: WorkoutVariant[]; equipment: WorkoutEquipment }) => {
+      todayBest: any;
+      allTimeBest: any;
+    };
     onRequestDelete: (set: WorkoutSet) => void;
     isDeleting: boolean;
   }) => {
-    const { allTimeBest } = getBestSetComparison(exerciseName, []);
+    const { allTimeBest } = getBestSetComparison({ ...set, todaySets: [] });
     const isWarmup = isWarmupSet(set, allTimeBest, sets);
     const exo = EXERCISES.find((ex) => ex.name.toLocaleLowerCase() === set.exerciseName.toLocaleLowerCase());
 
@@ -525,7 +528,7 @@ export function LogView() {
         totalSeries: 0,
         suggestedReps: null,
         suggestedCharge: null,
-        suggestedVariant: 'default',
+        suggestedVariants: [],
         suggestedEquipment: 'floor',
         exerciseDetails: null,
         completedExercises: [],
@@ -550,8 +553,9 @@ export function LogView() {
         return exercice && exercice.favorite;
       })
       .forEach((set) => {
-        const count = exerciseCounts.get(set.exerciseName) || 0;
-        exerciseCounts.set(set.exerciseName, count + 1);
+        const key = `${set.exerciseName}`;
+        const count = exerciseCounts.get(key) || 0;
+        exerciseCounts.set(key, count + 1);
       });
 
     return Array.from(exerciseCounts.entries())
@@ -583,7 +587,7 @@ export function LogView() {
   // Initialize form persistence
   const { loadSavedValues, saveFormValues } = useReactFormPersistence('workout-log-form', {
     exerciseName: defaultExercise,
-    variant: 'default',
+    variants: [],
     equipment: 'floor',
     weight: 0,
     reps: 0,
@@ -600,7 +604,7 @@ export function LogView() {
     resolver: zodResolver(setFormSchema),
     defaultValues: {
       exerciseName: 'Pull up',
-      variant: 'default',
+      variants: [],
       equipment: 'floor',
       weight: 0,
       reps: 0,
@@ -634,7 +638,7 @@ export function LogView() {
   }, [defaultExercise, setValue, reset]);
 
   const selectedExercise = watch('exerciseName');
-  const selectedVariant = watch('variant');
+  const selectedVariants = watch('variants');
   const selectedExoVariant = watch('exoVariant');
   const selectedEquipment = watch('equipment');
 
@@ -645,7 +649,7 @@ export function LogView() {
         return;
       }
       setValue('equipment', getDefaultEquipment(selectedExercise), { shouldValidate: true });
-      setValue('variant', 'default');
+      setValue('variants', []);
       setValue('exoVariant', undefined);
     }
   }, [selectedExercise, setValue]);
@@ -706,11 +710,13 @@ export function LogView() {
 
   // Calculate best set for each exercise (today vs all time)
   const getBestSetComparison = useMemo(() => {
-    return (exerciseName: string, todaySets: any[]) => {
+    return (exerciseGroup: { exerciseName: string; variants: WorkoutVariant[]; todaySets: WorkoutSet[]; equipment: WorkoutEquipment }) => {
+      const { exerciseName, todaySets, variants, equipment } = exerciseGroup;
+
       const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === exerciseName.toLowerCase());
       const isBodyweight = exerciseData?.bodyweight || false;
 
-      const compareSetScore = (set: any) => {
+      const compareSetScore = (set: WorkoutSet) => {
         // For bodyweight exercises without added weight, compare by reps only
         if (isBodyweight && set.weight === 0) {
           return set.reps;
@@ -728,7 +734,9 @@ export function LogView() {
       }, null);
 
       // Best set from all time
-      const allTimeSets = history.filter((set) => set.exerciseName === exerciseName);
+      const allTimeSets = history.filter(
+        (set) => set.exerciseName === exerciseName && equipment === set.equipment && areSameVariants(variants, set.variants)
+      );
       const allTimeBest = allTimeSets.reduce<any>((best, set) => {
         if (!best) return set;
         const bestScore = compareSetScore(best);
@@ -946,11 +954,11 @@ export function LogView() {
                   <div className="flex items-center gap-2 mb-1 justify-between">
                     <p className="font-medium text-sm overflow-ellipsis line-clamp-1">{suggestions.nextExercise}</p>
                     <div className="flex gap-1">
-                      {suggestions.suggestedVariant !== 'default' && (
+                      {suggestions.suggestedVariants.map((suggestedVariant) => (
                         <Badge variant="secondary" className="shrink-0 text-xs">
-                          {suggestions.suggestedVariant}
+                          {suggestedVariant}
                         </Badge>
-                      )}
+                      ))}
                       <Badge variant="outline" className="shrink-0 text-xs">
                         {suggestions.suggestedEquipment}
                       </Badge>
@@ -996,7 +1004,7 @@ export function LogView() {
                     onClick={() => {
                       preserveSuggestedEquipment.current = true;
                       setValue('exerciseName', suggestions.nextExercise!);
-                      setValue('variant', suggestions.suggestedVariant, { shouldDirty: true, shouldValidate: true });
+                      setValue('variants', suggestions.suggestedVariants, { shouldDirty: true, shouldValidate: true });
                       setValue('equipment', suggestions.suggestedEquipment, { shouldDirty: true, shouldValidate: true });
                       if (suggestions.suggestedReps !== null) {
                         setValue('reps', suggestions.suggestedReps);
@@ -1260,9 +1268,9 @@ export function LogView() {
           </div>
           <div className="flex flex-col gap-1">
             <Label htmlFor="variant" className="text-sm text-muted-foreground">
-              Variante
+              Variantes
             </Label>
-            <input type="hidden" {...register('variant')} />
+            <input type="hidden" {...register('variants')} />
             <Popover open={variantOpen} onOpenChange={setVariantOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -1273,34 +1281,53 @@ export function LogView() {
                   aria-expanded={variantOpen}
                   className="h-10 w-full justify-between px-2 text-sm font-semibold"
                 >
-                  <span className="truncate">{selectedVariant || 'Select...'}</span>
+                  <span className="truncate">{selectedVariants.length > 0 ? selectedVariants.join(',') : 'Aucune'}</span>
                   <ChevronDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[calc(100vw-3rem)] max-w-md p-0" align="end">
+              <PopoverContent className="w-[300px] p-0" align="start">
+                <div className="p-2 border-b">
+                  <Input
+                    placeholder="Rechercher une variante..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-8"
+                  />
+                </div>
                 <div className="max-h-[300px] overflow-y-auto p-1">
-                  {WORKOUT_VARIANTS.map((variant) => (
-                    <button
-                      key={variant}
-                      type="button"
-                      onClick={() => {
-                        setValue('variant', variant, { shouldDirty: true, shouldValidate: true });
-                        setVariantOpen(false);
-                      }}
-                      className={cn(
-                        'relative flex w-full cursor-pointer items-center rounded-md px-3 py-2.5 text-sm outline-none transition-colors',
-                        'hover:bg-accent hover:text-accent-foreground',
-                        selectedVariant === variant && 'bg-accent/50'
-                      )}
-                    >
-                      <Check className={cn('mr-2 h-4 w-4', selectedVariant === variant ? 'opacity-100' : 'opacity-0')} />
-                      {variant}
-                    </button>
-                  ))}
+                  {WORKOUT_VARIANTS.map((variant) => {
+                    const isSelected = selectedVariants.includes(variant);
+
+                    return (
+                      <button
+                        key={variant}
+                        type="button"
+                        onClick={() => {
+                          const newValue = isSelected ? selectedVariants.filter((item) => item !== variant) : [...selectedVariants, variant];
+
+                          setValue('variants', newValue, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          });
+                        }}
+                        className={cn(
+                          'relative flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm outline-none transition-colors',
+                          'hover:bg-accent hover:text-accent-foreground',
+                          isSelected && 'bg-accent/50'
+                        )}
+                      >
+                        <div className={cn('flex h-4 w-4 items-center justify-center rounded border', isSelected && 'border-primary bg-primary')}>
+                          {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
+                        </div>
+
+                        <span className="flex-1 text-left">{variant}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </PopoverContent>
             </Popover>
-            {errors.variant && <p className="text-sm text-destructive">{errors.variant.message}</p>}
+            {errors.variants && <p className="text-sm text-destructive">{errors.variants.message}</p>}
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2">
@@ -1309,7 +1336,7 @@ export function LogView() {
               <Label htmlFor="exoVariant" className="text-sm text-muted-foreground">
                 Variation exercice
               </Label>
-              <input type="hidden" {...register('exoVariant')} />
+              <input type="hidden" {...register('exoVariant', { required: false })} />
               <Popover open={exoVariantOpen} onOpenChange={setExoVariantOpen}>
                 <PopoverTrigger asChild>
                   <Button
@@ -1413,7 +1440,9 @@ export function LogView() {
                 <div className="truncate text-sm font-semibold leading-tight text-primary-foreground">
                   {isSubmitting ? 'Ajout...' : selectedExercise || 'Exercice'}
                 </div>
-                {selectedVariant !== 'default' && <div className="mt-0.5 truncate text-xs text-primary-foreground/75">{selectedVariant}</div>}
+                {selectedVariants.length > 1 && (
+                  <div className="mt-0.5 truncate text-xs text-primary-foreground/75">{selectedVariants.join(',')}</div>
+                )}
                 {selectedExoVariant && <div className="mt-0.5 truncate text-xs text-primary-foreground/75">{selectedExoVariant}</div>}
                 <div className="mt-0.5 truncate text-xs text-primary-foreground/75">{selectedEquipment}</div>
               </div>
@@ -1488,11 +1517,11 @@ export function LogView() {
                           </p>
                         </div>
                         <div className="flex gap-1 flex-col">
-                          {exerciseGroup.variant !== 'default' && (
+                          {exerciseGroup.variants.map((variant) => (
                             <Badge variant="secondary" className="text-xs">
-                              {exerciseGroup.variant}
+                              {variant}
                             </Badge>
-                          )}
+                          ))}
                           {exerciseGroup.exoVariant && (
                             <Badge variant="secondary" className="text-xs">
                               {exerciseGroup.exoVariant}
@@ -1542,11 +1571,12 @@ export function LogView() {
 
                   {/* Statistiques de l'exercice - Améliorées */}
                   {(() => {
-                    const { todayBest, allTimeBest } = getBestSetComparison(exerciseGroup.exerciseName, exerciseGroup.sets);
+                    const { todayBest, allTimeBest } = getBestSetComparison({ ...exerciseGroup, todaySets: exerciseGroup.sets });
                     const totalReps = exerciseGroup.sets.reduce((total, set) => total + set.reps, 0);
 
-                    const todayScore = todayBest?.estimated1RM || todayBest?.weight * todayBest?.reps || 0;
-                    const allTimeScore = allTimeBest?.estimated1RM || allTimeBest?.weight * allTimeBest?.reps || 0;
+                    const todayScore = todayBest?.estimated1RM || ((todayBest?.weight && todayBest?.weight > 0) || 1) * todayBest?.reps || 0;
+                    const allTimeScore =
+                      allTimeBest?.estimated1RM || ((allTimeBest?.weight && allTimeBest?.weight > 0) || 1) * allTimeBest?.reps || 0;
                     const isNewRecord = todayScore >= allTimeScore;
 
                     const exo = EXERCISES.find((ex) => ex.name.toLocaleLowerCase() === exerciseGroup.exerciseName.toLocaleLowerCase());
@@ -1556,7 +1586,7 @@ export function LogView() {
                         <div className={`flex items-center gap-1 ${isNewRecord ? 'text-green-600 font-medium' : ''}`}>
                           <Trophy className={`h-3 w-3 ${isNewRecord ? 'text-green-600' : ''}`} />
                           <span>
-                            Aujourd'hui: {formatWeight(todayBest?.weight || 0, exerciseGroup.exerciseName)} × {todayBest?.reps || 0}
+                            Today: {formatWeight(todayBest?.weight || 0, exerciseGroup.exerciseName)} × {todayBest?.reps || 0}
                             {exo?.repTypeUnit === 'minute' ? "'" : "''"}
                             {todayBest?.estimated1RM ? ` (~${todayBest.estimated1RM}kg)` : <></>}
                             {isNewRecord && todayScore > 0 ? ' 🔥' : <></>}
@@ -1567,7 +1597,7 @@ export function LogView() {
                           <div className={`flex items-center gap-1 ${!isNewRecord ? 'text-amber-600 font-medium' : ''}`}>
                             <Star className={`h-3 w-3 ${!isNewRecord ? 'text-amber-600' : ''}`} />
                             <span>
-                              Record: {formatWeight(allTimeBest.weight, exerciseGroup.exerciseName)} × {allTimeBest.reps}
+                              Best: {formatWeight(allTimeBest.weight, exerciseGroup.exerciseName)} × {allTimeBest.reps}
                               {exo?.repTypeUnit === 'minute' ? "'" : "''"}
                               {allTimeBest.estimated1RM ? ` (~${allTimeBest.estimated1RM}kg)` : <></>}
                               {!isNewRecord && ' 👑'}
