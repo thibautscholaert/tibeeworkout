@@ -1266,6 +1266,53 @@ export function LogView() {
             />
             {errors.reps && <p className="text-sm text-destructive">{errors.reps.message}</p>}
           </div>
+
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="equipment" className="text-sm text-muted-foreground">
+              Équipement
+            </Label>
+            <input type="hidden" {...register('equipment')} />
+            <Popover open={equipmentOpen} onOpenChange={setEquipmentOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  id="equipment"
+                  type="button"
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={equipmentOpen}
+                  className="h-10 w-full justify-between px-2 text-sm font-semibold"
+                >
+                  <span className="truncate">{selectedEquipment || 'Select...'}</span>
+                  <ChevronDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[calc(100vw-3rem)] max-w-md p-0" align="end">
+                <div className="max-h-[300px] overflow-y-auto p-1">
+                  {WORKOUT_EQUIPMENT.map((equipment) => (
+                    <button
+                      key={equipment}
+                      type="button"
+                      onClick={() => {
+                        setValue('equipment', equipment, { shouldDirty: true, shouldValidate: true });
+                        setEquipmentOpen(false);
+                      }}
+                      className={cn(
+                        'relative flex w-full cursor-pointer items-center rounded-md px-3 py-2.5 text-sm outline-none transition-colors',
+                        'hover:bg-accent hover:text-accent-foreground',
+                        selectedEquipment === equipment && 'bg-accent/50'
+                      )}
+                    >
+                      <Check className={cn('mr-2 h-4 w-4', selectedEquipment === equipment ? 'opacity-100' : 'opacity-0')} />
+                      {equipment}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+            {errors.equipment && <p className="text-sm text-destructive">{errors.equipment.message}</p>}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
           <div className="flex flex-col gap-1">
             <Label htmlFor="variant" className="text-sm text-muted-foreground">
               Variantes
@@ -1329,8 +1376,7 @@ export function LogView() {
             </Popover>
             {errors.variants && <p className="text-sm text-destructive">{errors.variants.message}</p>}
           </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
+
           {selectedExerciseData?.exoVariants?.length ? (
             <div className="flex flex-col gap-1">
               <Label htmlFor="exoVariant" className="text-sm text-muted-foreground">
@@ -1377,51 +1423,6 @@ export function LogView() {
               {errors.exoVariant && <p className="text-sm text-destructive">{errors.exoVariant.message}</p>}
             </div>
           ) : null}
-
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="equipment" className="text-sm text-muted-foreground">
-              Équipement
-            </Label>
-            <input type="hidden" {...register('equipment')} />
-            <Popover open={equipmentOpen} onOpenChange={setEquipmentOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  id="equipment"
-                  type="button"
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={equipmentOpen}
-                  className="h-10 w-full justify-between px-2 text-sm font-semibold"
-                >
-                  <span className="truncate">{selectedEquipment || 'Select...'}</span>
-                  <ChevronDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[calc(100vw-3rem)] max-w-md p-0" align="end">
-                <div className="max-h-[300px] overflow-y-auto p-1">
-                  {WORKOUT_EQUIPMENT.map((equipment) => (
-                    <button
-                      key={equipment}
-                      type="button"
-                      onClick={() => {
-                        setValue('equipment', equipment, { shouldDirty: true, shouldValidate: true });
-                        setEquipmentOpen(false);
-                      }}
-                      className={cn(
-                        'relative flex w-full cursor-pointer items-center rounded-md px-3 py-2.5 text-sm outline-none transition-colors',
-                        'hover:bg-accent hover:text-accent-foreground',
-                        selectedEquipment === equipment && 'bg-accent/50'
-                      )}
-                    >
-                      <Check className={cn('mr-2 h-4 w-4', selectedEquipment === equipment ? 'opacity-100' : 'opacity-0')} />
-                      {equipment}
-                    </button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-            {errors.equipment && <p className="text-sm text-destructive">{errors.equipment.message}</p>}
-          </div>
         </div>
 
         {/* Quick Add Button */}
