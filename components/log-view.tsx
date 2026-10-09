@@ -1286,14 +1286,14 @@ export function LogView() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[300px] p-0" align="start">
-                <div className="p-2 border-b">
+                {/* <div className="p-2 border-b">
                   <Input
                     placeholder="Rechercher une variante..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="h-8"
                   />
-                </div>
+                </div> */}
                 <div className="max-h-[300px] overflow-y-auto p-1">
                   {WORKOUT_VARIANTS.map((variant) => {
                     const isSelected = selectedVariants.includes(variant);
