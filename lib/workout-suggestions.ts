@@ -203,7 +203,6 @@ export function getWorkoutSuggestions(
     const selectedProgram = todayProgram ?? program.sessions[0];
 
     if (selectedProgram) {
-      console.log('selectedProgram.blocs', selectedProgram.blocs);
       // Collecter tous les exercices incomplets dans l'ordre
       for (const bloc of selectedProgram.blocs) {
         for (const exercise of bloc.exercises) {

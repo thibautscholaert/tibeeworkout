@@ -128,6 +128,28 @@ function formatDuration(milliseconds: number): string {
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
+function getSetScore(set: WorkoutSet | null | undefined): number {
+  console.log('set', set);
+  if (!set) return 0;
+
+  const weight = set.weight > 0 ? set.weight : 1;
+
+  return set.estimated1RM || weight * set.reps;
+}
+
+type SetComparisonInput = {
+  exerciseName: string;
+  variants: WorkoutVariant[];
+  equipment: WorkoutEquipment;
+  exoVariant?: WorkoutSet['exoVariant'];
+  todaySets: WorkoutSet[];
+};
+
+type SetComparisonResult = {
+  todayBest: WorkoutSet | null;
+  allTimeBest: WorkoutSet | null;
+};
+
 function RestTimeStatus({ restAlert, lastSet }: { restAlert: RestAlertState | null; lastSet: WorkoutSet | null }) {
   const [now, setNow] = useState(Date.now());
   const [chronoElapsed, setChronoElapsed] = useState(0);
@@ -220,10 +242,7 @@ const ExerciseSetItem = memo(
     index: number;
     totalSets: number;
     exerciseName: string;
-    getBestSetComparison: (payload: { exerciseName: string; todaySets: any[]; variants: WorkoutVariant[]; equipment: WorkoutEquipment }) => {
-      todayBest: any;
-      allTimeBest: any;
-    };
+    getBestSetComparison: (payload: SetComparisonInput) => SetComparisonResult;
     onRequestDelete: (set: WorkoutSet) => void;
     isDeleting: boolean;
   }) => {
@@ -323,7 +342,6 @@ export function LogView() {
   const [variantOpen, setVariantOpen] = useState(false);
   const [exoVariantOpen, setExoVariantOpen] = useState(false);
   const [equipmentOpen, setEquipmentOpen] = useState(false);
-  const preserveSuggestedEquipment = useRef(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [restAlert, setRestAlert] = useState<RestAlertState | null>(null);
   const [setToDelete, setSetToDelete] = useState<WorkoutSet | null>(null);
@@ -611,63 +629,77 @@ export function LogView() {
     },
   });
 
-  // Save form values whenever they change - debounced
-  const watchedValues = watch();
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      saveFormValues(watchedValues);
-    }, 500); // 500ms debounce
+  const hasRestoredForm = useRef(false);
+  const [isFormReady, setIsFormReady] = useState(false);
 
-    return () => clearTimeout(timeoutId);
-  }, [watchedValues, saveFormValues]);
-
-  // Load saved values from localStorage (client-side only)
   useEffect(() => {
-    // Load saved form values
+    if (hasRestoredForm.current) return;
+
     const savedValues = loadSavedValues();
-    if (savedValues) {
-      reset(savedValues);
-    }
-
-    // Load selected exercise from localStorage or use default
     const savedExercise = getWithTTL<string>('selectedExercise');
-    const exerciseToSet = savedExercise || defaultExercise;
-    if (exerciseToSet) {
-      setValue('exerciseName', exerciseToSet);
-    }
-  }, [defaultExercise, setValue, reset]);
+
+    // Priorité :
+    // formulaire sauvegardé > exercice sauvegardé > défaut
+    const exerciseName = savedValues?.exerciseName || savedExercise || defaultExercise;
+
+    const initialValues: SetFormData = {
+      weight: 0,
+      reps: 0,
+      variants: [],
+      exoVariant: undefined,
+      equipment: getDefaultEquipment(exerciseName),
+      ...savedValues,
+      exerciseName,
+    };
+
+    reset(initialValues);
+
+    hasRestoredForm.current = true;
+    setIsFormReady(true);
+  }, [loadSavedValues, defaultExercise, reset]);
 
   const selectedExercise = watch('exerciseName');
   const selectedVariants = watch('variants');
   const selectedExoVariant = watch('exoVariant');
   const selectedEquipment = watch('equipment');
 
-  useEffect(() => {
-    if (selectedExercise) {
-      if (preserveSuggestedEquipment.current) {
-        preserveSuggestedEquipment.current = false;
-        return;
-      }
-      setValue('equipment', getDefaultEquipment(selectedExercise), { shouldValidate: true });
-      setValue('variants', []);
-      setValue('exoVariant', undefined);
-    }
-  }, [selectedExercise, setValue]);
+  const handleExerciseSelect = (exerciseName: string) => {
+    if (exerciseName === selectedExercise) return;
+
+    reset((currentValues) => ({
+      ...currentValues,
+      exerciseName,
+      equipment: getDefaultEquipment(exerciseName),
+      variants: [],
+      exoVariant: undefined,
+    }));
+  };
 
   const note = useMemo(() => {
     return notes.find((note) => note.exerciseName === selectedExercise);
   }, [notes, selectedExercise]);
 
-  // Save selectedExercise to localStorage whenever it changes - debounced
-  useEffect(() => {
-    if (selectedExercise) {
-      const timeoutId = setTimeout(() => {
-        setWithTTL('selectedExercise', selectedExercise, 2 * 60 * 60 * 1000); // 2 hours TTL
-      }, 300); // 300ms debounce
+  const watchedValues = watch();
 
-      return () => clearTimeout(timeoutId);
-    }
-  }, [selectedExercise]);
+  useEffect(() => {
+    if (!isFormReady) return;
+
+    const timeoutId = setTimeout(() => {
+      saveFormValues(watchedValues);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [isFormReady, watchedValues, saveFormValues]);
+
+  useEffect(() => {
+    if (!isFormReady || !selectedExercise) return;
+
+    const timeoutId = setTimeout(() => {
+      setWithTTL('selectedExercise', selectedExercise, 2 * 60 * 60 * 1000);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [isFormReady, selectedExercise]);
 
   const selectedExerciseData = useMemo(() => {
     return EXERCISES.find((ex) => ex.name.toLowerCase() === selectedExercise.toLowerCase());
@@ -709,44 +741,89 @@ export function LogView() {
   }, [history, selectedExercise]);
 
   // Calculate best set for each exercise (today vs all time)
-  const getBestSetComparison = useMemo(() => {
-    return (exerciseGroup: { exerciseName: string; variants: WorkoutVariant[]; todaySets: WorkoutSet[]; equipment: WorkoutEquipment }) => {
-      const { exerciseName, todaySets, variants, equipment } = exerciseGroup;
+  // const getBestSetComparison = useMemo(() => {
+  //   return (exerciseGroup: { exerciseName: string; variants: WorkoutVariant[]; todaySets: WorkoutSet[]; equipment: WorkoutEquipment }) => {
+  //     const { exerciseName, todaySets, variants, equipment } = exerciseGroup;
 
-      const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === exerciseName.toLowerCase());
-      const isBodyweight = exerciseData?.bodyweight || false;
+  //     const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === exerciseName.toLowerCase());
+  //     const isBodyweight = exerciseData?.bodyweight || false;
 
-      const compareSetScore = (set: WorkoutSet) => {
-        // For bodyweight exercises without added weight, compare by reps only
+  //     const compareSetScore = (set: WorkoutSet) => {
+  //       // For bodyweight exercises without added weight, compare by reps only
+  //       if (isBodyweight && set.weight === 0) {
+  //         return set.reps;
+  //       }
+  //       // For weighted exercises (or bodyweight exercises with added weight), prefer estimated1RM, fallback to weight * reps
+  //       return set.estimated1RM || set.weight * set.reps;
+  //     };
+
+  //     // Best set from today's session
+  //     const todayBest = todaySets.reduce<any>((best, set) => {
+  //       if (!best) return set;
+  //       const bestScore = compareSetScore(best);
+  //       const setScore = compareSetScore(set);
+  //       return setScore > bestScore ? set : best;
+  //     }, null);
+
+  //     // Best set from all time
+  //     const allTimeSets = history.filter(
+  //       (set) => set.exerciseName === exerciseName && equipment === set.equipment && areSameVariants(variants, set.variants)
+  //     );
+  //     const allTimeBest = allTimeSets.reduce<any>((best, set) => {
+  //       if (!best) return set;
+  //       const bestScore = compareSetScore(best);
+  //       const setScore = compareSetScore(set);
+  //       return setScore > bestScore ? set : best;
+  //     }, null);
+
+  //     return { todayBest, allTimeBest };
+  //   };
+  // }, [history]);
+
+  // À déclarer en dehors du composant
+
+  // Dans LogView
+  const getBestSetComparison = useCallback(
+    ({ exerciseName, variants, equipment, exoVariant, todaySets }: SetComparisonInput): SetComparisonResult => {
+      const normalizeName = (name: string) => name.trim().toLowerCase();
+
+      const normalizedExerciseName = normalizeName(exerciseName);
+
+      const exerciseData = EXERCISES.find((exercise) => normalizeName(exercise.name) === normalizedExerciseName);
+
+      const isBodyweight = exerciseData?.bodyweight ?? false;
+
+      // Une série est comparable uniquement si toute sa configuration
+      // correspond à celle demandée.
+      const isMatchingSet = (set: WorkoutSet): boolean =>
+        normalizeName(set.exerciseName) === normalizedExerciseName &&
+        set.equipment === equipment &&
+        areSameVariants(set.variants ?? [], variants ?? []) &&
+        (set.exoVariant ?? undefined) === (exoVariant ?? undefined);
+
+      // Calcul du score conservé par rapport à ta version.
+      const getScore = (set: WorkoutSet): number => {
         if (isBodyweight && set.weight === 0) {
           return set.reps;
         }
-        // For weighted exercises (or bodyweight exercises with added weight), prefer estimated1RM, fallback to weight * reps
+
         return set.estimated1RM || set.weight * set.reps;
       };
 
-      // Best set from today's session
-      const todayBest = todaySets.reduce<any>((best, set) => {
-        if (!best) return set;
-        const bestScore = compareSetScore(best);
-        const setScore = compareSetScore(set);
-        return setScore > bestScore ? set : best;
-      }, null);
+      const findBestSet = (sets: WorkoutSet[]): WorkoutSet | null =>
+        sets.reduce<WorkoutSet | null>((best, current) => {
+          if (!best) return current;
 
-      // Best set from all time
-      const allTimeSets = history.filter(
-        (set) => set.exerciseName === exerciseName && equipment === set.equipment && areSameVariants(variants, set.variants)
-      );
-      const allTimeBest = allTimeSets.reduce<any>((best, set) => {
-        if (!best) return set;
-        const bestScore = compareSetScore(best);
-        const setScore = compareSetScore(set);
-        return setScore > bestScore ? set : best;
-      }, null);
+          return getScore(current) > getScore(best) ? current : best;
+        }, null);
 
-      return { todayBest, allTimeBest };
-    };
-  }, [history]);
+      return {
+        todayBest: findBestSet(todaySets.filter(isMatchingSet)),
+        allTimeBest: findBestSet(history.filter(isMatchingSet)),
+      };
+    },
+    [history]
+  );
 
   // Update target weight and target reps when exercise changes
   useEffect(() => {
@@ -1002,19 +1079,18 @@ export function LogView() {
                   <Button
                     type="button"
                     onClick={() => {
-                      preserveSuggestedEquipment.current = true;
-                      setValue('exerciseName', suggestions.nextExercise!);
-                      setValue('variants', suggestions.suggestedVariants, { shouldDirty: true, shouldValidate: true });
-                      setValue('equipment', suggestions.suggestedEquipment, { shouldDirty: true, shouldValidate: true });
-                      if (suggestions.suggestedReps !== null) {
-                        setValue('reps', suggestions.suggestedReps);
-                      }
-                      if (suggestions.suggestedCharge !== null) {
-                        setValue('weight', suggestions.suggestedCharge);
-                      } else {
-                        setValue('weight', targetWeight);
-                        setValue('reps', targetReps);
-                      }
+                      const exerciseName = suggestions.nextExercise;
+                      if (!exerciseName) return;
+
+                      reset((currentValues) => ({
+                        ...currentValues,
+                        exerciseName,
+                        equipment: suggestions.suggestedEquipment,
+                        variants: suggestions.suggestedVariants,
+                        exoVariant: undefined,
+                        reps: suggestions.suggestedReps ?? currentValues.reps,
+                        weight: suggestions.suggestedCharge ?? currentValues.weight,
+                      }));
                     }}
                     className="text-sm"
                   >
@@ -1046,7 +1122,7 @@ export function LogView() {
                 <button
                   key={exerciseName}
                   type="button"
-                  onClick={() => setValue('exerciseName', exerciseName)}
+                  onClick={() => handleExerciseSelect(exerciseName)}
                   className={cn(
                     'px-1 py-1.5 rounded-md text-xs font-medium transition-all duration-200',
                     'border border-border/40 bg-muted/30 hover:bg-muted/60 hover:border-border/60',
@@ -1092,7 +1168,7 @@ export function LogView() {
                       key={exercise.name}
                       type="button"
                       onClick={() => {
-                        setValue('exerciseName', exercise.name);
+                        handleExerciseSelect(exercise.name);
                         setExerciseOpen(false);
                         setSearchQuery('');
                       }}
@@ -1254,7 +1330,9 @@ export function LogView() {
 
           <div className="flex flex-col gap-1">
             <Label htmlFor="reps" className="text-sm text-muted-foreground">
-              {selectedExerciseData?.repType === 'time' ? 'Temps (s)' : 'Reps'}
+              {selectedExerciseData?.repType === 'time'
+                ? `Temps (${selectedExerciseData?.repTypeUnit === 'minute' ? 'minutes' : 'secondes'})`
+                : 'Reps'}
             </Label>
             <Input
               id="reps"
@@ -1441,7 +1519,7 @@ export function LogView() {
                 <div className="truncate text-sm font-semibold leading-tight text-primary-foreground">
                   {isSubmitting ? 'Ajout...' : selectedExercise || 'Exercice'}
                 </div>
-                {selectedVariants.length > 1 && (
+                {selectedVariants.length > 0 && (
                   <div className="mt-0.5 truncate text-xs text-primary-foreground/75">{selectedVariants.join(',')}</div>
                 )}
                 {selectedExoVariant && <div className="mt-0.5 truncate text-xs text-primary-foreground/75">{selectedExoVariant}</div>}
@@ -1519,12 +1597,12 @@ export function LogView() {
                         </div>
                         <div className="flex gap-1 flex-col">
                           {exerciseGroup.variants.map((variant) => (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge variant="secondary" className="text-xs" key={variant}>
                               {variant}
                             </Badge>
                           ))}
                           {exerciseGroup.exoVariant && (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge variant="secondary" className="text-xs" key={exerciseGroup.exoVariant}>
                               {exerciseGroup.exoVariant}
                             </Badge>
                           )}
@@ -1572,15 +1650,28 @@ export function LogView() {
 
                   {/* Statistiques de l'exercice - Améliorées */}
                   {(() => {
-                    const { todayBest, allTimeBest } = getBestSetComparison({ ...exerciseGroup, todaySets: exerciseGroup.sets });
+                    const { todayBest, allTimeBest } = getBestSetComparison({
+                      exerciseName: exerciseGroup.exerciseName,
+                      variants: exerciseGroup.variants,
+                      equipment: exerciseGroup.equipment,
+                      exoVariant: exerciseGroup.exoVariant,
+                      todaySets: exerciseGroup.sets,
+                    });
+
                     const totalReps = exerciseGroup.sets.reduce((total, set) => total + set.reps, 0);
 
-                    const todayScore = todayBest?.estimated1RM || ((todayBest?.weight && todayBest?.weight > 0) || 1) * todayBest?.reps || 0;
-                    const allTimeScore =
-                      allTimeBest?.estimated1RM || ((allTimeBest?.weight && allTimeBest?.weight > 0) || 1) * allTimeBest?.reps || 0;
-                    const isNewRecord = todayScore >= allTimeScore;
+                    const todayScore = getSetScore(todayBest);
+                    const allTimeScore = getSetScore(allTimeBest);
+
+                    const isNewRecord = Boolean(todayBest) && todayScore >= allTimeScore;
 
                     const exo = EXERCISES.find((ex) => ex.name.toLocaleLowerCase() === exerciseGroup.exerciseName.toLocaleLowerCase());
+
+                    const formatSetPerformance = (set: WorkoutSet): string => {
+                      const unit = exo?.repType === 'time' ? (exo.repTypeUnit === 'minute' ? ' min' : ' sec') : ` rep${set.reps > 1 ? 's' : ''}`;
+
+                      return `${formatWeight(set.weight, set.exerciseName)} × ${set.reps}${unit}`;
+                    };
 
                     return (
                       <div className="mt-3 ml-13 flex items-center gap-4 rounded-lg bg-muted/30 p-2 text-xs text-muted-foreground">
@@ -1598,10 +1689,9 @@ export function LogView() {
                           <div className={`flex items-center gap-1 ${!isNewRecord ? 'text-amber-600 font-medium' : ''}`}>
                             <Star className={`h-3 w-3 ${!isNewRecord ? 'text-amber-600' : ''}`} />
                             <span>
-                              Best: {formatWeight(allTimeBest.weight, exerciseGroup.exerciseName)} × {allTimeBest.reps}
-                              {exo?.repTypeUnit === 'minute' ? "'" : "''"}
-                              {allTimeBest.estimated1RM ? ` (~${allTimeBest.estimated1RM}kg)` : <></>}
-                              {!isNewRecord && ' 👑'}
+                              Best: {formatSetPerformance(allTimeBest)}
+                              {allTimeBest.estimated1RM ? ` (~${allTimeBest.estimated1RM}kg)` : null}
+                              {!isNewRecord ? ' 👑' : null}
                             </span>
                           </div>
                         )}

@@ -88,13 +88,29 @@ export function HistoryView() {
   }, [history]);
 
   // Filter sessions by selected exercises, keeping week structure
+  // Filtrer les sessions complètes, en conservant la structure par semaine.
   const filteredGroupedByWeek = useMemo(() => {
-    return groupedByWeek
-      .map(([weekStart, sets]) => {
-        const filtered = selectedExercises.length === 0 ? sets : sets.filter((s) => selectedExercises.includes(s.exerciseName));
-        return [weekStart, filtered] as [string, typeof sets];
-      })
-      .filter(([_, sets]) => sets.length > 0);
+    if (selectedExercises.length === 0) {
+      return groupedByWeek;
+    }
+
+    const selectedExerciseNames = new Set(selectedExercises);
+
+    return (
+      groupedByWeek
+        .map(([weekStart, weekSets]): [string, WorkoutSet[]] => {
+          // D'abord regrouper toutes les séries en sessions complètes.
+          const sessions = Array.from(groupSetsByDate(weekSets).values());
+
+          // Conserver une session entière si elle contient
+          // au moins un exercice sélectionné.
+          const matchingSessions = sessions.filter((sessionSets) => sessionSets.some((set) => selectedExerciseNames.has(set.exerciseName)));
+
+          return [weekStart, matchingSessions.flat()];
+        })
+        // Masquer les semaines sans session correspondante.
+        .filter(([, sets]) => sets.length > 0)
+    );
   }, [groupedByWeek, selectedExercises]);
 
   // For backward compat with stats (flat filtered list)
@@ -106,15 +122,21 @@ export function HistoryView() {
 
   // Calculer les statistiques globales
   const totalStats = useMemo(() => {
-    const filteredSets = selectedExercises.length === 0 ? history : history.filter((set) => selectedExercises.includes(set.exerciseName));
+    const visibleSets = filteredGroupedByDate.flatMap(([, sets]) => sets);
 
-    const totalVolume = filteredSets.reduce((acc, set) => acc + set.weight * set.reps, 0);
-    const totalReps = filteredSets.reduce((acc, set) => acc + set.reps, 0);
-    const uniqueExercises = new Set(filteredSets.map((set) => set.exerciseName)).size;
-    const totalDays = filteredGroupedByDate.length;
+    const totalVolume = visibleSets.reduce((acc, set) => acc + set.weight * set.reps, 0);
 
-    return { totalVolume, totalReps, uniqueExercises, totalDays };
-  }, [history, filteredGroupedByDate, selectedExercises]);
+    const totalReps = visibleSets.reduce((acc, set) => acc + set.reps, 0);
+
+    const uniqueExercises = new Set(visibleSets.map((set) => set.exerciseName)).size;
+
+    return {
+      totalVolume,
+      totalReps,
+      uniqueExercises,
+      totalDays: filteredGroupedByDate.length,
+    };
+  }, [filteredGroupedByDate]);
 
   const toggleExercise = (exerciseName: string) => {
     setSelectedExercises((prev) => (prev.includes(exerciseName) ? prev.filter((e) => e !== exerciseName) : [...prev, exerciseName]));
