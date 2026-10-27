@@ -24,7 +24,8 @@ function normalizeWorkoutVariant(value?: string): WorkoutVariant[] {
   const list: WorkoutVariant[] = [];
   if (value && value.length > 0) {
     const variants = value.split(',');
-    for (const variant of variants) {
+    for (const rawVariant of variants) {
+      const variant = rawVariant.trim();
       if (WORKOUT_VARIANTS.includes(variant as WorkoutVariant)) {
         list.push(variant as WorkoutVariant);
       }
@@ -246,6 +247,7 @@ export async function getPrograms() {
       const bloc = row.get('Bloc') || '';
       const exerciseName = row.get('Exercice') || '';
       const variants = normalizeWorkoutVariant(row.get('Variant') || row.get('Variant'));
+      const exoVariant = row.get('Exo Variant') || undefined;
       const equipment = normalizeOptionalWorkoutEquipment(row.get('Equipement') || row.get('Equipment'));
       const sets = parseInt(row.get('Séries') || '0');
       const reps = row.get('Reps') || '';
@@ -284,6 +286,7 @@ export async function getPrograms() {
       blocObj.exercises.push({
         exerciseName,
         variants,
+        exoVariant,
         equipment,
         sets,
         reps,

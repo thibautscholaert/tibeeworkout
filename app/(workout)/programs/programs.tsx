@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { copyProgramToClipboard } from '@/lib/clipboard-utils';
 import { EXERCISES } from '@/lib/exercises';
+import { Program, ProgramBloc, ProgramExercise, ProgramSession } from '@/lib/types';
 import { useWorkoutPrograms } from '@/lib/use-workout-programs';
 import { Calendar, Copy, Dumbbell, Flame, PersonStandingIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -42,7 +43,7 @@ export default function Programs() {
   const { workoutPrograms: programs } = useWorkoutPrograms();
 
   const [currentDay, setCurrentDay] = useState<string>('');
-  const [selectedProgram, setSelectedProgram] = useState<any>(programs[0] || null);
+  const [selectedProgram, setSelectedProgram] = useState<Program | null>(programs[0] || null);
 
   useEffect(() => {
     setCurrentDay(getCurrentDayInFrench());
@@ -166,7 +167,7 @@ export default function Programs() {
                 //   if (normalizedB === currentDay) return 1;
                 //   return 0;
                 // })
-                .map((session: any, sessionIndex: number) => {
+                .map((session: ProgramSession, sessionIndex: number) => {
                   const normalizedDay = normalizeDayName(session.day);
                   const isToday = normalizedDay === currentDay;
                   const sessionExercises = session.blocs.flatMap((bloc: any) => bloc.exercises);
@@ -250,7 +251,7 @@ export default function Programs() {
                       <AccordionContent>
                         {/* Blocs de la session */}
                         <div className="space-y-3 ml-2 mt-2">
-                          {session.blocs.map((bloc: any, blocIndex: number) => (
+                          {session.blocs.map((bloc: ProgramBloc, blocIndex: number) => (
                             <div key={blocIndex} className="rounded-lg bg-background/50 border p-3">
                               <div className="flex items-center gap-2 mb-3">
                                 <div className="flex h-6 w-6 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">
@@ -261,7 +262,7 @@ export default function Programs() {
 
                               {/* Exercices du bloc */}
                               <div className="space-y-2">
-                                {bloc.exercises.map((exercise: any, exerciseIndex: number) => {
+                                {bloc.exercises.map((exercise: ProgramExercise, exerciseIndex: number) => {
                                   const exerciseData = EXERCISES.find((ex: any) => ex.name.toLowerCase() === exercise.exerciseName.toLowerCase());
                                   const isBodyweight = exerciseData?.bodyweight || false;
 
@@ -281,13 +282,18 @@ export default function Programs() {
                                               {exerciseIndex + 1}
                                             </div>
                                             <h6 className="font-medium text-sm">{exercise.exerciseName}</h6>
-                                            {exercise.variant && exercise.variant !== 'default' && (
+                                            {exercise.variants && exercise.variants.length > 0 && (
                                               <Badge variant="secondary" className="text-xs">
-                                                {exercise.variant}
+                                                {exercise.variants.join(',')}
+                                              </Badge>
+                                            )}
+                                            {exercise.exoVariant && (
+                                              <Badge variant="secondary" className="text-xs">
+                                                {exercise.exoVariant}
                                               </Badge>
                                             )}
 
-                                            {exercise.equipment && exercise.equipment !== 'default' && (
+                                            {exercise.equipment && (
                                               <Badge variant="outline" className="text-xs">
                                                 {exercise.equipment}
                                               </Badge>

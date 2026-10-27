@@ -547,6 +547,7 @@ export function LogView() {
         suggestedReps: null,
         suggestedCharge: null,
         suggestedVariants: [],
+        suggestedExoVariant: undefined,
         suggestedEquipment: 'floor',
         exerciseDetails: null,
         completedExercises: [],
@@ -1036,6 +1037,12 @@ export function LogView() {
                           {suggestedVariant}
                         </Badge>
                       ))}
+                      {suggestions.suggestedExoVariant && (
+                        <Badge variant="secondary" className="shrink-0 text-xs">
+                          {suggestions.suggestedExoVariant}
+                        </Badge>
+                      )}
+
                       <Badge variant="outline" className="shrink-0 text-xs">
                         {suggestions.suggestedEquipment}
                       </Badge>
@@ -1087,7 +1094,7 @@ export function LogView() {
                         exerciseName,
                         equipment: suggestions.suggestedEquipment,
                         variants: suggestions.suggestedVariants,
-                        exoVariant: undefined,
+                        exoVariant: suggestions.suggestedExoVariant,
                         reps: suggestions.suggestedReps ?? currentValues.reps,
                         weight: suggestions.suggestedCharge ?? currentValues.weight,
                       }));

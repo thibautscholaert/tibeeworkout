@@ -46,6 +46,7 @@ export interface ProgramBloc {
 export interface ProgramExercise {
   exerciseName: string;
   variants: WorkoutVariant[];
+  exoVariant?: string;
   equipment?: WorkoutEquipment;
   sets: number;
   reps: string;

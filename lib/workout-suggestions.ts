@@ -169,6 +169,7 @@ export interface ExerciseSuggestion {
   suggestedReps: number | null;
   suggestedCharge: number | null;
   suggestedVariants: WorkoutVariant[];
+  suggestedExoVariant?: string;
   suggestedEquipment: WorkoutEquipment;
   exerciseDetails: ProgramExercise | null;
   completedExercises: string[];
@@ -207,6 +208,7 @@ export function getWorkoutSuggestions(
       for (const bloc of selectedProgram.blocs) {
         for (const exercise of bloc.exercises) {
           const variants = exercise.variants || [];
+          const exoVariants = exercise.exoVariant;
           const equipment = exercise.equipment || getDefaultEquipment(exercise.exerciseName);
           const exerciseKey = getExerciseVariantKey(exercise.exerciseName, variants, equipment);
           const allTimeSets = history.filter(
@@ -249,6 +251,7 @@ export function getWorkoutSuggestions(
               suggestedReps: parseInt(exercise.reps),
               suggestedCharge,
               suggestedVariants: variants,
+              suggestedExoVariant: exoVariants,
               suggestedEquipment: equipment,
               exerciseDetails: exercise,
               completedExercises: completedExerciseNames,

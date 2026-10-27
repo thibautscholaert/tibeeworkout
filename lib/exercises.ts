@@ -317,6 +317,7 @@ const EXERCISE_DEFINITIONS: Exercise[] = [
         <li>Active scapula depress / shoulders down</li>
       </ul>  `,
     },
+    exoVariants: ['archer', 'wide', 'close', 'hammer', 'typewriter'],
   },
   {
     name: 'Chin up',
@@ -620,7 +621,6 @@ const EXERCISE_DEFINITIONS: Exercise[] = [
     category: ['push_vertical', 'push_horizontal'],
     strengthType: 'strength',
     equipment: 'bar',
-    exoVariants: ['bar'],
   },
   {
     name: 'Ring support hold',
