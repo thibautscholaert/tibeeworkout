@@ -136,8 +136,9 @@ export const copyProgramToClipboard = async (program: Program, sessionDay?: stri
             const setsText = exercise.sets && exercise.sets > 1 ? `${exercise.sets}x` : '';
 
             const variantLabel = exercise.variants.length > 0 ? ` - ${exercise.variants.join(',')}` : '';
+            const exoVariantLabel = exercise.exoVariant ? ` - ${exercise.exoVariant}` : '';
             const equipment = exercise.equipment || getDefaultEquipment(exercise.exerciseName);
-            const exerciseLabel = `${exercise.exerciseName}${variantLabel} [${equipment}]`;
+            const exerciseLabel = `${exercise.exerciseName}${variantLabel}${exoVariantLabel} [${equipment}]`;
             let exerciseLine = `${exerciseLabel} ${setsText}${repsText}${weightText}`;
 
             // Ajouter les notes si présentes
