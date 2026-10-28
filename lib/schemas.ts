@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const WORKOUT_VARIANTS = ['default', 'slow', 'explosive', 'tempo', 'negative', 'tuck', 'straddle', 'adv tuck', 'supi', 'prona', 'l-sit'] as const;
+export const WORKOUT_VARIANTS = ['default', 'slow', 'explosive', 'tempo', 'negative', 'tuck', 'straddle', 'adv tuck', 'supi', 'prona', 'l-sit', 'band assisted'] as const;
 export type WorkoutVariant = (typeof WORKOUT_VARIANTS)[number];
 
 export const WORKOUT_EQUIPMENT = ['floor', 'parallette', 'rings', 'bar', 'dumbbell', 'band', 'barbell', 'machine'] as const;
