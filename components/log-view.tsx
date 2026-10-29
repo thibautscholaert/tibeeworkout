@@ -431,6 +431,53 @@ export function LogView() {
     setRestAlert(readRestAlert());
   }, []);
 
+  function playTone(ctx: AudioContext, freq: number, startTime: number, duration = 0.25, volume = 0.2) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    // 'sine' pour la douceur, mais 'triangle' tranche un peu mieux si la musique est forte
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, startTime);
+
+    // Enveloppe : Attaque ultra rapide (5ms) + Decay naturel
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(volume, startTime + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(startTime);
+    osc.stop(startTime + duration);
+  }
+
+  function ringAlert() {
+    try {
+      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
+      if (!AudioContextClass) return;
+
+      const ctx = new AudioContextClass();
+      const now = ctx.currentTime;
+
+      // Motif : Trio de double-bips (Ré5 -> La5) répété 3 fois
+      // Total : ~3.2 secondes, idéal pour percer au-dessus d'un fond musical
+      const repetitions = 3;
+      const intervalBetweenReps = 0.9; // Pause de 900ms entre chaque salve
+
+      for (let i = 0; i < repetitions; i++) {
+        const repStart = now + i * intervalBetweenReps;
+
+        // Note 1 (Ré5 - 587.33 Hz)
+        playTone(ctx, 587.33, repStart, 0.2, 0.25);
+
+        // Note 2 (La5 - 880.00 Hz) - Jouée 140ms plus tard, résonne légèrement plus long
+        playTone(ctx, 880.0, repStart + 0.14, 0.35, 0.25);
+      }
+    } catch (error) {
+      console.warn('Erreur AudioContext :', error);
+    }
+  }
+
   useEffect(() => {
     if (!restAlert || restAlert.notifiedAtRange.every(Boolean)) return;
 
@@ -447,6 +494,7 @@ export function LogView() {
 
         updatedAlert = markRestAlertNotified(updatedAlert, alertIndex);
         setRestAlert(updatedAlert);
+        ringAlert(); // Un bip aigu d'un quart de seconde
         toast.warning(alertIndex === 0 ? 'Temps de repos minimum atteint' : 'Temps de repos maximum atteint', {
           description: `${updatedAlert.exerciseName} • ${formatRestSeconds(updatedAlert.restSecondsRange[alertIndex])}`,
           duration: 10000,
@@ -740,48 +788,6 @@ export function LogView() {
 
     return bestSet ? { reps: bestSet.reps, weight: bestSet.weight } : null;
   }, [history, selectedExercise]);
-
-  // Calculate best set for each exercise (today vs all time)
-  // const getBestSetComparison = useMemo(() => {
-  //   return (exerciseGroup: { exerciseName: string; variants: WorkoutVariant[]; todaySets: WorkoutSet[]; equipment: WorkoutEquipment }) => {
-  //     const { exerciseName, todaySets, variants, equipment } = exerciseGroup;
-
-  //     const exerciseData = EXERCISES.find((ex) => ex.name.toLowerCase() === exerciseName.toLowerCase());
-  //     const isBodyweight = exerciseData?.bodyweight || false;
-
-  //     const compareSetScore = (set: WorkoutSet) => {
-  //       // For bodyweight exercises without added weight, compare by reps only
-  //       if (isBodyweight && set.weight === 0) {
-  //         return set.reps;
-  //       }
-  //       // For weighted exercises (or bodyweight exercises with added weight), prefer estimated1RM, fallback to weight * reps
-  //       return set.estimated1RM || set.weight * set.reps;
-  //     };
-
-  //     // Best set from today's session
-  //     const todayBest = todaySets.reduce<any>((best, set) => {
-  //       if (!best) return set;
-  //       const bestScore = compareSetScore(best);
-  //       const setScore = compareSetScore(set);
-  //       return setScore > bestScore ? set : best;
-  //     }, null);
-
-  //     // Best set from all time
-  //     const allTimeSets = history.filter(
-  //       (set) => set.exerciseName === exerciseName && equipment === set.equipment && areSameVariants(variants, set.variants)
-  //     );
-  //     const allTimeBest = allTimeSets.reduce<any>((best, set) => {
-  //       if (!best) return set;
-  //       const bestScore = compareSetScore(best);
-  //       const setScore = compareSetScore(set);
-  //       return setScore > bestScore ? set : best;
-  //     }, null);
-
-  //     return { todayBest, allTimeBest };
-  //   };
-  // }, [history]);
-
-  // À déclarer en dehors du composant
 
   // Dans LogView
   const getBestSetComparison = useCallback(

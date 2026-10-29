@@ -26,14 +26,39 @@ function dispatchChronoStateChange(state: ChronoState) {
   window.dispatchEvent(new CustomEvent(CHRONO_STATE_EVENT, { detail: state }));
 }
 
-export function readChronoState(): ChronoState | null {
+export const MAX_CHRONO_DURATION_MS = 2 * 60 * 60 * 1000; // 2 heures en ms (7 200 000 ms)
+
+export function clearChronoState() {
+  localStorage.removeItem(CHRONO_STATE_KEY);
+  localStorage.removeItem(REST_ALERT_KEY);
+}
+
+export function readChronoState(now = Date.now()): ChronoState | null {
   const savedState = localStorage.getItem(CHRONO_STATE_KEY);
   if (!savedState) return null;
 
   try {
-    return JSON.parse(savedState) as ChronoState;
+    const state = JSON.parse(savedState) as ChronoState;
+
+    // Calcul du temps écoulé réel
+    const elapsed = getChronoElapsed(state, now);
+
+    // Si la durée dépasse 2 heures, on réinitialise complètement
+    if (elapsed > MAX_CHRONO_DURATION_MS) {
+      clearChronoState();
+      dispatchChronoStateChange({
+        time: 0,
+        isRunning: false,
+        startTime: null,
+        initialStartTime: null,
+      });
+      return null;
+    }
+
+    return state;
   } catch (error) {
     console.error("Erreur lors du chargement de l'état du chrono:", error);
+    clearChronoState();
     return null;
   }
 }
@@ -87,12 +112,21 @@ export function createRestAlert(exerciseName: string, restSecondsRange: [number,
   return alert;
 }
 
-export function readRestAlert(): RestAlertState | null {
+export function readRestAlert(now = Date.now()): RestAlertState | null {
   const savedAlert = localStorage.getItem(REST_ALERT_KEY);
   if (!savedAlert) return null;
 
   try {
     const parsed = JSON.parse(savedAlert) as RestAlertState;
+
+    // Si le temps écoulé depuis le début de la séance dépasse 2h
+    // ou si l'alerte est dépassée depuis plus de 2h
+    const timeSinceAlert = now - parsed.startedAt;
+    if (timeSinceAlert > MAX_CHRONO_DURATION_MS) {
+      localStorage.removeItem(REST_ALERT_KEY);
+      return null;
+    }
+
     const startElapsed = parsed.startElapsed ?? 0;
     const [minRestSeconds, maxRestSeconds] = parsed.restSecondsRange;
     const targetElapsed = parsed.targetElapsed ?? startElapsed + maxRestSeconds * 1000;
@@ -106,6 +140,7 @@ export function readRestAlert(): RestAlertState | null {
     };
   } catch (error) {
     console.error("Erreur lors du chargement de l'alerte de repos:", error);
+    localStorage.removeItem(REST_ALERT_KEY);
     return null;
   }
 }
@@ -122,4 +157,10 @@ export function markRestAlertNotified(alert: RestAlertState, index: 0 | 1, now =
 
   localStorage.setItem(REST_ALERT_KEY, JSON.stringify(updatedAlert));
   return updatedAlert;
+}
+
+export const MAX_CHRONO_DURATION_SECONDS = 7200; // 2 heures
+
+export function shouldResetChrono(elapsedSeconds: number): boolean {
+  return elapsedSeconds > MAX_CHRONO_DURATION_SECONDS;
 }

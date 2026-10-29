@@ -1,97 +1,153 @@
 'use client';
 
-import { CHRONO_STATE_EVENT, readChronoState, type ChronoState } from '@/lib/chrono';
-import { cn } from '@/lib/utils';
-import { Timer } from 'lucide-react';
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { CHRONO_STATE_EVENT, ChronoState, clearChronoState, getChronoElapsed, readChronoState, writeChronoState } from '@/lib/chrono';
+import { Pause, Play, RotateCcw, Timer } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+
+function formatChronoTime(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  const pad = (n: number) => n.toString().padStart(2, '0');
+
+  if (hours > 0) {
+    return `${hours}:${pad(minutes)}:${pad(seconds)}`;
+  }
+  return `${pad(minutes)}:${pad(seconds)}`;
+}
 
 export function ChronoIndicator() {
-  const [time, setTime] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-  const [startTime, setStartTime] = useState<number | null>(null);
-  const [initialStartTime, setInitialStartTime] = useState<number | null>(null);
+  const [chronoState, setChronoState] = useState<ChronoState | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
 
-  // Charger l'état depuis localStorage
+  // Synchro avec l'état stocké dans la lib
   useEffect(() => {
-    const applyState = (parsed: ChronoState | null) => {
-      if (!parsed) return;
-
-      if (parsed.isRunning && parsed.initialStartTime) {
-        const elapsed = Date.now() - parsed.initialStartTime;
-        setTime(elapsed);
-        setIsRunning(true);
-        setStartTime(parsed.startTime);
-        setInitialStartTime(parsed.initialStartTime);
+    const syncState = () => {
+      const current = readChronoState();
+      setChronoState(current);
+      if (current) {
+        setElapsedSeconds(Math.floor(getChronoElapsed(current) / 1000));
       } else {
-        setTime(parsed.time || 0);
-        setIsRunning(false);
-        setStartTime(null);
-        setInitialStartTime(parsed.initialStartTime);
+        setElapsedSeconds(0);
       }
     };
 
-    const loadState = () => applyState(readChronoState());
+    syncState();
 
-    loadState();
-
-    // Écouter les changements dans localStorage
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'chronoState') {
-        loadState();
+    const handleStateChange = (e: CustomEvent<ChronoState>) => {
+      const newState = e.detail;
+      setChronoState(newState);
+      if (newState) {
+        setElapsedSeconds(Math.floor(getChronoElapsed(newState) / 1000));
+      } else {
+        setElapsedSeconds(0);
       }
     };
-    const handleChronoStateChange = (event: Event) => {
-      applyState((event as CustomEvent<ChronoState>).detail);
-    };
 
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener(CHRONO_STATE_EVENT, handleChronoStateChange);
-
-    // Mettre à jour le temps si le chrono est en cours
-    let interval: NodeJS.Timeout | null = null;
-    if (isRunning && initialStartTime) {
-      interval = setInterval(() => {
-        const elapsed = Date.now() - initialStartTime;
-        setTime(elapsed);
-      }, 100);
-    }
-
+    window.addEventListener(CHRONO_STATE_EVENT as any, handleStateChange);
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener(CHRONO_STATE_EVENT, handleChronoStateChange);
-      if (interval) {
-        clearInterval(interval);
-      }
+      window.removeEventListener(CHRONO_STATE_EVENT as any, handleStateChange);
     };
-  }, [isRunning, startTime, initialStartTime]);
+  }, []);
 
-  const formatTime = (milliseconds: number) => {
-    const totalSeconds = Math.floor(milliseconds / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
+  // Tick du chrono
+  useEffect(() => {
+    if (!chronoState?.isRunning) return;
 
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    const interval = setInterval(() => {
+      const elapsedMs = getChronoElapsed(chronoState);
+      setElapsedSeconds(Math.floor(elapsedMs / 1000));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [chronoState]);
+
+  // Actions
+  const handleTogglePlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const now = Date.now();
+
+    if (!chronoState || !chronoState.isRunning) {
+      // Démarrage ou Reprise
+      const currentElapsed = getChronoElapsed(chronoState, now);
+      const newState: ChronoState = {
+        time: currentElapsed,
+        isRunning: true,
+        startTime: now,
+        initialStartTime: now - currentElapsed,
+      };
+      writeChronoState(newState);
+    } else {
+      // Pause
+      const currentElapsed = getChronoElapsed(chronoState, now);
+      const newState: ChronoState = {
+        time: currentElapsed,
+        isRunning: false,
+        startTime: null,
+        initialStartTime: null,
+      };
+      writeChronoState(newState);
+    }
   };
 
-  // Ne rien afficher si le chrono est à 0 et pas en cours
-  if (time === 0 && !isRunning) {
-    return null;
-  }
+  const handleReset = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    clearChronoState();
+    writeChronoState(
+      {
+        time: 0,
+        isRunning: false,
+        startTime: null,
+        initialStartTime: null,
+      },
+      { emitEvent: true }
+    );
+  };
+
+  const isRunning = chronoState?.isRunning ?? false;
+  const hasStarted = elapsedSeconds > 0 || isRunning;
 
   return (
-    <Link href="/chrono">
-      <div
-        className={cn(
-          'flex items-center gap-4 px-3 py-1.5 rounded-full transition-all duration-200',
-          'bg-primary/10 hover:bg-primary/20 border border-primary/20 hover:border-primary/30',
-          isRunning && 'animate-pulse'
-        )}
-      >
-        <Timer className={cn('h-5 w-5', isRunning ? 'text-primary' : 'text-muted-foreground')} />
-        <span className={cn('text-2xl font-mono font-medium', isRunning ? 'text-primary' : 'text-muted-foreground')}>{formatTime(time)}</span>
-        {isRunning && <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />}
+    <div className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 px-4 py-2 shadow-md backdrop-blur-md">
+      {/* Icône du chrono */}
+      <Timer className={`h-7 w-7 text-green-600 ${isRunning ? 'animate-pulse' : ''}`} />
+
+      {/* Affichage du temps agrandi */}
+      <span className="font-mono text-3xl font-semibold tabular-nums text-foreground min-w-[60px] text-center tracking-wide">
+        {formatChronoTime(elapsedSeconds)}
+      </span>
+
+      {/* Zone de boutons d'action */}
+      <div className="flex items-center gap-1 pl-1 border-l border-primary/20">
+        {/* Play / Pause */}
+        <button
+          type="button"
+          onClick={handleTogglePlay}
+          className="p-1 rounded-lg text-white transition-colors focus:outline-none w-8"
+          title={isRunning ? 'Mettre en pause' : 'Démarrer le chrono'}
+          aria-label={isRunning ? 'Mettre en pause' : 'Démarrer le chrono'}
+        >
+          {isRunning ? (
+            <Pause className="h-6 w-6 text-amber-600 fill-amber-600" />
+          ) : (
+            <Play className="h-6 w-6 text-green-600 fill-green-600 ml-0.5" />
+          )}
+        </button>
+
+        {/* Reset */}
+        {/* {hasStarted && ( */}
+        <button
+          type="button"
+          onClick={handleReset}
+          className={`p-1.5 rounded-lg ${hasStarted ? 'text-white' : 'text-muted'} transition-colors focus:outline-none`}
+          title="Réinitialiser le chrono"
+          aria-label="Réinitialiser le chrono"
+        >
+          <RotateCcw className="h-5 w-5" />
+        </button>
+        {/* )} */}
       </div>
-    </Link>
+    </div>
   );
 }
